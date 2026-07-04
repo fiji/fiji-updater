@@ -220,7 +220,7 @@ change, and it is the direct cause of the `Fiji` collision below.
   keep `jvm.version-min` as low as the app-launcher's own bytecode allows, so
   that the launcher always starts and only the *recommended* version moves.
 
-- **One-line launcher change:** `'--update|net.imagej.updater.CommandLine'`
+- **One-line launcher change:** `'--update|sc.fiji.updater.CommandLine'`
   becomes `'--update|sc.fiji.updater.cli.CommandLine'`.
 
 - **Publish a final `net.imagej:imagej-updater`** whose only job is to be

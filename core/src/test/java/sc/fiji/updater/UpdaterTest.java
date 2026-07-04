@@ -836,7 +836,7 @@ public class UpdaterTest {
 			+ "#Tue Jun 17 09:47:43 CST 2012\n"
 			+ "narf.egads = pinkie\n";
 		final String fileName =
-			"META-INF/maven/net.imagej/updater-test/pom.properties";
+			"META-INF/maven/sc.fiji/updater-test/pom.properties";
 		final File oldOldJar =
 			UpdaterTestUtils.writeJarWithDatedFile(files, "old.jar", 2012, 6, 12, fileName, oldContents);
 		final File oldNewJar =
@@ -889,7 +889,7 @@ public class UpdaterTest {
 			"blub = true\n" + "#Tue Jun 17 09:47:43 CST 2012\n"
 				+ "narf.egads = pinkie\n";
 		final String fileName =
-			"META-INF/maven/net.imagej/updater-test/pom.properties";
+			"META-INF/maven/sc.fiji/updater-test/pom.properties";
 		assertTrue(files.prefix("jars").mkdirs());
 		File jar =
 			UpdaterTestUtils.writeJarWithDatedFile(files, "jars/new.jar", 2012, 6, 17, fileName, newContents);
