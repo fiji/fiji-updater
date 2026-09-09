@@ -34,12 +34,16 @@ package net.imagej.updater.util;
 import net.imagej.updater.URLChange;
 import net.imagej.updater.FilesCollection;
 import net.imagej.updater.UpdateSite;
-import net.imagej.util.MediaWikiClient;
 import org.scijava.log.LogService;
 import org.scijava.log.Logger;
+import org.scijava.util.XML;
 import org.xml.sax.SAXException;
+import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 import java.io.IOException;
+import java.io.InputStream;
+import java.net.URL;
+import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -77,13 +81,54 @@ public final class AvailableSites {
 	}
 
 	private static String downloadWikiPage(final Logger log) throws IOException {
-		String wikiURL = HTTPSUtil.getProtocol() + "imagej.net/";
+		final String wikiURL = HTTPSUtil.getProtocol() + "imagej.net/";
 
 		if(log != null) log.info("Reading available sites from " + wikiURL);
 		else System.out.println("[INFO] Reading available sites from " + wikiURL);
 
-		final MediaWikiClient wiki = new MediaWikiClient(wikiURL);
-		return wiki.getPageSource(SITE_LIST_PAGE_TITLE);
+		return getPageSource(wikiURL, SITE_LIST_PAGE_TITLE);
+	}
+
+	/**
+	 * Fetches the wiki source of a single page via the MediaWiki API.
+	 * <p>
+	 * This is deliberately minimal: an anonymous GET of one page, which is all
+	 * the updater has ever needed from the wiki. It replaces a general-purpose
+	 * MediaWiki client -- account creation, login, cookie handling and all --
+	 * whose only other consequence was a dependency on imagej-common.
+	 * </p>
+	 * <p>
+	 * The whole arrangement is on its way out: the update site list is generated
+	 * from structured data in the imagej/list-of-update-sites repository, and is
+	 * scraped back out of the wiki page that data renders into. Once that
+	 * repository publishes its list directly, {@link #parseWikiPage} and this
+	 * method go away together.
+	 * </p>
+	 *
+	 * @param wikiURL base URL of the wiki, ending in a slash.
+	 * @param title title of the page to fetch.
+	 * @return the page's wiki source.
+	 * @throws IOException if the page cannot be fetched or parsed.
+	 */
+	private static String getPageSource(final String wikiURL, final String title)
+		throws IOException
+	{
+		final String url = wikiURL + "api.php?action=query&format=xml" +
+			"&export=true&exportnowrap=true&titles=" +
+			URLEncoder.encode(title, "UTF-8");
+		try (final InputStream in =
+			UpdaterUtil.openConnection(new URL(url)).getInputStream())
+		{
+			final XML xml = new XML(in);
+			final String source = xml.cdata("/mediawiki/page/revision/text");
+			if (source == null) {
+				throw new IOException("No such wiki page: " + title);
+			}
+			return source;
+		}
+		catch (final ParserConfigurationException | SAXException e) {
+			throw new IOException("Could not parse response from " + wikiURL, e);
+		}
 	}
 
 	private static Map<String, UpdateSite> parseWikiPage(final String text) throws IOException {

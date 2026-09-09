@@ -34,7 +34,7 @@ package net.imagej.updater;
 import java.io.IOException;
 import java.util.List;
 
-import net.imagej.ImageJPlugin;
+import org.scijava.plugin.SciJavaPlugin;
 import net.imagej.updater.util.Progressable;
 
 import org.scijava.plugin.Plugin;
@@ -54,7 +54,7 @@ import org.scijava.plugin.Plugin;
  * @see Plugin
  * @see UploaderService
  */
-public interface Uploader extends ImageJPlugin, Progressable {
+public interface Uploader extends SciJavaPlugin, Progressable {
 
 	/** TODO */
 	void upload(List<Uploadable> files, List<String> locks) throws IOException;

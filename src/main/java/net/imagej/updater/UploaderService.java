@@ -31,7 +31,7 @@
 
 package net.imagej.updater;
 
-import net.imagej.ImageJService;
+import org.scijava.service.SciJavaService;
 import net.imagej.updater.util.Progress;
 
 /**
@@ -39,7 +39,7 @@ import net.imagej.updater.util.Progress;
  * 
  * @author Johannes Schindelin
  */
-public interface UploaderService extends ImageJService {
+public interface UploaderService extends SciJavaService {
 
 	// CTR TODO: Extend SingletonService<Uploader>.
 

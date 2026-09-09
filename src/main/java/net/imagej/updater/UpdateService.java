@@ -33,14 +33,14 @@ package net.imagej.updater;
 
 import java.io.File;
 
-import net.imagej.ImageJService;
+import org.scijava.service.SciJavaService;
 
 /**
  * Interface for services that manage ImageJ updates.
  * 
  * @author Curtis Rueden
  */
-public interface UpdateService extends ImageJService {
+public interface UpdateService extends SciJavaService {
 
 	/** Gets the update site with the given name. */
 	UpdateSite getUpdateSite(String name);
