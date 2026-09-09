@@ -9,17 +9,17 @@
 		<relativePath />
 	</parent>
 
-	<groupId>net.imagej</groupId>
-	<artifactId>imagej-updater</artifactId>
-	<version>2.0.4-SNAPSHOT</version>
+	<groupId>sc.fiji</groupId>
+	<artifactId>fiji-updater</artifactId>
+	<version>3.0.0-SNAPSHOT</version>
 
-	<name>ImageJ Updater</name>
-	<description>Keeps components of ImageJ up-to-date.</description>
+	<name>Fiji Updater</name>
+	<description>Keeps components of Fiji up-to-date.</description>
 	<url>https://imagej.net/plugins/updater</url>
 	<inceptionYear>2009</inceptionYear>
 	<organization>
-		<name>ImageJ</name>
-		<url>https://imagej.net/</url>
+		<name>Fiji</name>
+		<url>https://fiji.sc/</url>
 	</organization>
 	<licenses>
 		<license>
@@ -90,23 +90,23 @@
 	</mailingLists>
 
 	<scm>
-		<connection>scm:git:https://github.com/imagej/imagej-updater</connection>
-		<developerConnection>scm:git:git@github.com:imagej/imagej-updater</developerConnection>
+		<connection>scm:git:https://github.com/fiji/fiji-updater</connection>
+		<developerConnection>scm:git:git@github.com:fiji/fiji-updater</developerConnection>
 		<tag>HEAD</tag>
-		<url>https://github.com/imagej/imagej-updater</url>
+		<url>https://github.com/fiji/fiji-updater</url>
 	</scm>
 	<issueManagement>
 		<system>GitHub Issues</system>
-		<url>https://github.com/imagej/imagej-updater/issues</url>
+		<url>https://github.com/fiji/fiji-updater/issues</url>
 	</issueManagement>
 	<ciManagement>
 		<system>GitHub Actions</system>
-		<url>https://github.com/imagej/imagej-updater/actions</url>
+		<url>https://github.com/fiji/fiji-updater/actions</url>
 	</ciManagement>
 
 	<properties>
-		<package-name>net.imagej.updater</package-name>
-		<main-class>net.imagej.updater.CommandLine</main-class>
+		<package-name>sc.fiji.updater</package-name>
+		<main-class>sc.fiji.updater.CommandLine</main-class>
 
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>Board of Regents of the University of

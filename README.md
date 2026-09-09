@@ -1,19 +1,31 @@
-[![](https://github.com/imagej/imagej-updater/actions/workflows/build-main.yml/badge.svg)](https://github.com/imagej/imagej-updater/actions/workflows/build-main.yml)
+[![](https://github.com/fiji/fiji-updater/actions/workflows/build-main.yml/badge.svg)](https://github.com/fiji/fiji-updater/actions/workflows/build-main.yml)
 
-ImageJ Updater
---------------
+Fiji Updater
+------------
 
-The ImageJ Updater is a mechanism to update individual packages in ImageJ.
-The Updater keeps users up-to-date with all components of ImageJ, including
-both plugins and the core components (libraries) needed by the plugins.
+The Fiji Updater is a mechanism to update individual components of Fiji.
+It keeps users up-to-date with everything an installation is made of, including
+both plugins and the core libraries those plugins need.
 
-The ImageJ Updater can handle 3rd-party update sites: anybody with write access
-to a web server can
+The Updater can handle 3rd-party update sites: anybody with write access to a
+web server can
 [set up their own update site](https://imagej.net/update-sites/setup) which
 users can decide to follow.
 
 For more details, see the [Updater](https://imagej.net/plugins/updater) page on
 the ImageJ wiki.
+
+History
+=======
+
+This component was previously published as `net.imagej:imagej-updater`, in the
+[imagej/imagej-updater](https://github.com/imagej/imagej-updater) repository.
+It was renamed because the name had stopped describing the thing: the Updater
+is the mechanism that maintains Fiji installations, it encodes Fiji's directory
+layout and launcher conventions, and it was called the Fiji Updater originally.
+
+The rename also opened up the API, which had been frozen by its coordinates for
+a long while. Expect 3.x to differ from 2.x wherever that made the tool better.
 
 Platform naming conventions
 ===========================
