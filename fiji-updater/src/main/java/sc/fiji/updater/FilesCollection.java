@@ -68,6 +68,7 @@ import sc.fiji.updater.util.HTTPSUtil;
 import sc.fiji.updater.util.Platforms;
 import sc.fiji.updater.util.Progress;
 import sc.fiji.updater.util.UpdateCanceledException;
+import sc.fiji.updater.util.UpdateSiteNetwork;
 import sc.fiji.updater.util.UpdaterUtil;
 import org.scijava.log.LogService;
 import org.scijava.log.StderrLogService;
@@ -111,7 +112,8 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 		XMLFileWriter.prepare();
 	}
 
-	public final static String DEFAULT_UPDATE_SITE = "ImageJ";
+	public final static String DEFAULT_UPDATE_SITE =
+		UpdateSiteNetwork.MAIN_SITE_NAME;
 	private final File appRoot;
 	public final LogService log;
 	protected Set<FileObject> ignoredConflicts = new HashSet<>();

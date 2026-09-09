@@ -48,6 +48,7 @@ import sc.fiji.updater.util.Downloader;
 import sc.fiji.updater.util.Platforms;
 import sc.fiji.updater.util.Progress;
 import sc.fiji.updater.util.UpdaterUserInterface;
+import sc.fiji.updater.util.AppLayout;
 import sc.fiji.updater.util.UpdaterUtil;
 
 import org.scijava.command.CommandInfo;
@@ -148,21 +149,21 @@ public class Installer extends Downloader {
 		// First we scan the update list to see if there's anything in Fiji.app to update
 		boolean updateMacApp = false;
 		for (final FileObject file : files.toInstallOrUpdate()) {
-			if (file.filename.contains("Fiji.app")) {
+			if (file.filename.contains(AppLayout.MAC_BUNDLE)) {
 				updateMacApp = true;
 				break;
 			}
 		}
 		// If there is a Mac app update, we need to flag ALL installed files in Fiji.app for update
 		if (updateMacApp) {
-			Path macBundlePath = files.prefix("Fiji.app").toPath();
+			Path macBundlePath = files.prefix(AppLayout.MAC_BUNDLE).toPath();
 			File backupAppFile = files.prefix("Fiji.old.app");
 			Path backupAppPath = backupAppFile.toPath();
 
 			// If there's no Fiji.app folder to back up we can just skip this step
 			if (Files.exists(macBundlePath)) {
 				for (FileObject installed : files.installed()) {
-					if (installed.filename.contains("Fiji.app")) {
+					if (installed.filename.contains(AppLayout.MAC_BUNDLE)) {
 						installed.stageForUpdate(files, true);
 					}
 				}
@@ -190,7 +191,7 @@ public class Installer extends Downloader {
 			//
 			// However - in the case of Fiji.app files, we already handled the backup process atomically above,
 			// so all we need to do is update the saveTo to download directly and not to the update directory
-			if (name.contains("Fiji.app")) {
+			if (name.contains(AppLayout.MAC_BUNDLE)) {
 				saveTo = files.prefix(name);
 			} else if (file.executable ||
 					saveTo.getAbsolutePath().contains("config" + File.separator + "jaunch")) {
@@ -201,8 +202,9 @@ public class Installer extends Downloader {
 				final File old = new File(oldName);
 				if (old.exists()) old.delete();
 				saveTo.renameTo(old);
-				if (name.equals("Contents/MacOS/ImageJ-tiger")) try {
-					UpdaterUtil.patchInfoPList(files.prefix("Contents/Info.plist"), "ImageJ-tiger");
+				if (name.equals(AppLayout.MAC_LEGACY_LAUNCHER)) try {
+					UpdaterUtil.patchInfoPList(
+						files.prefix(AppLayout.MAC_INFO_PLIST), "ImageJ-tiger");
 				}
 				catch (final IOException e) {
 					UpdaterUserInterface.get().error("Could not patch Info.plist");
@@ -222,13 +224,13 @@ public class Installer extends Downloader {
 				: Status.NOT_INSTALLED);
 	}
 
-	protected final static String UPDATER_JAR_NAME = "jars/fiji-updater.jar";
+	protected final static String UPDATER_JAR_NAME = AppLayout.UPDATER_JAR;
 
 	/**
 	 * The updater's own Swing user interface, updated alongside the updater
 	 * itself so that the two never disagree about the index format.
 	 */
-	protected final static String UPDATER_GUI_JAR_NAME = "jars/fiji-updater-gui.jar";
+	protected final static String UPDATER_GUI_JAR_NAME = AppLayout.UPDATER_GUI_JAR;
 
 	public static Set<FileObject> getUpdaterFiles(final FilesCollection files, final CommandService commandService, final boolean onlyUpdateable) {
 		final Set<FileObject> result = new HashSet<>();

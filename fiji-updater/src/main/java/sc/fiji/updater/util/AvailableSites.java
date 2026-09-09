@@ -67,7 +67,8 @@ public final class AvailableSites {
 		// NB: prevent instantiation of utility class
 	}
 
-	private static final String SITE_LIST_PAGE_TITLE = "List of update sites";
+	private static final String SITE_LIST_PAGE_TITLE =
+		UpdateSiteNetwork.SITE_LIST_PAGE_TITLE;
 
 	public static Map<String, UpdateSite> getAvailableSites() throws IOException {
 		return getAvailableSites(null);
@@ -81,7 +82,8 @@ public final class AvailableSites {
 	}
 
 	private static String downloadWikiPage(final Logger log) throws IOException {
-		final String wikiURL = HTTPSUtil.getProtocol() + "imagej.net/";
+		final String wikiURL =
+			HTTPSUtil.getProtocol() + UpdateSiteNetwork.SITE_LIST_HOST + "/";
 
 		if(log != null) log.info("Reading available sites from " + wikiURL);
 		else System.out.println("[INFO] Reading available sites from " + wikiURL);

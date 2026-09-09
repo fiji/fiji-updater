@@ -47,9 +47,11 @@ public class HTTPSUtil {
 	private static boolean secureMode = true;
 	private static boolean offlineMode = false;
 
-	private static final String secureURL = "https://imagej.net/api.php";
-	private static final String insecureUserSiteURL = "http://sites.imagej.net";
-	private static final String secureUserSiteURL = "https://sites.imagej.net";
+	private static final String secureURL = UpdateSiteNetwork.HTTPS_PROBE_URL;
+	private static final String insecureUserSiteURL =
+		"http://" + UpdateSiteNetwork.USER_SITE_HOST;
+	private static final String secureUserSiteURL =
+		"https://" + UpdateSiteNetwork.USER_SITE_HOST;
 
 	/**
 	 * Calls {@link #secureURL} to check whether the HTTPS certificate can be handled by the JVM.

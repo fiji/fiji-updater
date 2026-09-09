@@ -60,6 +60,7 @@ import sc.fiji.updater.FileObject.Status;
 import sc.fiji.updater.util.AbstractProgressable;
 import sc.fiji.updater.util.Platforms;
 import sc.fiji.updater.util.Progress;
+import sc.fiji.updater.util.AppLayout;
 import sc.fiji.updater.util.UpdaterUtil;
 
 /**
@@ -623,7 +624,7 @@ public class Checksummer extends AbstractProgressable {
 		if (cachedChecksums == null) readCachedChecksums();
 		FileObject.Version version = cachedChecksums.get(path);
 		if (version == null || timestamp != version.timestamp) {
-			final String checksum = path.equals("plugins/Fiji_Updater.jar") ?
+			final String checksum = path.equals(AppLayout.LEGACY_UPDATER_JAR) ?
 				UpdaterUtil.getJarDigest(file, false, false, false) :
 				UpdaterUtil.getDigest(path, file);
 			version = new FileObject.Version(checksum, timestamp);

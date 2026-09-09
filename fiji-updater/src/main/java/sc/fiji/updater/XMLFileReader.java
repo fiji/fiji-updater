@@ -49,6 +49,7 @@ import javax.xml.parsers.SAXParserFactory;
 
 import sc.fiji.updater.FileObject.Status;
 import sc.fiji.updater.FileObject.Version;
+import sc.fiji.updater.util.UpdateSiteNetwork;
 import sc.fiji.updater.util.UpdaterUtil;
 
 import org.xml.sax.Attributes;
@@ -155,7 +156,9 @@ public class XMLFileReader extends DefaultHandler {
 			if (updateSite == null) {
 				updateSite = atts.getValue("update-site");
 				// for backwards compatibility
-				if (updateSite == null) updateSite = "Fiji";
+				if (updateSite == null) {
+					updateSite = UpdateSiteNetwork.LEGACY_DEFAULT_SITE_NAME;
+				}
 			}
 			current =
 				new FileObject(updateSite, atts.getValue("filename"), -1, null, 0,

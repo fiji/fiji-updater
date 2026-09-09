@@ -32,6 +32,7 @@
 package sc.fiji.updater;
 
 import sc.fiji.updater.util.HTTPSUtil;
+import sc.fiji.updater.util.UpdateSiteNetwork;
 import sc.fiji.updater.util.UpdaterUtil;
 
 /**
@@ -232,9 +233,10 @@ public class UpdateSite implements Cloneable, Comparable<UpdateSite> {
 
 	/** Rewrites known-obsolete URLs to the current ones. */
 	private static String rewriteOldURLs(String url) {
-		if ("http://pacific.mpi-cbg.de/update/".equals(url) ||
-				"http://fiji.sc/update/".equals(url)) {
-			return HTTPSUtil.getProtocol() + "update.fiji.sc/";
+		for (final String[] entry : UpdateSiteNetwork.OBSOLETE_URLS) {
+			if (entry[0].equals(url)) {
+				return HTTPSUtil.getProtocol() + entry[1];
+			}
 		}
 		return url;
 	}

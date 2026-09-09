@@ -247,8 +247,7 @@ public class FijiUpdater implements UpdaterUI {
 	 */
 
 	public static boolean isDebian() {
-		final String debianProperty = System.getProperty("fiji.debian");
-		return debianProperty != null && debianProperty.equals("true");
+		return AppLayout.isDebianPackage();
 	}
 
 	/**
@@ -259,9 +258,9 @@ public class FijiUpdater implements UpdaterUI {
 		// If this is the Debian / Ubuntu packaged version, then
 		// insist that the user uses apt-get / synaptic instead:
 		if (isDebian()) {
-			String message = "You are using the Debian packaged version of ImageJ.\n";
+			String message = "You are using the Debian packaged version of Fiji.\n";
 			message +=
-				"You should update ImageJ with your system's usual package manager instead.";
+				"You should update Fiji with your system's usual package manager instead.";
 			UpdaterUserInterface.get().error(message);
 			return true;
 		}
