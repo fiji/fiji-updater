@@ -153,10 +153,7 @@ public class Checksummer extends AbstractProgressable {
 				queueDir(path, extensions);
 				continue;
 			}
-			if (!extensions.contains("")) {
-				final int dot = item.lastIndexOf('.');
-				if (dot < 0 || !extensions.contains(item.substring(dot))) continue;
-			}
+			if (!matchesExtension(extensions, item)) continue;
 			if (exists(file)) queue(path, file);
 		}
 	}
@@ -460,22 +457,42 @@ public class Checksummer extends AbstractProgressable {
 		return false;
 	}
 
+	/**
+	 * The directories whose contents the updater manages, paired with the file
+	 * extensions it recognizes in each. An extension list of <code>{ "" }</code>
+	 * means every file in that directory counts.
+	 * <p>
+	 * Note that this table governs the <em>discovery</em> of files not yet known
+	 * to the {@link FilesCollection} only. Files already recorded in an index are
+	 * queued regardless of where they live; see {@link #initializeQueue()}.
+	 * </p>
+	 * <p>
+	 * Entries here are cheap to add and invisible to remove, so the table only
+	 * shrinks when somebody looks. Audit it against a real installation from time
+	 * to time -- but note that "absent from my installation" and "safe to remove"
+	 * are different questions; see the note on <code>Contents</code> below.
+	 * </p>
+	 */
 	public static final String[][] directories = {
-		{ "jars", "retro", "misc" }, { ".jar", ".class" },
-		{ "config" }, { ".toml", ".class", ".py", ".txt" },
+		{ "jars" }, { ".jar", ".class" },
+		// NB: Deliberately an allow list, not a catch-all: config/jaunch/*.cfg is
+		// local machine state (the launcher's chosen JVM, the Python directory,
+		// and -- once channels land -- the installation's current channel). It
+		// must never become an updatable file, because an update site shipping
+		// one would overwrite that state for every user of the site.
+		{ "config" }, { ".toml", ".class", ".py", ".txt", ".yml" },
 		{ "plugins" }, { ".jar", ".class", ".txt", ".ijm", ".py", ".rb", ".clj", ".js", ".bsh", ".groovy", ".gvy" },
 		{ "scripts" }, { ".m",                     ".ijm", ".py", ".rb", ".clj", ".js", ".bsh", ".groovy", ".gvy" },
 		{ "macros" }, { ".txt", ".ijm", ".png" },
 		{ "models" }, { "" },
 		{ "luts" }, { ".lut" },
 		{ "images" }, { ".png", ".tif", ".txt", ".ico" },
+		// NB: Keep. This is the pre-Jaunch macOS bundle layout, absent from any
+		// modern installation but still present on the old Fiji-Stables that have
+		// yet to migrate; Platforms.LAUNCHERS and Installer both depend on it.
 		{ "Contents" }, { ".icns", ".plist" },
 		{ "lib" }, { "" },
-		{ "config" }, { "" },
-		{ "licenses" }, { "" },
-		{ "mm" }, { "" },
-		{ "mmautofocus" }, { "" },
-		{ "mmplugins" }, { "" }
+		{ "licenses" }, { "" }
 	};
 
 	protected static final Map<String, Set<String>> extensions;
@@ -484,18 +501,36 @@ public class Checksummer extends AbstractProgressable {
 		extensions = new HashMap<>();
 		for (int i = 0; i < directories.length; i += 2) {
 			final Set<String> set = new HashSet<>(Arrays.asList(directories[i + 1]));
-			for (final String dir : directories[i + 1])
+			for (final String dir : directories[i])
 				extensions.put(dir, set);
 		}
 	}
 
+	/**
+	 * Whether a file name matches a directory's recognized extensions. An
+	 * extension set containing the empty string matches every file.
+	 */
+	private static boolean matchesExtension(final Set<String> extensions,
+		final String filename)
+	{
+		if (extensions.contains("")) return true;
+		final int dot = filename.lastIndexOf('.');
+		return dot >= 0 && extensions.contains(filename.substring(dot));
+	}
+
+	/**
+	 * Whether the updater would discover the given path while scanning the
+	 * application directory -- i.e. whether it lies in a managed directory with a
+	 * recognized extension, or is a launcher.
+	 */
 	public boolean isCandidate(String path) {
 		path = path.replace('\\', '/'); // Microsoft time toll
+		if (Platforms.isLauncher(path)) return true;
 		final int slash = path.indexOf('/');
-		if (slash < 0) return Platforms.isLauncher(path);
+		if (slash < 0) return false;
 		final Set<String> exts = extensions.get(path.substring(0, slash));
-		final int dot = path.lastIndexOf('.');
-		return exts != null && dot >= 0 && exts.contains(path.substring(dot));
+		if (exts == null) return false;
+		return matchesExtension(exts, path.substring(path.lastIndexOf('/') + 1));
 	}
 
 	protected void initializeQueue() {
