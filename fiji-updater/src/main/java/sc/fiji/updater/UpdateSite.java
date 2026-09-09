@@ -52,6 +52,7 @@ public class UpdateSite implements Cloneable, Comparable<UpdateSite> {
 	private boolean official;
 	private String name;
 	private String url;
+	private String channel;
 	private boolean keepURLModification;
 
 	private String host;
@@ -111,6 +112,61 @@ public class UpdateSite implements Cloneable, Comparable<UpdateSite> {
 		return url;
 	}
 
+	/**
+	 * Gets the channel this site is currently resolved to, or {@code null} for
+	 * the base channel -- the index at the site root, which is what every site
+	 * served before channels existed.
+	 *
+	 * @see #getIndexURL()
+	 */
+	public String getChannel() {
+		return channel;
+	}
+
+	/**
+	 * Sets the channel this site is resolved to. {@code null} means the base
+	 * channel.
+	 * <p>
+	 * This is resolution state rather than configuration: it records which of the
+	 * site's indexes was actually found, which may be older than the
+	 * installation's own channel if this site has not published for it.
+	 * </p>
+	 */
+	public void setChannel(final String channel) {
+		this.channel = channel;
+	}
+
+	/**
+	 * Gets the URL of this site's index of available files.
+	 * <p>
+	 * This is the one place the remote index URL is constructed. It used to be
+	 * assembled by hand at each call site -- in XMLFileDownloader, XMLFileReader,
+	 * UpToDate, FilesUploader and, in a different repository, the Swing site
+	 * editor -- which is how the last of those came to disagree with the others.
+	 * </p>
+	 * <p>
+	 * With no channel set, this is byte-for-byte the URL those call sites built,
+	 * so behavior is unchanged for a site that has never heard of channels.
+	 * </p>
+	 */
+	public String getIndexURL() {
+		return getChannelURL() + UpdaterUtil.XML_COMPRESSED;
+	}
+
+	/**
+	 * Gets the base URL of this site's current channel: the site URL for the base
+	 * channel, or the channel's subdirectory beneath it.
+	 * <p>
+	 * Note that file contents are <em>not</em> served from here. Datestamped
+	 * blobs stay in the site root regardless of channel, because the datestamp
+	 * already disambiguates them and a channel index may reference a blob first
+	 * published for another channel; see {@code FilesCollection.getURL}.
+	 * </p>
+	 */
+	public String getChannelURL() {
+		return channel == null ? url : url + channel + "/";
+	}
+
 	public void setURL(String url) {
 		url = format(url);
 		this.url = url;
@@ -166,6 +222,7 @@ public class UpdateSite implements Cloneable, Comparable<UpdateSite> {
 		final UpdateSite clone = new UpdateSite(name, url, host, uploadDirectory, description, maintainer, timestamp);
 		clone.setActive(isActive());
 		clone.setOfficial(isOfficial());
+		clone.setChannel(getChannel());
 		return clone;
 	}
 

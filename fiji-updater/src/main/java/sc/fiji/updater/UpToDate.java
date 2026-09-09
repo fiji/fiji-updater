@@ -129,8 +129,7 @@ public class UpToDate {
 			}
 			for (final String name : plugins.getUpdateSiteNames(false)) {
 				final UpdateSite updateSite = plugins.getUpdateSite(name, true);
-				final long lastModified =
-					getLastModified(updateSite.getURL() + UpdaterUtil.XML_COMPRESSED);
+				final long lastModified = getLastModified(updateSite.getIndexURL());
 				if (lastModified == FOUR_O_SEVEN) return Result.PROXY_NEEDS_AUTHENTICATION;
 				if (lastModified < 0) return Result.OFFLINE; // assume network is down
 				if (!updateSite.isLastModified(lastModified)) {

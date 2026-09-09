@@ -628,12 +628,21 @@ public class SitesDialog extends JDialog implements ActionListener {
 		}
 	}
 
-	protected boolean validURL(String url) {
-		if (!url.endsWith("/"))
-			url += "/";
+	/**
+	 * Whether the given URL serves an update site index.
+	 * <p>
+	 * Goes through {@link UpdateSite#getIndexURL()} rather than building the URL
+	 * here. Building it here is what made this method disagree with the rest of
+	 * the updater once channels arrived: a site publishing only a channel index
+	 * and no index at its root would have been rejected as "not a valid URL",
+	 * and that is the shape of every site created from now on.
+	 * </p>
+	 */
+	protected boolean validURL(final String url) {
+		final UpdateSite site = new UpdateSite(null, url, null, null, null, null, 0);
+		site.setChannel(files.getChannel());
 		try {
-			return UpdaterUtil.getLastModified(
-				new URL(url + UpdaterUtil.XML_COMPRESSED)) != -1;
+			return UpdaterUtil.getLastModified(new URL(site.getIndexURL())) != -1;
 		} catch (MalformedURLException e) {
 			updaterFrame.log.error(e);
 			return false;

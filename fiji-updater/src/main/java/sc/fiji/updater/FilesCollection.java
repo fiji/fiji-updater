@@ -68,6 +68,7 @@ import sc.fiji.updater.util.HTTPSUtil;
 import sc.fiji.updater.util.Platforms;
 import sc.fiji.updater.util.Progress;
 import sc.fiji.updater.util.UpdateCanceledException;
+import sc.fiji.updater.util.ChannelState;
 import sc.fiji.updater.util.UpdateSiteNetwork;
 import sc.fiji.updater.util.UpdaterUtil;
 import org.scijava.log.LogService;
@@ -115,6 +116,7 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	public final static String DEFAULT_UPDATE_SITE =
 		UpdateSiteNetwork.MAIN_SITE_NAME;
 	private final File appRoot;
+	private ChannelState channelState;
 	public final LogService log;
 	protected Set<FileObject> ignoredConflicts = new HashSet<>();
 	protected List<Conflict> conflicts = new ArrayList<>();
@@ -158,6 +160,34 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 
 	public File getAppRoot() {
 		return appRoot;
+	}
+
+	/**
+	 * Gets this installation's update channel, reading it from the launcher
+	 * configuration on first use.
+	 * <p>
+	 * Note that the result may be {@link ChannelState#isKnown() unknown}, which
+	 * callers must not confuse with the base channel; see {@link ChannelState}.
+	 * </p>
+	 */
+	public ChannelState getChannelState() {
+		if (channelState == null) channelState = ChannelState.read(appRoot);
+		return channelState;
+	}
+
+	/**
+	 * Gets the name of this installation's update channel, or null for the base
+	 * channel.
+	 * <p>
+	 * Returns null when the channel is unknown as well, so this is only
+	 * appropriate where treating an undeterminable channel as the base one is
+	 * harmless -- displaying a URL, say. Anything that resolves an index must
+	 * consult {@link #getChannelState()} and refuse to proceed when the channel
+	 * is unknown.
+	 * </p>
+	 */
+	public String getChannel() {
+		return getChannelState().channel();
 	}
 
 	public UpdateSite addUpdateSite(final String name, final String url,

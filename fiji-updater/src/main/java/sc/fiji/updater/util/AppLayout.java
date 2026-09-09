@@ -102,6 +102,24 @@ public final class AppLayout {
 	public static final String DEBIAN_PACKAGE_PROPERTY = "fiji.debian";
 
 	/**
+	 * Property naming the launcher's key=value configuration file. Set by the
+	 * launcher for any Jaunch application, and also read by app-launcher, which
+	 * writes the chosen JVM into the same file.
+	 */
+	public static final String CONFIG_FILE_PROPERTY = "scijava.app.config-file";
+
+	/**
+	 * Directory holding the launcher configuration, relative to the installation
+	 * root. Used only to locate the CFG when the launcher did not set
+	 * {@link #CONFIG_FILE_PROPERTY} -- which is the case whenever the JVM was
+	 * started by something other than the launcher.
+	 */
+	public static final String CONFIG_DIRECTORY = "config/jaunch";
+
+	/** Extension of the launcher's configuration file. */
+	public static final String CONFIG_EXTENSION = ".cfg";
+
+	/**
 	 * The installation root as declared by the launcher, or {@code null} if no
 	 * {@link #APP_DIRECTORY_PROPERTIES} is set -- which is the normal situation
 	 * when the JVM was started by something other than a launcher.
