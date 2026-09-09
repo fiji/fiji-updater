@@ -117,6 +117,7 @@
 	<properties>
 		<license.licenseName>N/A</license.licenseName>
 		<license.copyrightOwners>N/A</license.copyrightOwners>
+		<license.skipUpdateLicense>true</license.skipUpdateLicense>
 
 		<!-- NB: Do not install/deploy this aggregator POM. -->
 		<maven.deploy.skip>true</maven.deploy.skip>
