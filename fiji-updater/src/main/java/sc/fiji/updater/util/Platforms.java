@@ -1,6 +1,6 @@
 /*-
  * #%L
- * Fiji Updater, which keeps Fiji installations up to date.
+ * Fiji distribution of ImageJ for the life sciences.
  * %%
  * Copyright (C) 2009 - 2026 Board of Regents of the University of
  * Wisconsin-Madison, Broad Institute of MIT and Harvard, and Max Planck

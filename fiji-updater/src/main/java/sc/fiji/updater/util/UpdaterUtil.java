@@ -1,6 +1,6 @@
 /*
  * #%L
- * Fiji Updater, which keeps Fiji installations up to date.
+ * Fiji distribution of ImageJ for the life sciences.
  * %%
  * Copyright (C) 2009 - 2026 Board of Regents of the University of
  * Wisconsin-Madison, Broad Institute of MIT and Harvard, and Max Planck
@@ -474,23 +474,6 @@ public final class UpdaterUtil {
 			}
 		}
 		return false;
-	}
-
-	public static boolean patchInfoPList(final File infoPList, final String executable)
-		throws IOException
-	{
-		if (!infoPList.exists()) return false;
-		String contents = readFile(infoPList);
-		final Pattern pattern =
-			Pattern.compile(".*<key>CFBundleExecutable</key>[^<]*<string>([^<]*).*",
-				Pattern.DOTALL | Pattern.MULTILINE);
-		final Matcher matcher = pattern.matcher(contents);
-		if (!matcher.matches()) return false;
-		contents =
-			contents.substring(0, matcher.start(1)) + executable +
-				contents.substring(matcher.end(1));
-		writeFile(infoPList, contents);
-		return true;
 	}
 
 	public static<T> Iterable<T> iterate(final Enumeration<T> en) {

@@ -1,6 +1,6 @@
 /*
  * #%L
- * Fiji Updater, which keeps Fiji installations up to date.
+ * Fiji distribution of ImageJ for the life sciences.
  * %%
  * Copyright (C) 2009 - 2026 Board of Regents of the University of
  * Wisconsin-Madison, Broad Institute of MIT and Harvard, and Max Planck
@@ -202,13 +202,6 @@ public class Installer extends Downloader {
 				final File old = new File(oldName);
 				if (old.exists()) old.delete();
 				saveTo.renameTo(old);
-				if (name.equals(AppLayout.MAC_LEGACY_LAUNCHER)) try {
-					UpdaterUtil.patchInfoPList(
-						files.prefix(AppLayout.MAC_INFO_PLIST), "ImageJ-tiger");
-				}
-				catch (final IOException e) {
-					UpdaterUserInterface.get().error("Could not patch Info.plist");
-				}
 			}
 
 			final String url = files.getURL(file);

@@ -112,7 +112,7 @@
 		<license.copyrightOwners>Board of Regents of the University of
 Wisconsin-Madison, Broad Institute of MIT and Harvard, and Max Planck
 Institute of Molecular Cell Biology and Genetics.</license.copyrightOwners>
-		<license.projectName>Fiji Updater, which keeps Fiji installations up to date.</license.projectName>
+		<license.projectName>Fiji distribution of ImageJ for the life sciences.</license.projectName>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>

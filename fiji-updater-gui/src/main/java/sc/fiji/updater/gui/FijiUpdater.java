@@ -1,6 +1,6 @@
 /*
  * #%L
- * Fiji Updater, which keeps Fiji installations up to date.
+ * Fiji distribution of ImageJ for the life sciences.
  * %%
  * Copyright (C) 2009 - 2026 ImageJ developers.
  * %%

@@ -1,6 +1,6 @@
 /*
  * #%L
- * Fiji Updater, which keeps Fiji installations up to date.
+ * Fiji distribution of ImageJ for the life sciences.
  * %%
  * Copyright (C) 2009 - 2026 Board of Regents of the University of
  * Wisconsin-Madison, Broad Institute of MIT and Harvard, and Max Planck
@@ -31,15 +31,26 @@
 
 package sc.fiji.updater;
 
-import org.scijava.service.SciJavaService;
+import org.scijava.service.Service;
 import sc.fiji.updater.util.Progress;
 
 /**
- * Interface for service that manages available ImageJ upload mechanisms.
+ * Interface for the service that manages available upload mechanisms.
+ * <p>
+ * Extends {@link Service} directly rather than any grouping marker. It used to
+ * extend {@code net.imagej.ImageJService}, whose purpose is to let the ImageJ2
+ * gateway instantiate the ImageJ2 layer wholesale; the updater is no longer
+ * part of that layer. {@code SciJavaService} would be wrong in the other
+ * direction, as it marks core SciJava Common services only.
+ * </p>
+ * <p>
+ * Nothing depends on a marker here: callers ask for this service by its own
+ * interface, as {@code FilesUploader.createUploaderService} does.
+ * </p>
  * 
  * @author Johannes Schindelin
  */
-public interface UploaderService extends SciJavaService {
+public interface UploaderService extends Service {
 
 	// CTR TODO: Extend SingletonService<Uploader>.
 

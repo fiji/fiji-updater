@@ -1,6 +1,6 @@
 /*
  * #%L
- * Fiji Updater, which keeps Fiji installations up to date.
+ * Fiji distribution of ImageJ for the life sciences.
  * %%
  * Copyright (C) 2009 - 2026 Board of Regents of the University of
  * Wisconsin-Madison, Broad Institute of MIT and Harvard, and Max Planck
@@ -33,14 +33,18 @@ package sc.fiji.updater;
 
 import java.io.File;
 
-import org.scijava.service.SciJavaService;
+import org.scijava.service.Service;
 
 /**
- * Interface for services that manage ImageJ updates.
+ * Interface for services that manage Fiji updates.
+ * <p>
+ * Extends {@link Service} directly; see {@link UploaderService} for why neither
+ * grouping marker applies.
+ * </p>
  * 
  * @author Curtis Rueden
  */
-public interface UpdateService extends SciJavaService {
+public interface UpdateService extends Service {
 
 	/** Gets the update site with the given name. */
 	UpdateSite getUpdateSite(String name);

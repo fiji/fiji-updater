@@ -113,7 +113,7 @@
 
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>ImageJ developers.</license.copyrightOwners>
-		<license.projectName>Fiji Updater, which keeps Fiji installations up to date.</license.projectName>
+		<license.projectName>Fiji distribution of ImageJ for the life sciences.</license.projectName>
 
 		<!-- NB: Deploy releases to the SciJava Maven repository. -->
 		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>

@@ -1,6 +1,6 @@
 /*
  * #%L
- * Fiji Updater, which keeps Fiji installations up to date.
+ * Fiji distribution of ImageJ for the life sciences.
  * %%
  * Copyright (C) 2009 - 2026 Board of Regents of the University of
  * Wisconsin-Madison, Broad Institute of MIT and Harvard, and Max Planck
@@ -425,7 +425,7 @@ public class Checksummer extends AbstractProgressable {
 	}
 
 	protected boolean guessPlatform(final FileObject file) {
-		// Look for platform names as subdirectories of lib/ and mm/
+		// Look for platform names as subdirectories of jars/ and lib/
 		String platform;
 		if (file.executable) {
 			platform = Platforms.platformForLauncher(file.filename);
@@ -488,10 +488,6 @@ public class Checksummer extends AbstractProgressable {
 		{ "models" }, { "" },
 		{ "luts" }, { ".lut" },
 		{ "images" }, { ".png", ".tif", ".txt", ".ico" },
-		// NB: Keep. This is the pre-Jaunch macOS bundle layout, absent from any
-		// modern installation but still present on the old Fiji-Stables that have
-		// yet to migrate; Platforms.LAUNCHERS and Installer both depend on it.
-		{ "Contents" }, { ".icns", ".plist" },
 		{ "lib" }, { "" },
 		{ "licenses" }, { "" }
 	};

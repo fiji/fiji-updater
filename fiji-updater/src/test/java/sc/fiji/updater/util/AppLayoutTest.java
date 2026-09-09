@@ -1,6 +1,6 @@
 /*
  * #%L
- * Fiji Updater, which keeps Fiji installations up to date.
+ * Fiji distribution of ImageJ for the life sciences.
  * %%
  * Copyright (C) 2009 - 2026 Board of Regents of the University of
  * Wisconsin-Madison, Broad Institute of MIT and Harvard, and Max Planck
@@ -66,17 +66,20 @@ public class AppLayoutTest {
 		assertNull(AppLayout.appDirectory());
 	}
 
-	/** The properties are consulted in order, most modern first. */
+	/** The properties are consulted in order, most current first. */
 	@Test
 	public void testPrecedence() {
-		set("fiji.dir", "/three");
-		assertEquals("/three", AppLayout.appDirectory());
+		set("ij.dir", "/legacy-ij");
+		assertEquals("/legacy-ij", AppLayout.appDirectory());
 
-		set("ij.dir", "/two");
-		assertEquals("/two", AppLayout.appDirectory());
+		set("imagej.dir", "/legacy-imagej");
+		assertEquals("/legacy-imagej", AppLayout.appDirectory());
 
-		set("imagej.dir", "/one");
-		assertEquals("/one", AppLayout.appDirectory());
+		set("fiji.dir", "/fiji");
+		assertEquals("/fiji", AppLayout.appDirectory());
+
+		set("scijava.app.directory", "/app");
+		assertEquals("/app", AppLayout.appDirectory());
 	}
 
 	/** Every property named in the list is actually consulted. */
