@@ -101,7 +101,7 @@ public class UpdaterTestUtils {
 				new java.net.URLClassLoader(
 					new java.net.URL[] { new java.net.URL(url) });
 			final Class<?> clazz =
-				loader.loadClass("net.imagej.ui.swing.updater.UpdaterFrame");
+				loader.loadClass("sc.fiji.updater.gui.UpdaterFrame");
 			final java.lang.reflect.Constructor<?> ctor =
 				clazz.getConstructor(LogService.class, UploaderService.class, FilesCollection.class);
 			final Object updaterFrame = ctor.newInstance(UpdaterUtil.getLogService(), null, files);

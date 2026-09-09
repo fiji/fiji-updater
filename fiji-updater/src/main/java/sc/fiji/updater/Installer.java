@@ -224,6 +224,12 @@ public class Installer extends Downloader {
 
 	protected final static String UPDATER_JAR_NAME = "jars/fiji-updater.jar";
 
+	/**
+	 * The updater's own Swing user interface, updated alongside the updater
+	 * itself so that the two never disagree about the index format.
+	 */
+	protected final static String UPDATER_GUI_JAR_NAME = "jars/fiji-updater-gui.jar";
+
 	public static Set<FileObject> getUpdaterFiles(final FilesCollection files, final CommandService commandService, final boolean onlyUpdateable) {
 		final Set<FileObject> result = new HashSet<>();
 		final FileObject updater = files.get(UPDATER_JAR_NAME);
@@ -231,8 +237,9 @@ public class Installer extends Downloader {
 		final Set<FileObject> topLevel = new HashSet<>();
 		topLevel.add(updater);
 		if (commandService == null) {
-			final String hardcoded = "jars/imagej-ui-swing.jar";
-			final FileObject file = files.get(hardcoded);
+			// Without a CommandService we cannot ask which UpdaterUI
+			// implementations are installed, so fall back to the GUI we ship.
+			final FileObject file = files.get(UPDATER_GUI_JAR_NAME);
 			if (file != null) topLevel.add(file);
 		} else {
 			for (final CommandInfo info : commandService

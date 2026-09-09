@@ -1,0 +1,361 @@
+/*
+ * #%L
+ * ImageJ software for multidimensional image processing and analysis.
+ * %%
+ * Copyright (C) 2009 - 2025 ImageJ developers.
+ * %%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * #L%
+ */
+
+package sc.fiji.updater.gui;
+
+import java.awt.EventQueue;
+import java.io.File;
+import java.io.IOException;
+import java.lang.reflect.InvocationTargetException;
+import java.net.Authenticator;
+import java.net.HttpURLConnection;
+import java.net.URL;
+import java.net.URLConnection;
+import java.net.UnknownHostException;
+import java.util.List;
+
+import sc.fiji.updater.gui.ViewOptions.Option;
+import sc.fiji.updater.*;
+import sc.fiji.updater.Conflicts.Conflict;
+import sc.fiji.updater.util.*;
+
+import org.scijava.Context;
+import org.scijava.app.StatusService;
+import org.scijava.event.ContextDisposingEvent;
+import org.scijava.event.EventHandler;
+import org.scijava.log.LogService;
+import org.scijava.log.Logger;
+import org.scijava.plugin.Menu;
+import org.scijava.plugin.Parameter;
+import org.scijava.plugin.Plugin;
+import org.scijava.util.AppUtils;
+
+/**
+ * The Updater. As a command.
+ *
+ * @author Johannes Schindelin
+ */
+@Plugin(type = UpdaterUI.class, menu = { @Menu(label = "Help"),
+	@Menu(label = "Update...") })
+public class FijiUpdater implements UpdaterUI {
+
+	/** How long to wait on the network liveness probe. */
+	private static final int NETWORK_TIMEOUT_MS = 15000;
+
+	private UpdaterFrame main;
+
+	@Parameter(required = false)
+	private Context context;
+
+	@Parameter(required = false)
+	private StatusService statusService;
+
+	@Parameter(required = false)
+	private LogService log;
+
+	@Parameter(required = false)
+	private UploaderService uploaderService;
+
+	@Override
+	public void run() {
+		if (errorIfDebian()) return;
+
+		if (log == null) {
+			log = UpdaterUtil.getLogService();
+		}
+
+		if (errorIfNetworkInaccessible(log)) return;
+
+		final File appDir = getAppDirectory();
+		final FilesCollection files = new FilesCollection(log, appDir);
+
+		UpdaterUserInterface.set(new SwingUserInterface(log, statusService));
+
+		if (new File(appDir, "update").exists()) {
+			if (!UpdaterUserInterface.get().promptYesNo("It is suggested that you restart ImageJ, then continue the update.\n"
+					+ "Alternately, you can attempt to continue the upgrade without\n"
+					+ "restarting, but ImageJ might crash.\n\n"
+					+ "Do you want to try it?",
+					"Restart required to finalize update"))
+				return;
+			try {
+				new Installer(files, null).moveUpdatedIntoPlace();
+			} catch (IOException e) {
+				log.debug(e);
+				UpdaterUserInterface.get().error("Could not move files into place: " + e);
+				return;
+			}
+		}
+		UpdaterUtil.useSystemProxies();
+		Authenticator.setDefault(new SwingAuthenticator());
+
+		SwingTools.invokeOnEDT(() -> main = new UpdaterFrame(log, uploaderService, files));
+
+		main.setEasyMode(true);
+		Progress progress = main.getProgress("Starting up...");
+
+		try {
+			files.tryLoadingCollection();
+			HTTPSUtil.checkHTTPSSupport(log);
+			if(!HTTPSUtil.supportsHTTPS()) {
+				main.warn("Your Java might be too old to handle updates via HTTPS. This is a security risk!\n" +
+						"Please download a recent version of this software.\n");
+			}
+			refreshUpdateSites(files);
+			main.updateFilesTable();
+			String warnings = files.reloadCollectionAndChecksum(progress);
+			main.checkWritable();
+			main.addCustomViewOptions();
+			if (!warnings.equals("")) main.warn(warnings);
+			final List<Conflict> conflicts = files.getConflicts();
+			if (conflicts != null && conflicts.size() > 0 &&
+					!new ConflictDialog(main, "Conflicting Versions") {
+						private static final long serialVersionUID = 1L;
+
+						@Override
+						protected void updateConflictList() {
+							conflictList = conflicts;
+						}
+					}.resolve())
+				return;
+		}
+		catch (final UpdateCanceledException e) {
+			main.error("Canceled");
+			return;
+		}
+		catch (final Exception e) {
+			log.error(e);
+			String message;
+			if (e instanceof UnknownHostException) message =
+				"Failed to lookup host " + e.getMessage();
+			else message = "There was an error reading the cached metadata: " + e;
+			main.error(message);
+			return;
+		}
+
+		files.markForUpdate(false);
+		// Attempt to upgrade here
+
+		if (!files.updateable(false).iterator().hasNext()) {
+			// Everything looks up-to-date, so we can try to upgrade.
+			// If anything was out-of-date we wouldn't want to upgrade, in case an update impacts the upgrade process.
+			// NB: locally modified files are accepted. They will be forcibly updated as appropriate.
+			// If desired, check files.updateable(true) for local changes.
+			new LauncherMigrator(context).checkLaunchStatus();
+		}
+
+		// If the user didn't upgrade, we can continue with the update
+		try {
+			final String missingUploaders = main.files.protocolsMissingUploaders(main.getUploaderService(), main.getProgress(null));
+			if (missingUploaders != null) {
+				main.warn(missingUploaders);
+			}
+		} catch (final IllegalArgumentException e) {
+			e.printStackTrace();
+		}
+
+		main.setLocationRelativeTo(null);
+		main.setVisible(true);
+		main.requestFocus();
+
+		main.setViewOption(Option.UPDATEABLE);
+		if (files.hasForcableUpdates()) {
+			main.warn("There are locally modified files!");
+			if (files.hasUploadableSites() && !files.hasChanges()) {
+				main.setViewOption(Option.LOCALLY_MODIFIED);
+				main.setEasyMode(false);
+			}
+		}
+		else if (!files.hasChanges()) main.info("Your ImageJ is up to date!");
+
+		main.updateFilesTable();
+	}
+
+	static File getAppDirectory() {
+		String imagejDirProperty = System.getProperty("imagej.dir");
+		return imagejDirProperty != null ? new File(imagejDirProperty) :
+			AppUtils.getBaseDirectory("ij.dir", FilesCollection.class, "updater");
+	}
+
+	private void refreshUpdateSites(FilesCollection files)
+			throws InterruptedException, InvocationTargetException
+	{
+		List<URLChange>
+				changes = AvailableSites.initializeAndAddSites(files, (Logger) log);
+		if(ReviewSiteURLsDialog.shouldBeDisplayed(changes)) {
+			ReviewSiteURLsDialog dialog = new ReviewSiteURLsDialog(main, changes);
+			EventQueue.invokeAndWait(() -> dialog.setVisible(true));
+			if(dialog.isOkPressed())
+				AvailableSites.applySitesURLUpdates(files, changes);
+		}
+		else
+			AvailableSites.applySitesURLUpdates(files, changes);
+	}
+
+	@EventHandler
+	private void onEvent(final ContextDisposingEvent e) {
+		if (main != null && main.isDisplayable()) main.dispose();
+	}
+
+	protected boolean overwriteWithUpdated(final FilesCollection files,
+		final FileObject file)
+	{
+		File downloaded = files.prefix("update/" + file.filename);
+		if (!downloaded.exists()) return true; // assume all is well if there is no updated file
+		final File jar = files.prefix(file.filename);
+		if (!jar.delete() && !moveOutOfTheWay(jar)) return false;
+		if (!downloaded.renameTo(jar)) return false;
+		for (;;) {
+			downloaded = downloaded.getParentFile();
+			if (downloaded == null) return true;
+			final String[] list = downloaded.list();
+			if (list != null && list.length > 0) return true;
+			// dir is empty, remove
+			if (!downloaded.delete()) return false;
+		}
+	}
+
+	/**
+	 * This returns true if this seems to be the Debian packaged version of
+	 * ImageJ, or false otherwise.
+	 */
+
+	public static boolean isDebian() {
+		final String debianProperty = System.getProperty("fiji.debian");
+		return debianProperty != null && debianProperty.equals("true");
+	}
+
+	/**
+	 * If this seems to be the Debian packaged version of ImageJ, then produce an
+	 * error and return true. Otherwise return false.
+	 */
+	public static boolean errorIfDebian() {
+		// If this is the Debian / Ubuntu packaged version, then
+		// insist that the user uses apt-get / synaptic instead:
+		if (isDebian()) {
+			String message = "You are using the Debian packaged version of ImageJ.\n";
+			message +=
+				"You should update ImageJ with your system's usual package manager instead.";
+			UpdaterUserInterface.get().error(message);
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * If there is no network connection, then produce an error and return true.
+	 * Otherwise return false.
+	 */
+	public static boolean errorIfNetworkInaccessible(final LogService log) {
+		try {
+			testNetworkConnection();
+		}
+		catch (final SecurityException | IOException exc) {
+			final String msg = exc.getMessage();
+			String friendlyError = "Cannot connect to the Internet.";
+			if (msg != null && msg.indexOf(
+				"Address family not supported by protocol family: connect") >= 0)
+			{
+				friendlyError += "" + //
+					"\n-----------------------------------------------------------" + //
+					"\n* Check your computer for spyware called RelevantKnowledge" + //
+					"\n* Try disabling your antivirus software temporarily" + //
+					"\n* Try disabling IPv6 temporarily" + //
+					"\n* See also http://forum.imagej.net/t/5070" + //
+					"\n-----------------------------------------------------------";
+			}
+			friendlyError += "" + //
+				"\nDo you have a network connection?" + //
+				"\nAre your proxy settings correct?";
+			UpdaterUserInterface.get().error(friendlyError);
+			if (log != null) log.error(exc);
+			return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Checks whether we can reach the network at all. If we cannot, there is no
+	 * point attempting an update.
+	 * <p>
+	 * Deliberately weak: any HTTP response proves we reached a server, so a
+	 * redirect, an error page or even a 404 all count as success. Only a
+	 * connection-level failure -- DNS, routing, a refused connection, a
+	 * misconfigured proxy -- means there is no network.
+	 * </p>
+	 * <p>
+	 * This check used to assert an exact response: a 301 with a body between 250
+	 * and 500 bytes matching a fixed regular expression. That made an ordinary
+	 * webserver change -- a redirect to HTTPS, a CDN, a reworded error page --
+	 * able to stop every Updater on Earth from starting, with the message
+	 * "Cannot connect to the Internet." A liveness probe should not be able to
+	 * fail because a page was edited.
+	 * </p>
+	 *
+	 * @throws IOException if the network cannot be reached at all.
+	 */
+	private static void testNetworkConnection() throws IOException {
+		final URL url = new URL(HTTPSUtil.getProtocol() + "imagej.net/");
+		final URLConnection urlConn = UpdaterUtil.openConnection(url);
+		urlConn.setConnectTimeout(NETWORK_TIMEOUT_MS);
+		urlConn.setReadTimeout(NETWORK_TIMEOUT_MS);
+		if (urlConn instanceof HttpURLConnection) {
+			final HttpURLConnection httpConn = (HttpURLConnection) urlConn;
+			try {
+				// Any status line at all means we reached a server.
+				httpConn.getResponseCode();
+			}
+			finally {
+				httpConn.disconnect();
+			}
+		}
+		else {
+			// Not HTTP for some reason; fall back to actually opening the stream.
+			urlConn.getInputStream().close();
+		}
+	}
+
+	protected static boolean moveOutOfTheWay(final File file) {
+		if (!file.exists()) return true;
+		File backup = new File(file.getParentFile(), file.getName() + ".old");
+		if (backup.exists() && !backup.delete()) {
+			final int i = 2;
+			for (;;) {
+				backup = new File(file.getParentFile(), file.getName() + ".old" + i);
+				if (!backup.exists()) break;
+			}
+		}
+		return file.renameTo(backup);
+	}
+
+	public static void main(String[] args) {
+		new FijiUpdater().run();
+	}
+
+}
