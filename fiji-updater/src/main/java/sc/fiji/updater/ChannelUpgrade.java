@@ -1,5 +1,6 @@
 package sc.fiji.updater;
 
+import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -9,8 +10,12 @@ import java.util.Set;
 
 import sc.fiji.updater.FileObject.Action;
 import sc.fiji.updater.FileObject.Status;
+import org.scijava.launcher.Java;
+
+import sc.fiji.updater.util.AppLayout;
 import sc.fiji.updater.util.ChannelState;
 import sc.fiji.updater.util.Channels;
+import sc.fiji.updater.util.JavaRequirement;
 import sc.fiji.updater.util.Progress;
 
 /**
@@ -191,6 +196,72 @@ public class ChannelUpgrade {
 					break;
 			}
 		}
+	}
+
+	/**
+	 * The Java the target channel expects, read from the launcher configuration
+	 * it just staged.
+	 * <p>
+	 * Only meaningful after {@link #stage}, since it reads the staged file.
+	 * </p>
+	 */
+	public JavaRequirement javaRequirement() {
+		final File config = files.getDeclaredChannelState().configFile();
+		if (config == null) return JavaRequirement.unknown();
+		// The application's TOML is the CFG's sibling of the same name: fiji.cfg
+		// alongside fiji.toml. Deriving it avoids naming the application here,
+		// and picks the right one out of the several TOMLs Jaunch ships.
+		final String name = config.getName();
+		final int dot = name.lastIndexOf('.');
+		final String toml = (dot < 0 ? name : name.substring(0, dot)) + ".toml";
+		return JavaRequirement.read(files.prefixUpdate(
+			AppLayout.CONFIG_DIRECTORY + "/" + toml));
+	}
+
+	/**
+	 * Whether the running Java can run what the target channel is about to
+	 * install.
+	 */
+	public boolean needsNewerJava() {
+		return !javaRequirement().isSatisfiedBy(Java.currentVersion());
+	}
+
+	/**
+	 * Installs the Java the target channel expects, if the running one will not
+	 * do.
+	 * <p>
+	 * Deliberately done before the restart rather than left to the app-launcher
+	 * afterwards. Jaunch applies pending updates from within the configuration it
+	 * has already read, so the first launch after a switch puts the new files in
+	 * place while running on the JVM the <em>previous</em> channel asked for. If
+	 * the new channel needs a newer Java, that launch does not reach a prompt; it
+	 * fails on the first class compiled for a version it cannot read.
+	 * </p>
+	 * <p>
+	 * Installing first avoids that: app-launcher records the Java it installs in
+	 * the launcher's CFG, which the launcher honours over its own search, so the
+	 * next launch gets both the new files and a Java able to run them -- in one
+	 * restart rather than two.
+	 * </p>
+	 *
+	 * @param headless whether to install without prompting.
+	 * @return whether an installation was attempted.
+	 */
+	public boolean upgradeJava(final boolean headless) {
+		final JavaRequirement requirement = javaRequirement();
+		if (requirement.isSatisfiedBy(Java.currentVersion())) return false;
+
+		// Point app-launcher at what this channel asks for, rather than at the
+		// values the outgoing channel's configuration put into our properties.
+		if (requirement.recommended() != null) {
+			System.setProperty("scijava.app.java-version-recommended",
+				requirement.recommended());
+		}
+		if (requirement.links() != null) {
+			System.setProperty("scijava.app.java-links", requirement.links());
+		}
+		Java.upgrade(headless, false);
+		return true;
 	}
 
 	/**

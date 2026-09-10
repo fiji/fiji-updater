@@ -50,6 +50,7 @@ import org.junit.Test;
 
 import sc.fiji.updater.util.AppLayout;
 import sc.fiji.updater.util.ChannelState;
+import sc.fiji.updater.util.JavaRequirement;
 import sc.fiji.updater.util.Channels;
 import sc.fiji.updater.util.StderrProgress;
 
@@ -323,5 +324,84 @@ public class ChannelUpgradeTest {
 		CommandLine.main(ijRoot, -1, progress, "upgrade");
 		assertEquals(CHANNEL,
 			new FilesCollection(ijRoot).getDeclaredChannelState().channel());
+	}
+
+	/**
+	 * The Java requirement is read from the configuration the target channel
+	 * stages, not from the one currently in place.
+	 * <p>
+	 * This is the whole point of doing it before the restart. The launcher
+	 * applies pending updates from within the configuration it has already read,
+	 * so the first launch after a switch puts the new files in place while
+	 * running on the JVM the previous channel asked for. Reading the staged copy
+	 * is what lets the right Java be installed while the old session is still
+	 * running; reading the copy still in place would report the outgoing
+	 * channel's answer, which is exactly the mistake this guards against.
+	 * </p>
+	 */
+	@Test
+	public void testJavaRequirementComesFromTheStagedConfiguration()
+		throws Exception
+	{
+		files = initialize("macros/keep.ijm");
+		final File ijRoot = files.prefix("");
+		declareChannel(ijRoot, null);
+		Channels.setKnown(Arrays.asList(CHANNEL));
+		publishChannelWithout(getWebRoot(files), CHANNEL, "macros/keep.ijm");
+
+		// What is in place today: this installation runs on Java 21.
+		write(new File(ijRoot, AppLayout.CONFIG_DIRECTORY + "/fiji.toml"),
+			"jvm.version-min = '8'",
+			"    '-Dscijava.app.java-version-recommended=21',");
+
+		// What the target channel has staged for the next launch: Java 25.
+		write(new File(ijRoot,
+			"update/" + AppLayout.CONFIG_DIRECTORY + "/fiji.toml"),
+			"jvm.version-min = '25'",
+			"    '-Dscijava.app.java-version-recommended=25',",
+			"    '-Dscijava.app.java-links=https://example.org/jdk-25.txt',");
+
+		final FilesCollection collection = loaded(ijRoot);
+		final ChannelUpgrade upgrade = new ChannelUpgrade(collection, CHANNEL);
+		upgrade.reconcile(progress);
+
+		final JavaRequirement requirement = upgrade.javaRequirement();
+		assertTrue("expected the staged configuration to be read",
+			requirement.isKnown());
+		assertEquals("the staged answer, not the one still in place", "25",
+			requirement.recommended());
+		assertEquals("25", requirement.minimum());
+		assertEquals("https://example.org/jdk-25.txt", requirement.links());
+		assertFalse("Java 21 must not satisfy a Java 25 channel",
+			requirement.isSatisfiedBy("21.0.7"));
+	}
+
+	/**
+	 * With no staged configuration there is no requirement, and no requirement
+	 * means the eager upgrade is skipped rather than the switch being blocked.
+	 */
+	@Test
+	public void testNoStagedConfigurationMeansNoRequirement() throws Exception {
+		files = initialize("macros/keep.ijm");
+		final File ijRoot = files.prefix("");
+		declareChannel(ijRoot, null);
+		Channels.setKnown(Arrays.asList(CHANNEL));
+		publishChannelWithout(getWebRoot(files), CHANNEL, "macros/keep.ijm");
+
+		final FilesCollection collection = loaded(ijRoot);
+		final ChannelUpgrade upgrade = new ChannelUpgrade(collection, CHANNEL);
+		upgrade.reconcile(progress);
+
+		assertFalse(upgrade.javaRequirement().isKnown());
+		assertFalse("an unreadable requirement must not demand a Java upgrade",
+			upgrade.needsNewerJava());
+	}
+
+	private static void write(final File file, final String... lines)
+		throws IOException
+	{
+		assertTrue(file.getParentFile().exists() || file.getParentFile().mkdirs());
+		Files.write(file.toPath(),
+			(String.join("\n", lines) + "\n").getBytes("UTF-8"));
 	}
 }

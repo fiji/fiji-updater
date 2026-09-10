@@ -250,6 +250,18 @@ public class CommandLine {
 			final Installer installer = new Installer(files, progress);
 			installer.start();
 			installer.done();
+
+			// Before the restart, not after: the launcher applies pending updates
+			// from the configuration it has already read, so the next launch runs
+			// the new channel's code on the previous channel's Java. If that Java
+			// is too old, it fails before anything can offer to fix it.
+			final JavaRequirement java = upgrade.javaRequirement();
+			if (upgrade.needsNewerJava()) {
+				log.info("This channel expects Java " + java +
+					"; installing it before restarting.");
+				upgrade.upgradeJava(UpdaterUserInterface.get().isBatchMode());
+			}
+
 			upgrade.commit();
 		}
 		catch (final Exception e) {
