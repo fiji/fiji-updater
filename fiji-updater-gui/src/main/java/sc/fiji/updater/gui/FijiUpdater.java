@@ -40,11 +40,7 @@ import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.util.List;
 
-import sc.fiji.updater.gui.ViewOptions.Option;
-import sc.fiji.updater.*;
-import sc.fiji.updater.Conflicts.Conflict;
-import sc.fiji.updater.util.*;
-
+import org.scijava.Priority;
 import org.scijava.app.StatusService;
 import org.scijava.event.ContextDisposingEvent;
 import org.scijava.event.EventHandler;
@@ -55,13 +51,30 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 import org.scijava.util.AppUtils;
 
+import sc.fiji.updater.Conflicts.Conflict;
+import sc.fiji.updater.FileObject;
+import sc.fiji.updater.FilesCollection;
+import sc.fiji.updater.Installer;
+import sc.fiji.updater.URLChange;
+import sc.fiji.updater.UpdaterUI;
+import sc.fiji.updater.UploaderService;
+import sc.fiji.updater.gui.ViewOptions.Option;
+import sc.fiji.updater.util.AppLayout;
+import sc.fiji.updater.util.AvailableSites;
+import sc.fiji.updater.util.HTTPSUtil;
+import sc.fiji.updater.util.Progress;
+import sc.fiji.updater.util.UpdateCanceledException;
+import sc.fiji.updater.util.UpdaterUserInterface;
+import sc.fiji.updater.util.UpdaterUtil;
+
 /**
  * The Updater. As a command.
  *
  * @author Johannes Schindelin
  */
-@Plugin(type = UpdaterUI.class, menu = { @Menu(label = "Help"),
-	@Menu(label = "Update...") })
+@Plugin(type = UpdaterUI.class,
+	priority = Priority.HIGH, // NOTE: Higher priority than the ImageJ Updater.
+	menu = { @Menu(label = "Help"), @Menu(label = "Update...") })
 public class FijiUpdater implements UpdaterUI {
 
 	/** How long to wait on the network liveness probe. */

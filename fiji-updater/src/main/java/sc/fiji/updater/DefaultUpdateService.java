@@ -36,9 +36,7 @@ import java.io.IOException;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import sc.fiji.updater.util.AvailableSites;
-import sc.fiji.updater.util.HTTPSUtil;
-
+import org.scijava.Priority;
 import org.scijava.app.AppService;
 import org.scijava.command.CommandService;
 import org.scijava.event.EventHandler;
@@ -52,12 +50,16 @@ import org.scijava.ui.event.UIShownEvent;
 import org.scijava.ui.headless.HeadlessUI;
 import org.xml.sax.SAXException;
 
+import sc.fiji.updater.util.AvailableSites;
+import sc.fiji.updater.util.HTTPSUtil;
+
 /**
  * Default service for managing ImageJ updates.
  * 
  * @author Curtis Rueden
  */
-@Plugin(type = Service.class)
+@Plugin(type = Service.class,
+	priority = Priority.HIGH) // NOTE: Higher priority than the ImageJ Updater.
 public class DefaultUpdateService extends AbstractService implements
 	UpdateService
 {

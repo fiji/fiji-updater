@@ -38,9 +38,10 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
 
-import sc.fiji.updater.util.UpdaterUtil;
-
+import org.scijava.Priority;
 import org.scijava.plugin.Plugin;
+
+import sc.fiji.updater.util.UpdaterUtil;
 
 /**
  * This FileUploader is highly specialized to upload files and XML information
@@ -55,7 +56,8 @@ import org.scijava.plugin.Plugin;
  * 
  * @author Johannes Schindelin
  */
-@Plugin(type = Uploader.class)
+@Plugin(type = Uploader.class,
+	priority = Priority.HIGH) // NOTE: Higher priority than the ImageJ Updater.
 public class FileUploader extends AbstractUploader {
 
 	// Steps to accomplish entire upload task

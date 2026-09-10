@@ -31,10 +31,20 @@
 
 package sc.fiji.updater.uploaders.webdav;
 
-import sc.fiji.updater.uploaders.webdav.NetrcParser.Credentials;
-import sc.fiji.updater.*;
-import sc.fiji.updater.util.UpdaterUserInterface;
-import sc.fiji.updater.util.UpdaterUtil;
+import java.io.IOException;
+import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
+import java.net.URL;
+import java.net.URLEncoder;
+import java.util.ArrayList;
+import java.util.Calendar;
+import java.util.Date;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+
 import org.apache.http.Header;
 import org.apache.http.HttpEntity;
 import org.apache.http.HttpResponse;
@@ -55,21 +65,30 @@ import org.apache.http.impl.client.BasicCredentialsProvider;
 import org.apache.http.impl.client.HttpClientBuilder;
 import org.apache.http.protocol.HttpContext;
 import org.apache.jackrabbit.webdav.DavConstants;
-import org.apache.jackrabbit.webdav.client.methods.*;
+import org.apache.jackrabbit.webdav.client.methods.HttpDelete;
+import org.apache.jackrabbit.webdav.client.methods.HttpLock;
+import org.apache.jackrabbit.webdav.client.methods.HttpMkcol;
+import org.apache.jackrabbit.webdav.client.methods.HttpMove;
+import org.apache.jackrabbit.webdav.client.methods.HttpOptions;
+import org.apache.jackrabbit.webdav.client.methods.HttpPropfind;
+import org.apache.jackrabbit.webdav.client.methods.HttpUnlock;
 import org.apache.jackrabbit.webdav.lock.LockInfo;
 import org.apache.jackrabbit.webdav.lock.Scope;
 import org.apache.jackrabbit.webdav.lock.Type;
+import org.scijava.Priority;
 import org.scijava.log.LogLevel;
 import org.scijava.log.LogService;
 import org.scijava.log.StderrLogService;
 import org.scijava.plugin.Plugin;
 
-import java.io.IOException;
-import java.io.UnsupportedEncodingException;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.util.*;
+import sc.fiji.updater.AbstractUploader;
+import sc.fiji.updater.FilesUploader;
+import sc.fiji.updater.UpdateSite;
+import sc.fiji.updater.Uploadable;
+import sc.fiji.updater.Uploader;
+import sc.fiji.updater.uploaders.webdav.NetrcParser.Credentials;
+import sc.fiji.updater.util.UpdaterUserInterface;
+import sc.fiji.updater.util.UpdaterUtil;
 
 /**
  * Uploads files to an update server using WebDAV.
@@ -77,7 +96,8 @@ import java.util.*;
  * @author Johannes Schindelin
  * @author Deborah Schmidt
  */
-@Plugin(type = Uploader.class)
+@Plugin(type = Uploader.class,
+	priority = Priority.HIGH) // NOTE: Higher priority than the ImageJ Updater.
 public class WebDAVUploader extends AbstractUploader {
 
 	private String baseURL,username, password;

@@ -33,6 +33,7 @@ package sc.fiji.updater;
 
 import static org.scijava.ui.DialogPrompt.MessageType.WARNING_MESSAGE;
 
+import org.scijava.Priority;
 import org.scijava.command.Command;
 import org.scijava.command.CommandService;
 import org.scijava.log.LogService;
@@ -47,7 +48,8 @@ import org.scijava.ui.UIService;
  * @author Johannes Schindelin
  * @author Curtis Rueden
  */
-@Plugin(type = Command.class, label = "Up-to-date check")
+@Plugin(type = Command.class, label = "Up-to-date check",
+	priority = Priority.HIGH) // NOTE: Higher priority than the ImageJ Updater.
 public class CheckForUpdates implements Command {
 
 	@Parameter

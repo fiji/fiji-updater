@@ -31,15 +31,20 @@
 
 package sc.fiji.updater.uploaders.ssh;
 
-import com.jcraft.jsch.Channel;
-import com.jcraft.jsch.ChannelExec;
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
-
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 import java.util.List;
+
+import org.scijava.Priority;
+import org.scijava.log.LogService;
+import org.scijava.log.StderrLogService;
+import org.scijava.plugin.Plugin;
+
+import com.jcraft.jsch.Channel;
+import com.jcraft.jsch.ChannelExec;
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 
 import sc.fiji.updater.AbstractUploader;
 import sc.fiji.updater.FilesUploader;
@@ -49,10 +54,6 @@ import sc.fiji.updater.util.InputStream2OutputStream;
 import sc.fiji.updater.util.UpdateCanceledException;
 import sc.fiji.updater.util.UpdaterUserInterface;
 
-import org.scijava.log.LogService;
-import org.scijava.log.StderrLogService;
-import org.scijava.plugin.Plugin;
-
 /**
  * Uploads files to an update server using SSH. In addition to writing files, it
  * uses 'mv' and permissions to provide safe locking.
@@ -60,7 +61,8 @@ import org.scijava.plugin.Plugin;
  * @author Johannes Schindelin
  * @author Yap Chin Kiet
  */
-@Plugin(type = Uploader.class)
+@Plugin(type = Uploader.class,
+	priority = Priority.HIGH) // NOTE: Higher priority than the ImageJ Updater.
 public class SSHFileUploader extends AbstractUploader {
 
 	private Session session;

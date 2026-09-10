@@ -33,14 +33,15 @@ package sc.fiji.updater;
 
 import java.util.List;
 
-import sc.fiji.updater.util.UpdaterUtil;
-
+import org.scijava.Priority;
 import org.scijava.command.Command;
 import org.scijava.command.CommandInfo;
 import org.scijava.command.CommandService;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
+
+import sc.fiji.updater.util.UpdaterUtil;
 
 /**
  * This plugin prompts the user to launch the updater due to available updates.
@@ -49,7 +50,8 @@ import org.scijava.plugin.Plugin;
  * 
  * @author Johannes Schindelin
  */
-@Plugin(type = Command.class, label = "There are updates available")
+@Plugin(type = Command.class, label = "There are updates available",
+	priority = Priority.HIGH) // NOTE: Higher priority than the ImageJ Updater.
 public class PromptUserToUpdate implements Command {
 
 	private final static String YES = "Yes, please", NEVER = "Never",

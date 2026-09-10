@@ -40,9 +40,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import sc.fiji.updater.FileObject.Action;
-import sc.fiji.updater.util.Progress;
-
+import org.scijava.Priority;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
@@ -50,13 +48,17 @@ import org.scijava.plugin.PluginService;
 import org.scijava.service.AbstractService;
 import org.scijava.service.Service;
 
+import sc.fiji.updater.FileObject.Action;
+import sc.fiji.updater.util.Progress;
+
 /**
  * Default service for managing available ImageJ upload mechanisms.
  * 
  * @author Johannes Schindelin
  * @author Curtis Rueden
  */
-@Plugin(type = Service.class)
+@Plugin(type = Service.class,
+	priority = Priority.HIGH) // NOTE: Higher priority than the ImageJ Updater.
 public class DefaultUploaderService extends AbstractService implements
 	UploaderService
 {

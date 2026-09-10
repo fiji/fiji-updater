@@ -1,7 +1,8 @@
 # Fiji Updater channels: remaining work
 
-State as of the `channels` branch, 31 commits past `ea5f12e`. Everything below
-is outstanding; what is already done is in the commit log and not repeated here.
+State as of the fiji-updater `main` branch, 32 commits past `ea5f12e`
+(imagej-updater `master` as of this writing). Everything below is outstanding;
+what is already done is in the commit log and not repeated here.
 
 Nothing has been pushed. The branch is intended for a fresh
 `fiji/fiji-updater` repository, after which `imagej/imagej-updater` gets
@@ -12,11 +13,10 @@ archived with a pointer rather than renamed.
 These are wrong or missing in ways that only bite once a channel exists, which
 is exactly when it will be too late to notice.
 
-- **Coexistence detection for a stray `jars/imagej-updater.jar`.** Deliberately
-  left out of the rename commit as deserving its own change and tests. The
-  hazard is two registered `UpdaterUI` plugins, two "Update…" menu entries, and
-  a channel-unaware updater with write access to the same `db.xml.gz` and the
-  same launcher CFG — which is the mass-downgrade bug arriving through the
+- **Coexistence detection for a stray `jars/imagej-updater.jar`.**
+  The hazard is two registered `UpdaterUI` plugins, two "Update…" menu entries,
+  and a channel-unaware updater with write access to the same `db.xml.gz` and
+  the same launcher CFG — which is a mass-downgrade bug arriving through the
   front door. A JAR can survive via a third-party site shipping its own copy,
   or a plugin declaring a dependency on it. Wanted: detection at startup,
   removal, an audit of hosted sites for third-party copies, and the coexistence
