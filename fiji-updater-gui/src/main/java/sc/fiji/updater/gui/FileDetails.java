@@ -63,6 +63,7 @@ import org.scijava.platform.PlatformService;
 
 import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
+import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.util.UpdaterUserInterface;
 
 /**
@@ -298,17 +299,46 @@ public class FileDetails extends JTextPane implements UndoableEditListener {
 		list("Link", true, file.getLinks(), "\n", file);
 		list("Dependency", false, file.getDependencies(), ",\n", file);
 		if (file.executable) executable(file);
-		if (file.updateSite != null &&
-			!file.updateSite.equals(FilesCollection.DEFAULT_UPDATE_SITE))
-		{
-			blankLine();
-			bold("Update site:\n");
-			normal(file.updateSite);
-		}
+		showProvenance(file);
 
 		// scroll to top
 		scrollRectToVisible(new Rectangle(0, 0, 1, 1));
 		setCaretPosition(0);
+	}
+
+	/**
+	 * Shows where a file came from: its update site, and the channel that site
+	 * resolved to.
+	 * <p>
+	 * Two labelled lines rather than one combined string. They are separate
+	 * facts, and a reader should not have to know how the two are joined to read
+	 * either of them.
+	 * </p>
+	 * <p>
+	 * The site is normally left out for files from the main update site, which
+	 * is most of them and where naming it says nothing. It is shown whenever a
+	 * channel is, because "Channel: A.punctulata" with no indication of which
+	 * site is a worse kind of terse.
+	 * </p>
+	 */
+	private void showProvenance(final FileObject file) {
+		if (file.updateSite == null) return;
+		final UpdateSite site =
+			updaterFrame.files.getUpdateSite(file.updateSite, true);
+		final String channel = site == null ? null : site.getChannel();
+		final boolean mainSite =
+			file.updateSite.equals(FilesCollection.DEFAULT_UPDATE_SITE);
+
+		if (channel != null || !mainSite) {
+			blankLine();
+			bold("Update site:\n");
+			normal(file.updateSite);
+		}
+		if (channel != null) {
+			blankLine();
+			bold("Channel:\n");
+			normal(channel);
+		}
 	}
 
 	class EditableRegion implements Comparable<EditableRegion> {

@@ -63,6 +63,7 @@ import sc.fiji.updater.FileObject.Status;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.GroupAction;
 import sc.fiji.updater.UpdateSite;
+import sc.fiji.updater.util.ChannelState;
 
 /**
  * This class's role is to be in charge of how the Table should be displayed.
@@ -81,6 +82,7 @@ public class FileTable extends JTable {
 	static final int NAME_COLUMN = 0;
 	static final int ACTION_COLUMN = 1;
 	static final int SITE_COLUMN = 2;
+	static final int CHANNEL_COLUMN = 3;
 
 	public FileTable(final UpdaterFrame updaterFrame) {
 		this.updaterFrame = updaterFrame;
@@ -181,8 +183,13 @@ public class FileTable extends JTable {
 		actionColumn.setMinWidth(fm.stringWidth("Up-to-date"));
 		actionColumn.setResizable(true);
 		siteColumn.setPreferredWidth(fm.stringWidth("BigVolumeViewer Demo"));
-		siteColumn.setMinWidth(fm.stringWidth("Fiji"));
+		siteColumn.setMinWidth(fm.stringWidth("Fiji-Latest"));
 		siteColumn.setResizable(true);
+		final TableColumn channelColumn =
+			getColumnModel().getColumn(CHANNEL_COLUMN);
+		channelColumn.setPreferredWidth(fm.stringWidth("A.punctulata"));
+		channelColumn.setMinWidth(fm.stringWidth(ChannelState.BASE_CHANNEL_NAME));
+		channelColumn.setResizable(true);
 	}
 
 	public FilesCollection getAllFiles() {
@@ -313,7 +320,7 @@ public class FileTable extends JTable {
 
 		@Override
 		public int getColumnCount() {
-			return 3; // Name of file, status, update site
+			return 4; // Name of file, status, update site, channel
 		}
 
 		@Override
@@ -321,7 +328,8 @@ public class FileTable extends JTable {
 			switch (columnIndex) {
 				case NAME_COLUMN:
 				case SITE_COLUMN:
-					return String.class; // filename / update site
+				case CHANNEL_COLUMN:
+					return String.class; // filename / update site / channel
 				case ACTION_COLUMN:
 					return FileObject.Action.class; // status/action
 				default:
@@ -338,9 +346,28 @@ public class FileTable extends JTable {
 					return "Status/Action";
 				case SITE_COLUMN:
 					return "Update Site";
+				case CHANNEL_COLUMN:
+					return "Channel";
 				default:
 					throw new Error("Column out of range");
 			}
+		}
+
+		/**
+		 * The channel the file's update site resolved to, for display.
+		 * <p>
+		 * A column of its own rather than crowding the site name, because these
+		 * are separate facts and because sorting by it answers the question a
+		 * user actually has -- which of my sites have not kept up -- by clicking
+		 * a header.
+		 * </p>
+		 */
+		private String channelOf(final FileObject file) {
+			if (file.updateSite == null) return "";
+			final UpdateSite site = files.getUpdateSite(file.updateSite, true);
+			if (site == null) return "";
+			final String channel = site.getChannel();
+			return channel == null ? ChannelState.BASE_CHANNEL_NAME : channel;
 		}
 
 		public FileObject getEntry(final int rowIndex) {
@@ -364,6 +391,8 @@ public class FileTable extends JTable {
 				return file.getAction();
 			case SITE_COLUMN:
 				return file.updateSite;
+			case CHANNEL_COLUMN:
+				return channelOf(file);
 			}
 			throw new RuntimeException("Unhandled column: " + column);
 		}
