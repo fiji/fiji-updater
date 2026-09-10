@@ -45,6 +45,7 @@ import java.util.List;
 
 import sc.fiji.updater.Conflicts.Conflict;
 import sc.fiji.updater.FileObject.Action;
+import sc.fiji.updater.util.ChannelManifest;
 import sc.fiji.updater.util.ChannelState;
 import sc.fiji.updater.util.Channels;
 import sc.fiji.updater.util.Progress;
@@ -324,6 +325,48 @@ public class FilesUploader {
 		}
 	}
 
+	/**
+	 * The site's list of channels, published beside its index.
+	 * <p>
+	 * Written only when publishing to a channel. A base-channel upload leaves it
+	 * alone, so a site that has never used a channel never grows one -- which is
+	 * what makes its presence meaningful to clients.
+	 * </p>
+	 */
+	protected class ChannelManifestFile implements Uploadable {
+
+		private final byte[] bytes;
+
+		ChannelManifestFile(final byte[] bytes) {
+			this.bytes = bytes;
+		}
+
+		@Override
+		public String getFilename() {
+			return ChannelManifest.FILENAME + ".lock";
+		}
+
+		@Override
+		public String getPermissions() {
+			return "C0444";
+		}
+
+		@Override
+		public long getFilesize() {
+			return bytes.length;
+		}
+
+		@Override
+		public InputStream getInputStream() {
+			return new ByteArrayInputStream(bytes);
+		}
+
+		@Override
+		public String toString() {
+			return ChannelManifest.FILENAME;
+		}
+	}
+
 	public void upload(final Progress progress) throws Exception {
 		if (uploader == null) throw new RuntimeException("No uploader set for " +
 			site.getHost());
@@ -343,6 +386,17 @@ public class FilesUploader {
 		uploadables = new ArrayList<>();
 		final List<String> locks = new ArrayList<>();
 		uploadables.add(new DbXmlFile());
+
+		// Announce the channel beside the index, so clients that do not find
+		// their own channel here can learn what this site does serve instead of
+		// walking the whole list of channels ever minted.
+		final String channel = getUploadChannel();
+		if (channel != null) {
+			final ChannelManifest manifest =
+				ChannelManifest.read(site.getURL()).with(channel);
+			uploadables.add(new ChannelManifestFile(manifest.toByteArray()));
+			locks.add(ChannelManifest.FILENAME);
+		}
 
 		/*
 		 * Stage new versions of otherwise unchanged files for upload (Bio-Formats, I

@@ -32,6 +32,7 @@
 package sc.fiji.updater;
 
 import sc.fiji.updater.util.AppLayout;
+import sc.fiji.updater.util.ChannelManifest;
 import sc.fiji.updater.util.ChannelState;
 import sc.fiji.updater.util.StderrProgress;
 import sc.fiji.updater.util.UpdaterUtil;
@@ -158,6 +159,13 @@ public abstract class AbstractUploaderTestBase {
 		// A channel nobody published to is still absent, so the assertions above
 		// are about this channel rather than about any path resolving.
 		assertFalse(indexExists("Z.mays"));
+
+		// The site now announces which channel it serves, so a client that does
+		// not find its own here can learn what this site does offer.
+		final ChannelManifest manifest = ChannelManifest.read(url);
+		assertTrue("the site should announce its channels", manifest.isPresent());
+		assertTrue(channel + " should be listed", manifest.carries(channel));
+		assertFalse(manifest.carries("Z.mays"));
 	}
 
 	/** Writes a launcher configuration declaring the installation's channel. */
