@@ -34,8 +34,11 @@ package sc.fiji.updater;
 import java.io.ByteArrayInputStream;
 import java.io.FileNotFoundException;
 import java.io.InputStream;
+import java.net.MalformedURLException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.text.SimpleDateFormat;
+import java.util.Date;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
@@ -47,6 +50,7 @@ import sc.fiji.updater.util.Channels;
 import sc.fiji.updater.util.Progress;
 import sc.fiji.updater.util.StderrProgress;
 import sc.fiji.updater.util.UpdaterUserInterface;
+import sc.fiji.updater.util.UpdateCanceledException;
 import sc.fiji.updater.util.UpdaterUtil;
 
 import org.scijava.Context;
@@ -194,6 +198,69 @@ public class FilesUploader {
 		return UpdateSite.getIndexPath(getUploadChannel());
 	}
 
+	/**
+	 * Whether this upload would publish for a channel the site does not yet
+	 * serve, making it the site's first release for that edition.
+	 * <p>
+	 * Worth knowing because adoption is otherwise silent and has consequences
+	 * for other people. Nothing breaks -- the index at the site root is untouched
+	 * and clients on the base channel keep reading it -- but it stops being
+	 * updated, so those users are quietly frozen at whatever was published last.
+	 * </p>
+	 */
+	public boolean isFirstUploadToChannel() {
+		final String channel = getUploadChannel();
+		if (channel == null) return false;
+		return indexLastModified(channel) <= 0;
+	}
+
+	/**
+	 * When the given channel's index was last published, in milliseconds since
+	 * the epoch, or a non-positive value if there is no such index.
+	 */
+	private long indexLastModified(final String channel) {
+		try {
+			return UpdaterUtil.getLastModified(
+				new URL(site.getURL() + UpdateSite.getIndexPath(channel)));
+		}
+		catch (final MalformedURLException e) {
+			files.log.debug(e);
+			return -1;
+		}
+	}
+
+	/**
+	 * Warns that this upload adopts a channel the site has not served before, and
+	 * asks whether to go ahead.
+	 *
+	 * @return whether to proceed.
+	 */
+	private boolean confirmFirstUploadToChannel() {
+		final String channel = getUploadChannel();
+		final long baseModified = indexLastModified(null);
+		final String baseNote = baseModified > 0
+			? "Users on " + ChannelState.BASE_CHANNEL_NAME +
+				" will continue to see the release from " +
+				new SimpleDateFormat("d MMMM yyyy").format(new Date(baseModified)) + "."
+			: "Users on " + ChannelState.BASE_CHANNEL_NAME +
+				" will continue to see whatever was published there last.";
+
+		final String message = "This is the first upload to " + channel +
+			" for the '" + siteName + "' update site.\n\n" + baseNote +
+			"\nThat index will no longer be updated by uploads from this " +
+			"installation, which follows " + channel + ".\n\n" +
+			"Upload to " + channel + "?";
+
+		if (UpdaterUserInterface.get().isBatchMode()) {
+			// Nothing can be asked, and nothing is destroyed by proceeding, so say
+			// so clearly and carry on rather than breaking an automated release.
+			UpdaterUserInterface.get().log(message);
+			return true;
+		}
+		return UpdaterUserInterface.get().promptYesNo(message,
+			"First upload to " + channel);
+	}
+
 	public FilesCollection getFilesCollection() {
 		return files;
 	}
@@ -266,6 +333,10 @@ public class FilesUploader {
 			throw new RuntimeException("Unresolved upload conflicts!\n\n"
 				+ UpdaterUtil.join("\n", conflicts));
 		}
+		if (isFirstUploadToChannel() && !confirmFirstUploadToChannel()) {
+			throw new UpdateCanceledException();
+		}
+
 		uploader.addProgress(progress);
 		uploader.addProgress(new VerifyTimestamp());
 

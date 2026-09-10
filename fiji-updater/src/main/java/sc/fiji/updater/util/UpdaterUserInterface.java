@@ -96,7 +96,12 @@ public abstract class UpdaterUserInterface {
 	}
 
 	// The default implementation
-	protected static class StderrInterface extends UpdaterUserInterface {
+	/**
+	 * The fallback interface, used until something calls {@link #set}. Public so
+	 * that callers with only one thing to override -- a test that needs to answer
+	 * one prompt, say -- need not restate all eighteen methods.
+	 */
+	public static class StderrInterface extends UpdaterUserInterface {
 
 		protected LogService log;
 

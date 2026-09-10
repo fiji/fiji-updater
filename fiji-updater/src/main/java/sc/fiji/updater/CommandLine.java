@@ -1732,7 +1732,11 @@ public class CommandLine {
 
 		@Override
 		public boolean isBatchMode() {
-			return false;
+			// Batch mode means "nothing can be asked of the user", and that is
+			// exactly the condition every prompt method here already tests before
+			// refusing. Reporting false with no console said the opposite, so a
+			// caller checking this before prompting still got an exception.
+			return console == null;
 		}
 
 		@Override

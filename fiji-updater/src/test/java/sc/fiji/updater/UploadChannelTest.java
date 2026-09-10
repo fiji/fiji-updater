@@ -31,6 +31,8 @@
 package sc.fiji.updater;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assert.fail;
@@ -49,6 +51,8 @@ import sc.fiji.updater.util.AppLayout;
 import sc.fiji.updater.util.ChannelState;
 import sc.fiji.updater.util.Channels;
 import sc.fiji.updater.util.StderrProgress;
+import sc.fiji.updater.util.UpdateCanceledException;
+import sc.fiji.updater.util.UpdaterUserInterface;
 
 /**
  * Verifies which channel an upload publishes to.
@@ -152,5 +156,83 @@ public class UploadChannelTest {
 		final FilesUploader uploader = FilesUploader.initialUploader(null,
 			"file:/tmp/nonesuch/", "file:localhost", "/tmp/nonesuch/", progress);
 		assertNull(uploader.getUploadChannel());
+	}
+
+	/** Records what was asked, and answers however the test wants. */
+	private static class RecordingUI extends UpdaterUserInterface.StderrInterface {
+
+		String prompt;
+		boolean answer;
+
+		RecordingUI(final boolean answer) {
+			this.answer = answer;
+		}
+
+		@Override
+		public boolean isBatchMode() {
+			return false;
+		}
+
+		@Override
+		public boolean promptYesNo(final String message, final String title) {
+			prompt = message;
+			return answer;
+		}
+	}
+
+	/**
+	 * Adopting a channel is otherwise silent but has consequences for the site's
+	 * existing users, so it is confirmed, and the confirmation says what happens
+	 * to them.
+	 */
+	@Test
+	public void testFirstUploadToChannelIsConfirmed() throws Exception {
+		files = initialize("macros/macro.ijm");
+		final File ijRoot = files.prefix("");
+		declareChannel(ijRoot, "A.punctulata");
+
+		final RecordingUI ui = new RecordingUI(false);
+		final UpdaterUserInterface previous = UpdaterUserInterface.get();
+		UpdaterUserInterface.set(ui);
+		try {
+			final FilesCollection collection = new FilesCollection(ijRoot);
+			collection.read();
+			collection.downloadIndexAndChecksum(progress);
+			final File macro = new File(ijRoot, "macros/macro.ijm");
+			Files.write(macro.toPath(), "print(\"changed\");".getBytes("UTF-8"));
+			collection.prefix(".checksums").delete();
+			collection.downloadIndexAndChecksum(progress);
+			collection.get("macros/macro.ijm").stageForUpload(collection,
+				FilesCollection.DEFAULT_UPDATE_SITE);
+
+			final FilesUploader uploader = new FilesUploader(null, collection,
+				FilesCollection.DEFAULT_UPDATE_SITE, progress);
+			assertTrue("the site has no A.punctulata index yet",
+				uploader.isFirstUploadToChannel());
+			assertTrue(uploader.login());
+			try {
+				uploader.upload(progress);
+				fail("declining the confirmation should have cancelled the upload");
+			}
+			catch (final UpdateCanceledException expected) {
+				// pass
+			}
+
+			assertNotNull("the user should have been asked", ui.prompt);
+			assertTrue(ui.prompt, ui.prompt.contains("first upload to A.punctulata"));
+			assertTrue(ui.prompt,
+				ui.prompt.contains(ChannelState.BASE_CHANNEL_NAME));
+		}
+		finally {
+			UpdaterUserInterface.set(previous);
+		}
+	}
+
+	/** Uploading to the base channel is not an adoption, so nothing is asked. */
+	@Test
+	public void testBaseChannelUploadIsNotConfirmed() throws Exception {
+		files = initialize("macros/macro.ijm");
+		final FilesUploader uploader = uploaderFor(files.prefix(""));
+		assertFalse(uploader.isFirstUploadToChannel());
 	}
 }
