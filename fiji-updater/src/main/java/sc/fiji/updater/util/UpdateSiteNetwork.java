@@ -63,11 +63,30 @@ public final class UpdateSiteNetwork {
 		// NB: prevent instantiation of constants class
 	}
 
-	/** Name of the update site every installation starts out following. */
-	public static final String MAIN_SITE_NAME = "ImageJ";
+	/**
+	 * Name of the update site every installation starts out following.
+	 * <p>
+	 * Not "ImageJ": that site, along with "Fiji" and "Java-8", belongs to
+	 * Fiji-Stable, whose installations run Java 8 and so never run this updater.
+	 * This is the site a modern installation actually follows.
+	 * </p>
+	 * <p>
+	 * Nor, yet, plain "Fiji". That name is taken -- every modern installation
+	 * still carries a disabled entry for the legacy {@code update.fiji.sc} site
+	 * under it, and {@code AvailableSites} matches local sites against the
+	 * official list <em>by name</em>, including disabled ones. Claiming the name
+	 * here would make the merge replace the main site with that disabled legacy
+	 * entry. Retiring the name is a change to the published site list and to the
+	 * server, and this constant follows it rather than leading it.
+	 * </p>
+	 */
+	public static final String MAIN_SITE_NAME = "Fiji-Latest";
 
-	/** Host serving the main update site. */
-	public static final String MAIN_SITE_HOST = "update.imagej.net";
+	/** Host and path serving the main update site, without a protocol. */
+	public static final String MAIN_SITE_PATH = "sites.imagej.net/Fiji/";
+
+	/** Host maintainers upload the main update site's contents to. */
+	public static final String MAIN_SITE_SSH_HOST = "update.imagej.net";
 
 	/** Upload destination for the main update site. */
 	public static final String MAIN_SITE_UPLOAD_DIRECTORY =

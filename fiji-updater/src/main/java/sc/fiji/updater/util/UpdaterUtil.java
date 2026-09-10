@@ -81,11 +81,11 @@ import java.util.regex.Pattern;
  */
 public final class UpdaterUtil {
 
-	public static String MAIN_URL = HTTPSUtil.getProtocol() +
-		UpdateSiteNetwork.MAIN_SITE_HOST + "/";
+	public static String MAIN_URL =
+		HTTPSUtil.getProtocol() + UpdateSiteNetwork.MAIN_SITE_PATH;
 	public static String UPDATE_DIRECTORY =
 		UpdateSiteNetwork.MAIN_SITE_UPLOAD_DIRECTORY;
-	public static String SSH_HOST = UpdateSiteNetwork.MAIN_SITE_HOST;
+	public static String SSH_HOST = UpdateSiteNetwork.MAIN_SITE_SSH_HOST;
 
 	public static final String XML_COMPRESSED = "db.xml.gz";
 

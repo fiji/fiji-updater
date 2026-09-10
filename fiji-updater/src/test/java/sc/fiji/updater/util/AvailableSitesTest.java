@@ -197,10 +197,11 @@ public class AvailableSitesTest {
 		assumeTrue(HTTPSUtil.supportsHTTPS());
 
 		// apply mirror URL as source for main update site
-		applyOfficialUpdateSitesList(files, "ImageJ", mirrorURL);
+		applyOfficialUpdateSitesList(files,
+			FilesCollection.DEFAULT_UPDATE_SITE, mirrorURL);
 
 		// test whether the mirror URL is in use
-		assertEquals(mirrorURL, files.getUpdateSite("ImageJ", true).getURL());
+		assertEquals(mirrorURL, files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true).getURL());
 
 		// write and read the changes (= restart)
 		files.write();
@@ -213,7 +214,7 @@ public class AvailableSitesTest {
 		files = readFromDb(files);
 
 		// test whether the mirror URL is still in use
-		assertEquals(mirrorURL, files.getUpdateSite("ImageJ", true).getURL());
+		assertEquals(mirrorURL, files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true).getURL());
 
 		cleanup(files);
 
@@ -245,7 +246,7 @@ public class AvailableSitesTest {
 		Iterator<UpdateSite> iterator = sites.iterator();
 		assertTrue(iterator.hasNext());
 		UpdateSite site = iterator.next();
-		assertEquals("ImageJ", site.getName());
+		assertEquals(FilesCollection.DEFAULT_UPDATE_SITE, site.getName());
 		assertEquals(0, site.getRank());
 		assertTrue(iterator.hasNext());
 		site = iterator.next();
@@ -317,23 +318,23 @@ public class AvailableSitesTest {
 		// load initial files collection
 		FilesCollection files = initialize();
 		// there should be a main update site
-		UpdateSite updateSite = files.getUpdateSite("ImageJ", true);
+		UpdateSite updateSite = files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true);
 		updateSite.setActive(true);
 		// the main update site should point to a local folder
-		String oldLocalUrl = files.getUpdateSite("ImageJ", true).getURL();
+		String oldLocalUrl = files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true).getURL();
 
 		// when simulating refreshing the update sites, we can observe the changes
 		System.out.println("ImageJ --update refresh-update-sites --simulate");
 		files = main(files, "refresh-update-sites", "--simulate");
 		// the main update site URL should still be the same
-		assertEquals(oldLocalUrl, files.getUpdateSite("ImageJ", true).getURL());
+		assertEquals(oldLocalUrl, files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true).getURL());
 
 		// refresh the URLs again, now forcing to update all URLs
 		System.out.println("ImageJ --update refresh-update-sites --updateall");
 		files = main(files, "refresh-update-sites", "--updateall");
 		// the main update site should now point to the imagej.net server
-		assertNotEquals(oldLocalUrl, files.getUpdateSite("ImageJ", true).getURL());
-		assertFalse(files.getUpdateSite("ImageJ", true).shouldKeepURL());
+		assertNotEquals(oldLocalUrl, files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true).getURL());
+		assertFalse(files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true).shouldKeepURL());
 
 		cleanup(files);
 	}
@@ -344,23 +345,23 @@ public class AvailableSitesTest {
 		// load initial files collection
 		FilesCollection files = initialize();
 		// there should be a main update site
-		UpdateSite updateSite = files.getUpdateSite("ImageJ", true);
+		UpdateSite updateSite = files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true);
 		updateSite.setActive(false);
 		// the main update site should point to a local folder
-		String oldLocalUrl = files.getUpdateSite("ImageJ", true).getURL();
+		String oldLocalUrl = files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true).getURL();
 
 		// when simulating refreshing the update sites, we can observe the changes
 		System.out.println("ImageJ --update refresh-update-sites --simulate");
 		files = main(files, "refresh-update-sites", "--simulate");
 		// the main update site URL should still be the same
-		assertEquals(oldLocalUrl, files.getUpdateSite("ImageJ", true).getURL());
+		assertEquals(oldLocalUrl, files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true).getURL());
 
 		// refresh the URLs again, now forcing to update all URLs
 		System.out.println("ImageJ --update refresh-update-sites");
 		files = main(files, "refresh-update-sites");
 		// the main update site should now point to the imagej.net server
-		assertNotEquals(oldLocalUrl, files.getUpdateSite("ImageJ", true).getURL());
-		assertFalse(files.getUpdateSite("ImageJ", true).shouldKeepURL());
+		assertNotEquals(oldLocalUrl, files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true).getURL());
+		assertFalse(files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true).shouldKeepURL());
 
 		cleanup(files);
 	}

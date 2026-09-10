@@ -107,7 +107,8 @@ public class CustomUploaderTest {
 		final File target = files.prefix("jars/" + filename);
 		writeJar(target, clazz);
 
-		files = UpdaterTestUtils.main(files, new String[] { "upload", "--update-site", "ImageJ", "jars/" + filename });
+		files = UpdaterTestUtils.main(files, new String[] { "upload", "--update-site", FilesCollection.DEFAULT_UPDATE_SITE,
+				"jars/" + filename });
 		target.delete();
 		files = UpdaterTestUtils.main(files, new String[] { "list" });
 
