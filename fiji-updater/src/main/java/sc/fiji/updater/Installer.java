@@ -75,16 +75,28 @@ import org.scijava.command.CommandService;
  * </p>
  * @author Johannes Schindelin
  */
-public class Installer extends Downloader {
+public class Installer {
 
-	private FilesCollection files;
+	private final FilesCollection files;
+
+	/**
+	 * NB: owned rather than inherited from. Extending {@link Downloader} put
+	 * {@code start(Iterable<Downloadable>)} on the installer's signature and so
+	 * forced {@code Downloader} and {@code Downloadable} to be part of the
+	 * public API, for no gain: nothing outside this class ever downloaded
+	 * through an installer.
+	 */
+	private final Downloader downloader;
 
 	public Installer(final FilesCollection files, final Progress progress) {
-		super(progress);
 		this.files = files;
-		if (progress != null)
-			addProgress(progress);
-		addProgress(new VerifyFiles());
+		downloader = new Downloader(progress);
+		downloader.addProgress(new VerifyFiles());
+	}
+
+	/** Signals the end of the installation to the progress listeners. */
+	public void done() {
+		downloader.done();
 	}
 
 	class Download implements Downloadable {
@@ -209,7 +221,7 @@ public class Installer extends Downloader {
 			list.add(download);
 		}
 
-		start(list);
+		downloader.start(list);
 
 		for (final FileObject file : uninstalled)
 			if (file.isLocalOnly()) files.remove(file);
