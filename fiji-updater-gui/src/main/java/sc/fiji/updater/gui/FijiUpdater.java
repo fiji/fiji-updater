@@ -45,7 +45,6 @@ import sc.fiji.updater.*;
 import sc.fiji.updater.Conflicts.Conflict;
 import sc.fiji.updater.util.*;
 
-import org.scijava.Context;
 import org.scijava.app.StatusService;
 import org.scijava.event.ContextDisposingEvent;
 import org.scijava.event.EventHandler;
@@ -69,9 +68,6 @@ public class FijiUpdater implements UpdaterUI {
 	private static final int NETWORK_TIMEOUT_MS = 15000;
 
 	private UpdaterFrame main;
-
-	@Parameter(required = false)
-	private Context context;
 
 	@Parameter(required = false)
 	private StatusService statusService;
@@ -160,17 +156,15 @@ public class FijiUpdater implements UpdaterUI {
 		}
 
 		files.markForUpdate(false);
-		// Attempt to upgrade here
 
-		if (!files.updateable(false).iterator().hasNext()) {
-			// Everything looks up-to-date, so we can try to upgrade.
-			// If anything was out-of-date we wouldn't want to upgrade, in case an update impacts the upgrade process.
-			// NB: locally modified files are accepted. They will be forcibly updated as appropriate.
-			// If desired, check files.updateable(true) for local changes.
-			new LauncherMigrator(context).checkLaunchStatus();
-		}
+		// NB: This is where an upgrade to a newer update channel will be offered,
+		// gated on the installation being fully up to date within its current
+		// channel first -- an upgrade should not have to contend with a
+		// half-updated installation. When that lands, note that the gate must
+		// say so when it blocks: failing silently here means one un-updateable
+		// file, for any unrelated reason, quietly denies the user an upgrade
+		// their colleague was offered.
 
-		// If the user didn't upgrade, we can continue with the update
 		try {
 			final String missingUploaders = main.files.protocolsMissingUploaders(main.getUploaderService(), main.getProgress(null));
 			if (missingUploaders != null) {
