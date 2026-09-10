@@ -108,10 +108,19 @@ import org.xml.sax.SAXException;
  * 
  * @author Johannes Schindelin
  */
-@SuppressWarnings("serial")
-public class FilesCollection extends LinkedHashMap<String, FileObject>
-	implements Iterable<FileObject>
-{
+public class FilesCollection implements Iterable<FileObject> {
+
+	/**
+	 * The files, keyed by filename, in the order they were added.
+	 * <p>
+	 * Owned rather than inherited from: extending {@code LinkedHashMap} put the
+	 * whole {@code Map} API -- putAll, entrySet, merge, computeIfAbsent -- on
+	 * the updater's public surface, and forced the get/put/remove overrides
+	 * below to exist only in order to re-narrow types the superclass had
+	 * widened.
+	 * </p>
+	 */
+	private final Map<String, FileObject> byFilename = new LinkedHashMap<>();
 
 	static {
 		XMLFileWriter.prepare();
@@ -964,9 +973,9 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 				return index < 0 ? 0x200 + c : index;
 			}
 		});
-		this.clear();
+		byFilename.clear();
 		for (final FileObject file : files) {
-			super.put(file.filename, file);
+			byFilename.put(file.filename, file);
 		}
 	}
 
@@ -1053,48 +1062,47 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 		return UpdaterUtil.join(", ", this);
 	}
 
+	// -- Collection of files --
+
 	public void add(final FileObject file) {
-		super.put(file.getFilename(true), file);
+		byFilename.put(file.getFilename(true), file);
 	}
 
-	@Override
-	public FileObject get(final Object filename) {
-		return super.get(FileObject.getFilename((String)filename, true));
+	public FileObject get(final String filename) {
+		return byFilename.get(FileObject.getFilename(filename, true));
 	}
 
-	@Override
-	public FileObject put(final String key, final FileObject file) {
-		throw new UnsupportedOperationException();
+	public FileObject remove(final FileObject file) {
+		return byFilename.remove(file.getFilename(true));
 	}
 
-	@Override
-	public FileObject remove(final Object file) {
-		if (file instanceof FileObject) super.remove(((FileObject) file).getFilename(true));
-		if (file instanceof String) return super.remove(FileObject.getFilename((String)file, true));
-		return null;
+	public FileObject remove(final String filename) {
+		return byFilename.remove(FileObject.getFilename(filename, true));
+	}
+
+	public boolean containsKey(final String filename) {
+		return byFilename.containsKey(filename);
+	}
+
+	public Collection<FileObject> values() {
+		return Collections.unmodifiableCollection(byFilename.values());
+	}
+
+	public int size() {
+		return byFilename.size();
+	}
+
+	public boolean isEmpty() {
+		return byFilename.isEmpty();
+	}
+
+	public void clear() {
+		byFilename.clear();
 	}
 
 	@Override
 	public Iterator<FileObject> iterator() {
-		final Iterator<Map.Entry<String, FileObject>> iterator = entrySet().iterator();
-		return new Iterator<FileObject>() {
-
-			@Override
-			public boolean hasNext() {
-				return iterator.hasNext();
-			}
-
-			@Override
-			public FileObject next() {
-				return iterator.next().getValue();
-			}
-
-			@Override
-			public void remove() {
-				throw new UnsupportedOperationException();
-			}
-
-		};
+		return values().iterator();
 	}
 
 	public void tryLoadingCollection() throws ParserConfigurationException, SAXException {
