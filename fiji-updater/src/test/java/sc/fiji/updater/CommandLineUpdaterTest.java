@@ -59,7 +59,6 @@ import java.util.Set;
 import sc.fiji.updater.FileObject.Status;
 import sc.fiji.updater.action.Upload;
 import sc.fiji.updater.util.StderrProgress;
-import sc.fiji.updater.util.UpdaterUtil;
 
 import org.junit.After;
 import org.junit.Test;
@@ -348,8 +347,22 @@ public class CommandLineUpdaterTest {
 	public void testDowngrade() throws Exception {
 		final String macro = "macro/test.ijm";
 		files = initialize(macro);
-		final long timestamp = UpdaterUtil.getTimestamp(files.prefix(macro));
 
+		// Downgrade to the timestamp the first version was recorded with, which
+		// is what the command compares against, rather than to the local file's
+		// mtime. Those are two different clocks: a version is stamped by the
+		// upload that published it, the file by the write that preceded it. When
+		// the two land either side of a second boundary -- about one run in four
+		// hundred here, and more often on a slower machine -- the mtime names a
+		// moment at which no version yet existed, so the downgrade finds nothing
+		// to restore and uninstalls the file instead. That was this test's
+		// intermittent failure, and no amount of sleeping between the two
+		// versions would have addressed it: the race is inside the first upload,
+		// not between the uploads.
+		final long firstVersion = files.get(macro).current.timestamp;
+
+		// Long enough that the second upload lands in a later second than the
+		// first, since version timestamps have second granularity.
 		Thread.sleep(1000);
 		writeFile(files, macro, "new version");
 		files = main(files, "list");
@@ -357,10 +370,11 @@ public class CommandLineUpdaterTest {
 		upload(files);
 
 		files = main(files, "list");
-		final long newTimestamp = UpdaterUtil.getTimestamp(files.prefix(macro));
-		assertTrue("Equal: " + timestamp + ", " + newTimestamp, timestamp != newTimestamp);
+		final long secondVersion = files.get(macro).current.timestamp;
+		assertTrue("a second version should have been recorded, but the current " +
+			"version is still " + firstVersion, secondVersion > firstVersion);
 
-		files = main(files, "downgrade", "" + timestamp);
+		files = main(files, "downgrade", "" + firstVersion);
 		final String contents = readFile(files.prefix(macro));
 		assertEquals(macro, contents.trim());
 	}
