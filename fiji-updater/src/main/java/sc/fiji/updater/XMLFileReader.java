@@ -49,6 +49,7 @@ import javax.xml.parsers.SAXParserFactory;
 
 import sc.fiji.updater.FileObject.Status;
 import sc.fiji.updater.FileObject.Version;
+import sc.fiji.updater.util.Channels;
 import sc.fiji.updater.util.UpdateSiteNetwork;
 import sc.fiji.updater.util.UpdaterUtil;
 
@@ -95,15 +96,33 @@ public class XMLFileReader extends DefaultHandler {
 		throws ParserConfigurationException, IOException, SAXException
 	{
 		final UpdateSite site = files.getUpdateSite(updateSite, false);
-		if (site == null) throw new IOException("Unknown update site: " + site);
-		final URL url = new URL(site.getIndexURL());
-		final URLConnection connection = UpdaterUtil.openConnection(url);
-		final long lastModified = connection.getLastModified();
-		read(updateSite, new GZIPInputStream(connection.getInputStream()),
-			site.getTimestamp());
+		if (site == null) {
+			throw new IOException("Unknown update site: " + updateSite);
+		}
 
-		// lastModified is a Unix epoch, we need a timestamp
-		site.setTimestamp(Long.parseLong(UpdaterUtil.timestamp(lastModified)));
+		// Try each candidate channel in turn, exactly as XMLFileDownloader does;
+		// a site being activated has had no more chance to adopt this
+		// installation's channel than any other.
+		IOException failure = null;
+		for (final String channel : Channels.candidates(files.getChannel())) {
+			site.setChannel(channel);
+			try {
+				final URLConnection connection =
+					UpdaterUtil.openConnection(new URL(site.getIndexURL()));
+				final long lastModified = connection.getLastModified();
+				read(updateSite, new GZIPInputStream(connection.getInputStream()),
+					site.getTimestamp());
+
+				// lastModified is a Unix epoch, we need a timestamp
+				site.setTimestamp(Long.parseLong(UpdaterUtil.timestamp(lastModified)));
+				return;
+			}
+			catch (final IOException e) {
+				if (failure == null) failure = e;
+			}
+		}
+		site.setChannel(null);
+		throw failure;
 	}
 
 	public void read(final InputStream in) throws ParserConfigurationException,

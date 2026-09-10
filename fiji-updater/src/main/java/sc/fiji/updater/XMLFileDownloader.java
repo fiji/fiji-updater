@@ -34,12 +34,18 @@ package sc.fiji.updater;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.net.ConnectException;
+import java.net.NoRouteToHostException;
+import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
+import java.net.UnknownHostException;
 import java.util.Collection;
+import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 import sc.fiji.updater.util.AbstractProgressable;
+import sc.fiji.updater.util.Channels;
 import sc.fiji.updater.util.UpdaterUtil;
 
 /**
@@ -83,6 +89,41 @@ public class XMLFileDownloader extends AbstractProgressable {
 				"Updating from " + (name.isEmpty() ? "main" : name) + " site: " + updateSite.getURL();
 			addItem(title);
 			setCount(current, total);
+			read(reader, name, updateSite);
+			itemDone(title);
+		}
+		if (closeProgressAtEnd) {
+			done();
+		}
+		appendWarning(reader.getWarnings());
+	}
+
+	/**
+	 * Reads a site's index, trying each candidate channel in turn and keeping the
+	 * first that works.
+	 * <p>
+	 * There is no separate probe. The first candidate is the installation's own
+	 * channel, so in the ordinary case -- a site that has adopted the channel, or
+	 * an installation on the base channel -- this makes exactly one request, the
+	 * same request the updater made before channels existed.
+	 * </p>
+	 * <p>
+	 * Every failure is treated as "this channel is not published here, try the
+	 * next", because the ways a missing channel manifests are more varied than a
+	 * 404: some servers answer 403 for a directory that is not there, and a
+	 * misconfigured one answers 200 with an HTML error page, which fails not at
+	 * the connection but inside the gzip decoder. Only when every candidate has
+	 * failed is anything reported, and only then is the site treated as gone.
+	 * </p>
+	 */
+	private void read(final XMLFileReader reader, final String name,
+		final UpdateSite updateSite)
+	{
+		final List<String> candidates =
+			Channels.candidates(files.getChannel());
+		Exception failure = null;
+		for (final String channel : candidates) {
+			updateSite.setChannel(channel);
 			try {
 				final URLConnection connection =
 					UpdaterUtil.openConnection(new URL(updateSite.getIndexURL()));
@@ -94,23 +135,49 @@ public class XMLFileDownloader extends AbstractProgressable {
 				reader.read(name, in, updateSite.getTimestamp());
 				in.close();
 				updateSite.setLastModified(lastModified);
+				if (channel != null) {
+					files.log.debug("Update site '" + name + "' resolved to channel '" +
+						channel + "'");
+				}
+				return;
 			}
 			catch (final Exception e) {
-				if (e instanceof FileNotFoundException) {
-					// it was deleted
-					updateSite.setLastModified(0);
-					files.log.debug(e);
-				} else {
-					files.log.error(e);
+				if (failure == null) failure = e;
+				if (isUnreachable(e)) {
+					// The network is down, not the channel missing. Trying the
+					// remaining candidates would just repeat the same timeout.
+					break;
 				}
-				appendWarning("Could not update from site '" + name + "': " + e);
 			}
-			itemDone(title);
 		}
-		if (closeProgressAtEnd) {
-			done();
+
+		// Every candidate failed, so as far as this installation is concerned the
+		// site has nothing to offer it.
+		updateSite.setChannel(null);
+		if (failure instanceof FileNotFoundException) {
+			// it was deleted
+			updateSite.setLastModified(0);
+			files.log.debug(failure);
 		}
-		appendWarning(reader.getWarnings());
+		else {
+			files.log.error(failure);
+		}
+		appendWarning("Could not update from site '" + name + "': " + failure);
+	}
+
+	/**
+	 * Whether a failure means the network could not be reached at all, as opposed
+	 * to this particular index not being there.
+	 */
+	private static boolean isUnreachable(final Exception e) {
+		for (Throwable t = e; t != null; t = t.getCause()) {
+			if (t instanceof UnknownHostException) return true;
+			if (t instanceof ConnectException) return true;
+			if (t instanceof SocketTimeoutException) return true;
+			if (t instanceof NoRouteToHostException) return true;
+			if (t == t.getCause()) break;
+		}
+		return false;
 	}
 
 	public String getWarnings() {
