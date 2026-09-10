@@ -485,6 +485,9 @@ public class Checksummer extends AbstractProgressable {
 		{ "plugins" }, { ".jar", ".class", ".txt", ".ijm", ".py", ".rb", ".clj", ".js", ".bsh", ".groovy", ".gvy" },
 		{ "scripts" }, { ".m",                     ".ijm", ".py", ".rb", ".clj", ".js", ".bsh", ".groovy", ".gvy" },
 		{ "macros" }, { ".txt", ".ijm", ".png" },
+		// Note: models/ is absent from a stock installation, but two hosted sites
+		// ship model weights there -- GutAnalysisToolbox and MultiCellPlugins --
+		// so it stays a managed directory.
 		{ "models" }, { "" },
 		{ "luts" }, { ".lut" },
 		{ "images" }, { ".png", ".tif", ".txt", ".ico" },
