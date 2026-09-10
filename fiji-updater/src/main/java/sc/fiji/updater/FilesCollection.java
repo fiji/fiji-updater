@@ -41,6 +41,7 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.Comparator;
+import java.util.EnumSet;
 import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -49,6 +50,8 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Predicate;
+import java.util.stream.StreamSupport;
 import java.util.zip.GZIPOutputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -605,11 +608,6 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 		setUpdateSitesChanged(false);
 	}
 
-	public interface Filter {
-
-		boolean matches(FileObject file);
-	}
-
 	public FilesCollection clone(final Iterable<FileObject> iterable) {
 		final FilesCollection result = new FilesCollection(appRoot);
 		for (final FileObject file : iterable)
@@ -620,7 +618,7 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	}
 
 	public Iterable<FileObject> toUploadOrRemove() {
-		return filter(or(is(Action.UPLOAD), is(Action.REMOVE)));
+		return filter(is(Action.UPLOAD).or(is(Action.REMOVE)));
 	}
 
 	public Iterable<FileObject> toUpload() {
@@ -629,18 +627,12 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 
 	public Iterable<FileObject> toUpload(final boolean includeMetadataChanges) {
 		if (!includeMetadataChanges) return filter(is(Action.UPLOAD));
-		return filter(or(is(Action.UPLOAD), new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return file.metadataChanged &&
-					file.isUploadable(FilesCollection.this, false);
-			}
-		}));
+		return filter(is(Action.UPLOAD).or(file -> file.metadataChanged &&
+			file.isUploadable(this, false)));
 	}
 
 	public Iterable<FileObject> toUpload(final String updateSite) {
-		return filter(and(is(Action.UPLOAD), isUpdateSite(updateSite)));
+		return filter(is(Action.UPLOAD).and(isUpdateSite(updateSite)));
 	}
 
 	public Iterable<FileObject> toUninstall() {
@@ -668,7 +660,7 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	}
 
 	public Iterable<FileObject> notHidden() {
-		return filter(and(not(is(Status.OBSOLETE_UNINSTALLED)), doesPlatformMatch()));
+		return filter(is(Status.OBSOLETE_UNINSTALLED).negate().and(doesPlatformMatch()));
 	}
 
 	public Iterable<FileObject> uninstalled() {
@@ -676,8 +668,7 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	}
 
 	public Iterable<FileObject> installed() {
-		return filter(not(oneOf(Status.LOCAL_ONLY,
-			Status.NOT_INSTALLED)));
+		return filter(oneOf(Status.LOCAL_ONLY, Status.NOT_INSTALLED).negate());
 	}
 
 	public Iterable<FileObject> locallyModified() {
@@ -690,15 +681,15 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	}
 
 	public Iterable<FileObject> forUpdateSite(final String name, boolean includeObsoletes) {
-		Filter filter = and(doesPlatformMatch(), isUpdateSite(name));
+		final Predicate<FileObject> filter =
+			doesPlatformMatch().and(isUpdateSite(name));
 		if (!includeObsoletes) {
-			filter = and(not(is(Status.OBSOLETE_UNINSTALLED)), filter);
-			return filter(filter);
+			return filter(is(Status.OBSOLETE_UNINSTALLED).negate().and(filter));
 		}
 		// make sure that overridden records are kept
 		List<FileObject> result = new ArrayList<>();
 		for (FileObject file : this) {
-			if (filter.matches(file))
+			if (filter.test(file))
 				result.add(file);
 			else {
 				FileObject overridden = file.overriddenUpdateSites.get(name);
@@ -710,7 +701,7 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	}
 
 	public Iterable<FileObject> managedFiles() {
-		return filter(not(is(Status.LOCAL_ONLY)));
+		return filter(is(Status.LOCAL_ONLY).negate());
 	}
 
 	public Iterable<FileObject> localOnly() {
@@ -725,7 +716,8 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 		final Status[] oneOf =
 			{ Status.UPDATEABLE, Status.NEW, Status.OBSOLETE,
 				Status.OBSOLETE_MODIFIED };
-		return filter(or(oneOf(oneOf), oneOf(Action.INSTALL, Action.UPDATE, Action.UNINSTALL)));
+		return filter(oneOf(oneOf)
+			.or(oneOf(Action.INSTALL, Action.UPDATE, Action.UNINSTALL)));
 	}
 
 	public Iterable<FileObject> uploadable() {
@@ -740,251 +732,68 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	 * @return the list of uploadable files
 	 */
 	public Iterable<FileObject> uploadable(final boolean assumeModified) {
-		return filter(new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return file.isUploadable(FilesCollection.this, assumeModified);
-			}
-		});
+		return filter(file -> file.isUploadable(this, assumeModified));
 	}
 
 	public Iterable<FileObject> changes() {
-		return filter(new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return file.getAction() != file.getStatus().getNoAction();
-			}
-		});
+		return filter(file -> file.getAction() != file.getStatus().getNoAction());
 	}
 
-	public static class FilteredIterator implements Iterator<FileObject> {
-
-		Filter filter;
-		boolean opposite;
-		Iterator<FileObject> iterator;
-		FileObject next;
-
-		FilteredIterator(final Filter filter, final Iterable<FileObject> files) {
-			this.filter = filter;
-			iterator = files.iterator();
-			findNext();
-		}
-
-		@Override
-		public boolean hasNext() {
-			return next != null;
-		}
-
-		@Override
-		public FileObject next() {
-			final FileObject file = next;
-			findNext();
-			return file;
-		}
-
-		@Override
-		public void remove() {
-			throw new UnsupportedOperationException();
-		}
-
-		protected void findNext() {
-			while (iterator.hasNext()) {
-				next = iterator.next();
-				if (filter.matches(next)) return;
-			}
-			next = null;
-		}
-	}
-
-	public static Iterable<FileObject> filter(final Filter filter,
+	public static Iterable<FileObject> filter(final Predicate<FileObject> filter,
 		final Iterable<FileObject> files)
 	{
-		return new Iterable<FileObject>() {
-
-			@Override
-			public Iterator<FileObject> iterator() {
-				return new FilteredIterator(filter, files);
-			}
-		};
+		return () -> StreamSupport.stream(files.spliterator(), false) //
+			.filter(filter).iterator();
 	}
 
 	public static Iterable<FileObject> filter(final String search,
 		final Iterable<FileObject> files)
 	{
 		final String keyword = search.trim().toLowerCase();
-		return filter(new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return file.getFilename().trim().toLowerCase().indexOf(keyword) >= 0;
-			}
-		}, files);
+		return filter(file -> //
+			file.getFilename().trim().toLowerCase().contains(keyword), files);
 	}
 
-	public Filter yes() {
-		return new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return true;
-			}
-		};
+	/**
+	 * Whether a file belongs to the platform being updated.
+	 * <p>
+	 * Instance-level, unlike the other predicate factories: a developer with an
+	 * uploadable site is working on every platform at once, so the question does
+	 * not apply.
+	 * </p>
+	 */
+	Predicate<FileObject> doesPlatformMatch() {
+		if (hasUploadableSites()) return file -> true;
+		return file -> file.isActivePlatform(this);
 	}
 
-	Filter doesPlatformMatch() {
-		// If we're a developer or no platform was specified, return yes
-		if (hasUploadableSites()) return yes();
-		return new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return file.isActivePlatform(FilesCollection.this);
-			}
-		};
+	public static Predicate<FileObject> is(final Action action) {
+		return file -> file.getAction() == action;
 	}
 
-	public Filter is(final Action action) {
-		return new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return file.getAction() == action;
-			}
-		};
+	public static Predicate<FileObject> oneOf(final Action... actions) {
+		final Set<Action> oneOf = EnumSet.noneOf(Action.class);
+		Collections.addAll(oneOf, actions);
+		return file -> oneOf.contains(file.getAction());
 	}
 
-	Filter isNoAction() {
-		return new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return file.getAction() == file.getStatus().getNoAction();
-			}
-		};
+	public static Predicate<FileObject> is(final Status status) {
+		return file -> file.getStatus() == status;
 	}
 
-	public Filter oneOf(final Action... actions) {
-		final Set<Action> oneOf = new HashSet<>();
-		for (final Action action : actions)
-			oneOf.add(action);
-		return new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return oneOf.contains(file.getAction());
-			}
-		};
+	public static Predicate<FileObject> oneOf(final Status... states) {
+		final Set<Status> oneOf = EnumSet.noneOf(Status.class);
+		Collections.addAll(oneOf, states);
+		return file -> oneOf.contains(file.getStatus());
 	}
 
-	public Filter is(final Status status) {
-		return new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return file.getStatus() == status;
-			}
-		};
+	public static Predicate<FileObject> isUpdateSite(final String updateSite) {
+		// NB: file.updateSite is null for local-only files.
+		return file -> file.updateSite != null &&
+			file.updateSite.equals(updateSite);
 	}
 
-	Filter hasMetadataChanges() {
-		return new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return file.metadataChanged;
-			}
-		};
-	}
-
-	public Filter isUpdateSite(final String updateSite) {
-		return new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return file.updateSite != null && // is null for local-only files
-					file.updateSite.equals(updateSite);
-			}
-		};
-	}
-
-	public Filter oneOf(final Status... states) {
-		final Set<Status> oneOf = new HashSet<>();
-		for (final Status status : states)
-			oneOf.add(status);
-		return new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return oneOf.contains(file.getStatus());
-			}
-		};
-	}
-
-	public Filter startsWith(final String prefix) {
-		return new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return file.filename.startsWith(prefix);
-			}
-		};
-	}
-
-	public Filter startsWith(final String... prefixes) {
-		return new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				for (final String prefix : prefixes)
-					if (file.filename.startsWith(prefix)) return true;
-				return false;
-			}
-		};
-	}
-
-	public Filter endsWith(final String suffix) {
-		return new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return file.filename.endsWith(suffix);
-			}
-		};
-	}
-
-	public Filter not(final Filter filter) {
-		return new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return !filter.matches(file);
-			}
-		};
-	}
-
-	public Filter or(final Filter a, final Filter b) {
-		return new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return a.matches(file) || b.matches(file);
-			}
-		};
-	}
-
-	public Filter and(final Filter a, final Filter b) {
-		return new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return a.matches(file) && b.matches(file);
-			}
-		};
-	}
-
-	public Iterable<FileObject> filter(final Filter filter) {
+	public Iterable<FileObject> filter(final Predicate<FileObject> filter) {
 		return filter(filter, this);
 	}
 
@@ -1016,9 +825,9 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 			file.addDependency(dependency, prefix(dependency));
 	}
 
-	public boolean has(final Filter filter) {
+	public boolean has(final Predicate<FileObject> filter) {
 		for (final FileObject file : this)
-			if (filter.matches(file)) return true;
+			if (filter.test(file)) return true;
 		return false;
 	}
 
@@ -1045,13 +854,8 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	 * @return An iterable over any updateable items.
 	 */
 	public Iterable<FileObject> updateable(final boolean evenForcedOnes) {
-		return filter(new Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return file.isUpdateable(evenForcedOnes) && file.isActivePlatform(FilesCollection.this);
-			}
-		});
+		return filter(file -> file.isUpdateable(evenForcedOnes) &&
+			file.isActivePlatform(this));
 	}
 
 	public void markForUpdate(final boolean evenForcedUpdates) {

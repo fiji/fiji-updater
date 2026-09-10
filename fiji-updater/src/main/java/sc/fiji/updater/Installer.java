@@ -47,7 +47,6 @@ import sc.fiji.updater.util.Downloadable;
 import sc.fiji.updater.util.Downloader;
 import sc.fiji.updater.util.Platforms;
 import sc.fiji.updater.util.Progress;
-import sc.fiji.updater.util.UpdaterUserInterface;
 import sc.fiji.updater.util.AppLayout;
 import sc.fiji.updater.util.UpdaterUtil;
 
@@ -322,14 +321,8 @@ public class Installer {
 				counter++;
 		}
 		if (counter == 0) return; // nothing to be done
-		final FilesCollection.Filter filter = new FilesCollection.Filter() {
-
-			@Override
-			public boolean matches(final FileObject file) {
-				return all.contains(file);
-			}
-		};
-		final FilesCollection justTheUpdater = files.clone(files.filter(filter));
+		final FilesCollection justTheUpdater =
+			files.clone(files.filter(all::contains));
 		final Installer installer = new Installer(justTheUpdater, progress);
 		try {
 			installer.start();

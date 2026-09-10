@@ -54,6 +54,7 @@ import java.util.Map.Entry;
 import java.util.Set;
 import java.util.TreeMap;
 import java.util.TreeSet;
+import java.util.function.Predicate;
 import java.util.jar.Attributes;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -65,13 +66,11 @@ import sc.fiji.updater.Diff.Mode;
 import sc.fiji.updater.FileObject.Action;
 import sc.fiji.updater.FileObject.Status;
 import sc.fiji.updater.FileObject.Version;
-import sc.fiji.updater.FilesCollection.Filter;
 import sc.fiji.updater.util.*;
 
 import org.scijava.launcher.Java;
 import org.scijava.log.LogService;
 import org.scijava.log.Logger;
-import org.scijava.util.AppUtils;
 import org.scijava.util.FileUtils;
 import org.scijava.util.IteratorPlus;
 import org.scijava.util.POM;
@@ -132,7 +131,7 @@ public class CommandLine {
 		checksummed = true;
 	}
 
-	private class FileFilter implements Filter {
+	private class FileFilter implements Predicate<FileObject> {
 
 		protected Set<String> fileNames;
 
@@ -145,7 +144,7 @@ public class CommandLine {
 		}
 
 		@Override
-		public boolean matches(final FileObject file) {
+		public boolean test(final FileObject file) {
 			if (!file.isActivePlatform(files)) return false;
 			if (fileNames != null
 					&& !fileNames.contains(file.getFilename(true))) {
@@ -274,13 +273,10 @@ public class CommandLine {
 			System.out.println(file.filename + "-" + file.getTimestamp());
 	}
 
-	private void list(final List<String> list, Filter filter) {
+	private void list(final List<String> list, Predicate<FileObject> filter) {
 		ensureChecksummed();
-		if (filter == null) {
-			filter = new FileFilter(list);
-		} else {
-			filter = files.and(new FileFilter(list), filter);
-		}
+		filter = filter == null ? new FileFilter(list) //
+			: new FileFilter(list).and(filter);
 		files.sort();
 		for (final FileObject file : files.filter(filter)) {
 			System.out.println(file.filename + "\t(" + file.getStatus() + ")\t"
@@ -293,31 +289,30 @@ public class CommandLine {
 	}
 
 	private void listUptodate(final List<String> list) {
-		list(list, files.is(Status.INSTALLED));
+		list(list, FilesCollection.is(Status.INSTALLED));
 	}
 
 	private void listNotUptodate(final List<String> list) {
-		list(list,
-				files.not(files.oneOf(new Status[] { Status.OBSOLETE,
-						Status.INSTALLED, Status.LOCAL_ONLY })));
+		list(list, FilesCollection.oneOf(Status.OBSOLETE, Status.INSTALLED,
+				Status.LOCAL_ONLY).negate());
 	}
 
 	private void listUpdateable(final List<String> list) {
-		list(list, files.is(Status.UPDATEABLE));
+		list(list, FilesCollection.is(Status.UPDATEABLE));
 	}
 
 	private void listModified(final List<String> list) {
-		list(list, files.is(Status.MODIFIED));
+		list(list, FilesCollection.is(Status.MODIFIED));
 	}
 
 	private void listLocalOnly(final List<String> list) {
-		list(list, files.is(Status.LOCAL_ONLY));
+		list(list, FilesCollection.is(Status.LOCAL_ONLY));
 	}
 
 	private void listFromSite(final List<String> sites) {
 		if (sites.size() != 1)
 			throw die("Usage: list-from-site <name>");
-		list(null, files.isUpdateSite(sites.get(0)));
+		list(null, FilesCollection.isUpdateSite(sites.get(0)));
 	}
 
 	private void listShadowed(final List<String> list) {
