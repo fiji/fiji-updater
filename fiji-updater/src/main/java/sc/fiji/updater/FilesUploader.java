@@ -171,10 +171,20 @@ public class FilesUploader {
 	 */
 	public String getUploadChannel() {
 		if (initialUpload) {
-			// A new site is created with an empty index, which asserts nothing
-			// about any channel and so is safe to serve as the base -- where every
-			// client can see that the site exists. Its first real upload adopts
-			// the maintainer's channel.
+			// Bringing a site into being writes an empty index, which asserts
+			// nothing about any channel and so is safe to serve from the site
+			// root -- and it has to go there. A site serving only a channel index
+			// does not look empty to a client on the base channel: every candidate
+			// fails, so the site is reported unreadable and treated as deleted.
+			// See ChannelResolutionTest.testChannelOnlySiteIsUnreadableFromBase.
+			//
+			// Nothing more is "seeded" than that. The channel manifest is created
+			// by the first upload that publishes to a channel, like any other, and
+			// a site whose uploads all come from the base channel never grows one.
+			//
+			// NB: This case is separate only because initialUploader fabricates a
+			// FilesCollection with no application root, so there is no launcher
+			// configuration to read a channel from even when the caller has one.
 			return null;
 		}
 		final ChannelState state = files.getChannelState();

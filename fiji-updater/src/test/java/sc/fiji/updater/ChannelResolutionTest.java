@@ -275,4 +275,36 @@ public class ChannelResolutionTest {
 		assertEquals("", downloader.getWarnings().trim());
 		assertNotNull(after.get("macros/macro.ijm"));
 	}
+
+	/**
+	 * What a base-channel client sees when a site serves only a channel index.
+	 * <p>
+	 * Not "an empty site": every candidate fails, so the site is reported as
+	 * unreadable and treated as deleted. That is the argument for creating a
+	 * site's first index at its root rather than in the creating maintainer's
+	 * channel -- an empty index asserts nothing about any channel, and it is the
+	 * difference between the site existing with nothing in it and the site
+	 * appearing to have gone away.
+	 * </p>
+	 */
+	@Test
+	public void testChannelOnlySiteIsUnreadableFromBase() throws Exception {
+		files = initialize("macros/macro.ijm");
+		final File ijRoot = files.prefix("");
+		final File webRoot = getWebRoot(files);
+
+		// Move the whole index into a channel, leaving the site root bare.
+		publishChannel(webRoot, CHANNEL);
+		assertTrue(new File(webRoot, "db.xml.gz").delete());
+
+		// This installation is on the base channel and knows of no other.
+		final FilesCollection after = new FilesCollection(ijRoot);
+		after.tryLoadingCollection();
+		final XMLFileDownloader downloader = new XMLFileDownloader(after);
+		downloader.start(false);
+
+		final String warnings = downloader.getWarnings();
+		assertTrue("expected the site to be reported unreadable, got: " + warnings,
+			warnings.contains("Could not update from site"));
+	}
 }
