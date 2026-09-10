@@ -107,8 +107,7 @@ public class ChannelUpgrade {
 		final ChannelState state = files.getDeclaredChannelState();
 		if (!state.isKnown()) return null;
 
-		final UpdateSite core =
-			files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, false);
+		final UpdateSite core = files.getCoreSite();
 		if (core == null) return null;
 
 		final ChannelManifest manifest = ChannelManifest.read(core.getURL());

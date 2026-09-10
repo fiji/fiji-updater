@@ -37,6 +37,10 @@ import java.util.List;
  * current channel keep using the hundreds of sites that have never heard of
  * one.</li>
  * </ul>
+ * <p>
+ * The core update site is the exception, and gets {@link #coreCandidates}
+ * instead: it does not fall back at all.
+ * </p>
  *
  * @author Curtis Rueden
  * @see ChannelState
@@ -120,6 +124,35 @@ public final class Channels {
 		}
 		candidates.add(null);
 		return Collections.unmodifiableList(candidates);
+	}
+
+	/**
+	 * The channels to try for the <em>core</em> update site: exactly one, the
+	 * installation's own.
+	 * <p>
+	 * Falling back means something different for the core site than for anyone
+	 * else. A third-party site that has not adopted this channel is served from
+	 * its root, which is simply what it publishes for everyone -- reading it
+	 * there is the whole point of the fallback, and the content is the content
+	 * its maintainer stands behind. The core site's root is not that. It is the
+	 * previous edition of the application, so falling back to it would replace a
+	 * current installation with an older one: a downgrade of the application
+	 * itself, performed silently, in the course of what the user asked to be an
+	 * update.
+	 * </p>
+	 * <p>
+	 * So the core site resolves to the installation's channel or to nothing. The
+	 * failure is loud by construction -- no index read means no files offered,
+	 * and the caller says why -- which is the correct outcome, because a core
+	 * site not serving a channel its own installations follow is a fault in the
+	 * update site, not a condition for a client to paper over.
+	 * </p>
+	 *
+	 * @param current the installation's channel, or null for the base channel.
+	 * @return a single-element list containing that channel.
+	 */
+	public static List<String> coreCandidates(final String current) {
+		return Collections.singletonList(current);
 	}
 
 	/**

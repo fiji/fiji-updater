@@ -108,6 +108,43 @@ public class ChannelsTest {
 		}
 	}
 
+	/**
+	 * The core site gets one candidate and no fallback. Falling back means
+	 * something different for it than for anyone else: a third-party site's root
+	 * is what its maintainer publishes for everyone, while the core site's root
+	 * is the previous edition of the application.
+	 */
+	@Test
+	public void testCoreCandidatesDoNotFallBack() {
+		assertEquals(Arrays.asList("A.punctulata"),
+			Channels.coreCandidates("A.punctulata"));
+		assertEquals(Arrays.asList("B.floridae"),
+			Channels.coreCandidates("B.floridae"));
+	}
+
+	/**
+	 * For an installation on the base channel the root <em>is</em> its channel,
+	 * so the core site reads it. The rule is "never below your own channel", not
+	 * "never the root".
+	 */
+	@Test
+	public void testCoreCandidatesOnBaseChannelAreTheBase() {
+		assertEquals(Arrays.asList((String) null), Channels.coreCandidates(null));
+	}
+
+	/** The core site never resolves below the installation's channel either. */
+	@Test
+	public void testCoreCandidatesNeverGoBelowCurrent() {
+		for (final String current : new String[] { null, "A.punctulata",
+			"C.elegans" })
+		{
+			for (final String candidate : Channels.coreCandidates(current)) {
+				assertEquals(current, candidate);
+				assertFalse(Channels.isNewerThan(THREE, candidate, current));
+			}
+		}
+	}
+
 	@Test
 	public void testIsNewerThan() {
 		// The base channel is the oldest thing there is.

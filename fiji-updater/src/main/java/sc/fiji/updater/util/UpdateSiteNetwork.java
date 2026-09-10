@@ -152,6 +152,32 @@ public final class UpdateSiteNetwork {
 		return false;
 	}
 
+	/**
+	 * Whether the given site is the <em>core</em> update site: the one that ships
+	 * the application itself, and therefore the authority on which channels exist
+	 * and which one this installation is entitled to read.
+	 * <p>
+	 * The URL is asked first and the name second, because the URL is the half
+	 * that survives {@link #MAIN_SITE_NAME} being retired. During that rename the
+	 * constant changes while every installation in the world still carries the
+	 * old name in its local index, so a name-only test would stop recognizing the
+	 * core site on precisely the installations that have one -- and a site that
+	 * is not recognized as core is treated as third-party, which is the permissive
+	 * case. Matching on the URL keeps that from being a silent downgrade.
+	 * </p>
+	 * <p>
+	 * The name remains as a fallback for installations whose main site is not
+	 * served from the canonical host or a known mirror: a local mirror, a test
+	 * fixture, an air-gapped deployment. There the name is all there is to go on.
+	 * </p>
+	 *
+	 * @param name the site's name, as it appears in the local index.
+	 * @param url the site's URL.
+	 */
+	public static boolean isCoreSite(final String name, final String url) {
+		return isMainSite(url) || MAIN_SITE_NAME.equals(name);
+	}
+
 	/** Upload destination for the main update site. */
 	public static final String MAIN_SITE_UPLOAD_DIRECTORY =
 		"/home/imagej/update-site";

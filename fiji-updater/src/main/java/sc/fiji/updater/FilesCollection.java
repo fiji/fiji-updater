@@ -217,12 +217,59 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	 */
 	public List<String> getChannels() {
 		if (channels == null) {
-			final UpdateSite core = getUpdateSite(DEFAULT_UPDATE_SITE, false);
+			final UpdateSite core = getCoreSite();
 			final ChannelManifest manifest = core == null
 				? ChannelManifest.absent() : ChannelManifest.read(core.getURL());
 			channels = manifest.isPresent() ? manifest.channels() : Channels.EMBEDDED;
 		}
 		return channels;
+	}
+
+	/**
+	 * The core update site: the one that ships the application itself.
+	 * <p>
+	 * It is the authority on which channels exist, it is what an upgrade is
+	 * offered from, and it is the one site whose index is never read from an
+	 * older channel than the installation follows. Everything that needs to
+	 * single it out asks here, so that the question of how it is identified --
+	 * see {@link UpdateSiteNetwork#isCoreSite} -- is answered in one place rather
+	 * than by a name comparison scattered across the callers.
+	 * </p>
+	 *
+	 * @return the core site, or null if this installation has none, which a
+	 *         synthetic or badly damaged one may not.
+	 */
+	public UpdateSite getCoreSite() {
+		UpdateSite byName = null;
+		for (final UpdateSite site : getUpdateSites(false)) {
+			// The URL is the stronger claim, so a site matching it wins outright;
+			// a name match is only accepted once nothing else has spoken up.
+			if (UpdateSiteNetwork.isMainSite(site.getURL())) return site;
+			if (byName == null && DEFAULT_UPDATE_SITE.equals(site.getName())) {
+				byName = site;
+			}
+		}
+		return byName;
+	}
+
+	/** Whether the given site is this installation's {@link #getCoreSite core}. */
+	public boolean isCoreSite(final UpdateSite site) {
+		if (site == null) return false;
+		final UpdateSite core = getCoreSite();
+		return core != null && core.getName().equals(site.getName());
+	}
+
+	/**
+	 * The channels to try when reading the given site's index, in order.
+	 * <p>
+	 * Third-party sites fall back downward to the base channel; the core site
+	 * does not fall back at all. See {@link Channels#coreCandidates} for why the
+	 * two are not the same question.
+	 * </p>
+	 */
+	public List<String> candidates(final UpdateSite site) {
+		return isCoreSite(site) ? Channels.coreCandidates(getChannel())
+			: Channels.candidates(getChannels(), getChannel());
 	}
 
 	/**

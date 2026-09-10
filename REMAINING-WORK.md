@@ -30,14 +30,6 @@ is exactly when it will be too late to notice.
   case-insensitively, always emit the canonical form. `Channels` and
   `ChannelManifest` are the places.
 
-- **Core-site fallback asymmetry.** Every site currently falls back the same
-  way. For a third-party site, falling back to the base channel is the whole
-  point — base is simply what they publish for everyone. For the **core** site
-  it is a genuine downgrade to Fiji-Stable-era content. The core site should
-  not resolve below the installation's channel, and should say something loud
-  if its own channel is missing. Needs a decision on how the core site is
-  identified once `MAIN_SITE_NAME` stops being `Fiji-Latest`.
-
 - **Decide whether `Channels.EMBEDDED` gets populated.** It is deliberately
   empty. Once channels exist it becomes the offline fallback ordering, and the
   question is whether shipping a stale list is better or worse than shipping
@@ -80,6 +72,10 @@ to put anything else.
   `getUpdateSites(true)`, which includes disabled ones. Claiming it today makes
   the merge replace the main site with that deactivated legacy entry. The
   rename has to happen in the published site list and on the server first.
+  Recognizing the core site no longer depends on this, though:
+  `UpdateSiteNetwork.isCoreSite` asks the URL first and the name only as a
+  fallback, so an installation still carrying the old name in its local index
+  is recognized across the rename rather than quietly demoted to third-party.
 
 - **Version-scope `jdk-urls.txt`.** Currently one global file at
   `downloads.imagej.net/java/jdk-urls.txt`. Wanted: one per Java major version,

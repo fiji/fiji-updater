@@ -112,11 +112,10 @@ public class XMLFileReader extends DefaultHandler {
 
 		// Try each candidate channel in turn, exactly as XMLFileDownloader does;
 		// a site being activated has had no more chance to adopt this
-		// installation's channel than any other.
+		// installation's channel than any other. The core site, as ever, gets the
+		// one candidate it is allowed.
 		IOException failure = null;
-		for (final String channel : Channels.candidates(files.getChannels(),
-			files.getChannel()))
-		{
+		for (final String channel : files.candidates(site)) {
 			site.setChannel(channel);
 			try {
 				final URLConnection connection =

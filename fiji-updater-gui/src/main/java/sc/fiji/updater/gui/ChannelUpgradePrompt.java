@@ -186,6 +186,10 @@ public class ChannelUpgradePrompt {
 		for (final String name : files.getUpdateSiteNames(false)) {
 			final sc.fiji.updater.UpdateSite site = files.getUpdateSite(name, true);
 			if (site == null) continue;
+			// The core site is never one of the laggards. It either serves the
+			// target channel -- which is where the offer of the upgrade came from
+			// in the first place -- or the upgrade fails outright and says so.
+			if (files.isCoreSite(site)) continue;
 			if (channel != null && channel.equals(site.getChannel())) continue;
 			if (sc.fiji.updater.util.ChannelManifest.read(site.getURL())
 				.isPresent())

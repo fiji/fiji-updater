@@ -104,4 +104,50 @@ public class UpdateSiteNetworkTest {
 			assertTrue(mirror, UpdateSiteNetwork.isMirror(mirror));
 		}
 	}
+
+	/**
+	 * The case the URL half of the core-site test exists for: the name has been
+	 * retired, so this updater's constant and the name in an existing
+	 * installation's local index no longer agree. The URL still does.
+	 * <p>
+	 * Getting this wrong is not cosmetic. A site not recognized as core is
+	 * treated as third-party, and a third-party site is allowed to fall back to
+	 * its root -- which for the core site is the previous edition of the
+	 * application.
+	 * </p>
+	 */
+	@Test
+	public void testCoreSiteIsRecognizedByURLWhateverItIsCalled() {
+		final String url = "https://" + UpdateSiteNetwork.MAIN_SITE_PATH;
+		assertTrue(UpdateSiteNetwork.isCoreSite("Fiji-Latest", url));
+		assertTrue(UpdateSiteNetwork.isCoreSite("Fiji", url));
+		assertTrue(UpdateSiteNetwork.isCoreSite("whatever it was renamed to", url));
+	}
+
+	/** A mirror is a different source for the same content, not another site. */
+	@Test
+	public void testMirrorsOfTheCoreSiteAreCore() {
+		for (final String mirror : UpdateSiteNetwork.MAIN_SITE_MIRRORS) {
+			assertTrue(mirror, UpdateSiteNetwork.isCoreSite("Some-Name", mirror));
+		}
+	}
+
+	/**
+	 * The name is what is left for an installation whose main site is served
+	 * from neither the canonical host nor a known mirror: a local mirror, a test
+	 * fixture, an air-gapped deployment.
+	 */
+	@Test
+	public void testNameIdentifiesACoreSiteServedFromElsewhere() {
+		assertTrue(UpdateSiteNetwork.isCoreSite(UpdateSiteNetwork.MAIN_SITE_NAME,
+			"file:/tmp/some-web-root/"));
+	}
+
+	/** An ordinary third-party site is neither. */
+	@Test
+	public void testThirdPartySiteIsNotCore() {
+		assertFalse(UpdateSiteNetwork.isCoreSite("SIMcheck",
+			"https://downloads.micron.ox.ac.uk/fiji_update/SIMcheck/"));
+		assertFalse(UpdateSiteNetwork.isCoreSite(null, null));
+	}
 }

@@ -145,8 +145,7 @@ public class XMLFileDownloader extends AbstractProgressable {
 	private void read(final XMLFileReader reader, final String name,
 		final UpdateSite updateSite)
 	{
-		final List<String> candidates =
-			Channels.candidates(files.getChannels(), files.getChannel());
+		final List<String> candidates = files.candidates(updateSite);
 		Exception failure = null;
 		for (final String channel : candidates) {
 			updateSite.setChannel(channel);
@@ -188,7 +187,59 @@ public class XMLFileDownloader extends AbstractProgressable {
 		else {
 			files.log.error(failure);
 		}
-		appendWarning("Could not update from site '" + name + "': " + failure);
+		if (isCoreChannelMissing(updateSite, failure)) {
+			appendWarning(coreChannelMissingWarning(name, updateSite, failure));
+		}
+		else {
+			appendWarning("Could not update from site '" + name + "': " + failure);
+		}
+	}
+
+	/**
+	 * Whether the failure to read a site is the core site failing to serve this
+	 * installation's channel, as opposed to any of the ordinary ways a site can
+	 * be unreadable.
+	 * <p>
+	 * Only the core site has a single candidate, so for it "every candidate
+	 * failed" means precisely "the channel is not published there" -- unless the
+	 * network is down, in which case nothing was learned about the site at all
+	 * and the generic message is the honest one.
+	 * </p>
+	 */
+	private boolean isCoreChannelMissing(final UpdateSite site,
+		final Exception failure)
+	{
+		return files.isCoreSite(site) && files.getChannel() != null &&
+			!isUnreachable(failure);
+	}
+
+	/**
+	 * The message for a core site that does not serve this installation's
+	 * channel.
+	 * <p>
+	 * It gets its own wording, and a loud one, because it is not the same event
+	 * as a third-party site being unreachable. It means the application's own
+	 * update site has nothing for the edition this installation is running, which
+	 * nothing the user can do at their end will fix; the alternative -- reading
+	 * the core site's root instead -- would replace their installation with the
+	 * previous edition, so the updater declines it and says so rather than
+	 * quietly getting on with a downgrade.
+	 * </p>
+	 */
+	private String coreChannelMissingWarning(final String name,
+		final UpdateSite site, final Exception failure)
+	{
+		return "The core update site does not serve the " + files.getChannel() +
+			" channel.\n    " + UpdateSite.getIndexPath(files.getChannel()) +
+			" could not be read from " + site.getURL() + "\n" +
+			"No files were read from '" + name + "', and none will be: the core " +
+			"update site is never read from an older channel, because that would " +
+			"replace this installation with a previous edition of the " +
+			"application.\n" +
+			"This is a fault in the update site rather than in this " +
+			"installation. Please report it on the Image.sc Forum " +
+			"(https://forum.image.sc/).\n" +
+			"The underlying failure was: " + failure;
 	}
 
 	/**
@@ -211,6 +262,11 @@ public class XMLFileDownloader extends AbstractProgressable {
 	 */
 	private boolean hasNotAdopted(final UpdateSite site, final String channel) {
 		if (channel == null) return false; // nothing to be behind
+		// The core site is not one of the sites that lag. It either serves this
+		// channel or it has failed outright, and that failure has already been
+		// reported in terms that "has not published for this channel yet" would
+		// only soften.
+		if (files.isCoreSite(site)) return false;
 		if (channel.equals(site.getChannel())) return false; // adopted
 		return ChannelManifest.read(site.getURL()).isPresent();
 	}
