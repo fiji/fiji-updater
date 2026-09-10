@@ -32,12 +32,12 @@ package sc.fiji.updater.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
 import java.util.List;
 
-import org.junit.After;
 import org.junit.Test;
 
 /**
@@ -53,13 +53,11 @@ import org.junit.Test;
 public class ChannelsTest {
 
 	/** Newest first, as the core site publishes them. */
+	private static final List<String> NONE = Channels.EMBEDDED;
+
 	private static final List<String> THREE =
 		Arrays.asList("C.elegans", "B.floridae", "A.punctulata");
 
-	@After
-	public void resetChannels() {
-		Channels.setKnown(null);
-	}
 
 	/**
 	 * With no channel, there is one candidate and it is the base -- byte for
@@ -67,13 +65,13 @@ public class ChannelsTest {
 	 */
 	@Test
 	public void testBaseChannelHasOnlyBaseCandidate() {
-		assertEquals(Arrays.asList((String) null), Channels.candidates(null));
+		assertEquals(Arrays.asList((String) null), Channels.candidates(NONE, null));
 	}
 
 	/** Candidates always end at the base channel, which every site serves. */
 	@Test
 	public void testCandidatesEndAtBase() {
-		final List<String> candidates = Channels.candidates("A.punctulata");
+		final List<String> candidates = Channels.candidates(NONE, "A.punctulata");
 		assertEquals("A.punctulata", candidates.get(0));
 		assertEquals(null, candidates.get(candidates.size() - 1));
 	}
@@ -84,14 +82,14 @@ public class ChannelsTest {
 	 */
 	@Test
 	public void testUnknownChannelFallsBackToBaseOnly() {
-		assertEquals(Arrays.asList("Z.mays", null), Channels.candidates("Z.mays"));
+		assertEquals(Arrays.asList("Z.mays", null), Channels.candidates(NONE, "Z.mays"));
 	}
 
 	/** The installation's own channel is always tried before anything else. */
 	@Test
 	public void testCurrentChannelIsAlwaysFirst() {
 		for (final String current : new String[] { "A.punctulata", "B.floridae" }) {
-			assertEquals(current, Channels.candidates(current).get(0));
+			assertEquals(current, Channels.candidates(NONE, current).get(0));
 		}
 	}
 
@@ -103,9 +101,9 @@ public class ChannelsTest {
 	@Test
 	public void testNeverResolvesAboveCurrentChannel() {
 		for (final String current : new String[] { null, "A.punctulata" }) {
-			for (final String candidate : Channels.candidates(current)) {
+			for (final String candidate : Channels.candidates(NONE, current)) {
 				assertFalse("candidate " + candidate + " is newer than " + current,
-					Channels.isNewerThan(candidate, current));
+					Channels.isNewerThan(NONE, candidate, current));
 			}
 		}
 	}
@@ -113,54 +111,57 @@ public class ChannelsTest {
 	@Test
 	public void testIsNewerThan() {
 		// The base channel is the oldest thing there is.
-		assertFalse(Channels.isNewerThan(null, null));
-		assertFalse(Channels.isNewerThan(null, "A.punctulata"));
-		assertTrue(Channels.isNewerThan("A.punctulata", null));
+		assertFalse(Channels.isNewerThan(NONE, null, null));
+		assertFalse(Channels.isNewerThan(NONE, null, "A.punctulata"));
+		assertTrue(Channels.isNewerThan(NONE, "A.punctulata", null));
 
 		// A channel is not newer than itself.
-		assertFalse(Channels.isNewerThan("A.punctulata", "A.punctulata"));
+		assertFalse(Channels.isNewerThan(NONE, "A.punctulata", "A.punctulata"));
 	}
 
-	/** No channels exist yet, so nothing can be unknown in a dangerous way. */
+	/**
+	 * Nothing is compiled in, because a compiled-in list can never be the
+	 * authority: an updater is always built before the channels that follow it.
+	 */
 	@Test
-	public void testNoneExistByDefault() {
-		assertFalse(Channels.anyExist());
-		assertTrue(Channels.known().isEmpty());
+	public void testNothingIsCompiledIn() {
+		assertFalse(Channels.anyExist(Channels.EMBEDDED));
+		assertTrue(Channels.EMBEDDED.isEmpty());
 	}
 
 	@Test
-	public void testSetKnown() {
-		Channels.setKnown(THREE);
-		assertTrue(Channels.anyExist());
-		assertEquals(THREE, Channels.known());
+	public void testAnyExist() {
+		assertTrue(Channels.anyExist(THREE));
+		assertFalse(Channels.anyExist(NONE));
+		assertFalse(Channels.anyExist(null));
+	}
 
-		// Null or empty restores the compiled-in fallback.
-		Channels.setKnown(null);
-		assertEquals(Channels.EMBEDDED, Channels.known());
+	@Test
+	public void testNewest() {
+		assertEquals("C.elegans", Channels.newest(THREE));
+		assertNull(Channels.newest(NONE));
+		assertNull(Channels.newest(null));
 	}
 
 	/** From the newest channel, every older one is a fallback, base last. */
 	@Test
 	public void testFallbackWalksDownward() {
-		Channels.setKnown(THREE);
 		assertEquals(Arrays.asList("C.elegans", "B.floridae", "A.punctulata", null),
-			Channels.candidates("C.elegans"));
+			Channels.candidates(THREE, "C.elegans"));
 	}
 
 	/** From the middle, only what is below it -- never C.elegans. */
 	@Test
 	public void testFallbackNeverGoesUp() {
-		Channels.setKnown(THREE);
 		assertEquals(Arrays.asList("B.floridae", "A.punctulata", null),
-			Channels.candidates("B.floridae"));
+			Channels.candidates(THREE, "B.floridae"));
 	}
 
 	/** The oldest named channel falls back only to the base. */
 	@Test
 	public void testOldestChannelFallsBackToBase() {
-		Channels.setKnown(THREE);
 		assertEquals(Arrays.asList("A.punctulata", null),
-			Channels.candidates("A.punctulata"));
+			Channels.candidates(THREE, "A.punctulata"));
 	}
 
 	/**
@@ -169,16 +170,14 @@ public class ChannelsTest {
 	 */
 	@Test
 	public void testBaseChannelStaysOnBase() {
-		Channels.setKnown(THREE);
-		assertEquals(Arrays.asList((String) null), Channels.candidates(null));
+		assertEquals(Arrays.asList((String) null), Channels.candidates(THREE, null));
 	}
 
 	@Test
 	public void testIsNewerThanWithKnownChannels() {
-		Channels.setKnown(THREE);
-		assertTrue(Channels.isNewerThan("C.elegans", "A.punctulata"));
-		assertTrue(Channels.isNewerThan("B.floridae", "A.punctulata"));
-		assertFalse(Channels.isNewerThan("A.punctulata", "C.elegans"));
-		assertFalse(Channels.isNewerThan("B.floridae", "B.floridae"));
+		assertTrue(Channels.isNewerThan(THREE, "C.elegans", "A.punctulata"));
+		assertTrue(Channels.isNewerThan(THREE, "B.floridae", "A.punctulata"));
+		assertFalse(Channels.isNewerThan(THREE, "A.punctulata", "C.elegans"));
+		assertFalse(Channels.isNewerThan(THREE, "B.floridae", "B.floridae"));
 	}
 }

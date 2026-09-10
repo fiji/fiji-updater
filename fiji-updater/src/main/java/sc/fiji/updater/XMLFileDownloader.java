@@ -89,7 +89,7 @@ public class XMLFileDownloader extends AbstractProgressable {
 		// update. While no channel exists there is nothing to get wrong, so this
 		// only bites once one does.
 		final ChannelState channel = files.getChannelState();
-		if (!channel.isKnown() && Channels.anyExist()) {
+		if (!channel.isKnown() && Channels.anyExist(files.getChannels())) {
 			if (warnings == null) warnings = new StringBuilder();
 			appendWarning("Cannot determine which update channel this " +
 				"installation follows, so no update sites were checked.\n" +
@@ -146,7 +146,7 @@ public class XMLFileDownloader extends AbstractProgressable {
 		final UpdateSite updateSite)
 	{
 		final List<String> candidates =
-			Channels.candidates(files.getChannel());
+			Channels.candidates(files.getChannels(), files.getChannel());
 		Exception failure = null;
 		for (final String channel : candidates) {
 			updateSite.setChannel(channel);

@@ -113,11 +113,13 @@ public class ChannelUpgrade {
 
 		final ChannelManifest manifest = ChannelManifest.read(core.getURL());
 		if (!manifest.isPresent()) return null;
-		Channels.setKnown(manifest.channels());
+		files.setChannels(manifest.channels());
 
 		// Newest first, so the first one above us is the one to offer.
 		for (final String channel : manifest.channels()) {
-			if (Channels.isNewerThan(channel, state.channel())) return channel;
+			if (Channels.isNewerThan(manifest.channels(), channel, state.channel())) {
+				return channel;
+			}
 		}
 		return null;
 	}
@@ -134,7 +136,7 @@ public class ChannelUpgrade {
 
 	/** Whether this moves backwards, to an edition older than the current one. */
 	public boolean isDowngrade() {
-		return !Channels.isNewerThan(to, from);
+		return !Channels.isNewerThan(files.getChannels(), to, from);
 	}
 
 	/** A human-readable name for a channel, including the base one. */

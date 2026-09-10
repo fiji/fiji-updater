@@ -200,7 +200,7 @@ public class FilesUploader {
 			// While no channel exists there is only one place to publish, so an
 			// undeterminable channel costs nothing. Once channels exist, guessing
 			// would mean publishing an index into a channel it was never true of.
-			if (!Channels.anyExist()) return null;
+			if (!Channels.anyExist(files.getChannels())) return null;
 			throw new IllegalStateException("Cannot determine which update " +
 				"channel this installation follows, so there is no way to know " +
 				"which channel to publish to.");

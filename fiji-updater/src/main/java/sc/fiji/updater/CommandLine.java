@@ -204,7 +204,8 @@ public class CommandLine {
 		// dropped file goes unnoticed.
 		ensureChecksummed();
 
-		final String target = list.isEmpty() ? Channels.newest() : list.get(0);
+		final String target =
+			list.isEmpty() ? Channels.newest(files.getChannels()) : list.get(0);
 		if (list.isEmpty() && target == null) {
 			throw die("No update channels exist yet, so there is nowhere to " +
 				"move this installation.");

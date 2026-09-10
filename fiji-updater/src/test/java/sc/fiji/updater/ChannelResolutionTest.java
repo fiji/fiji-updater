@@ -70,12 +70,24 @@ public class ChannelResolutionTest {
 
 	private static final String CHANNEL = "A.punctulata";
 
+	/**
+	 * The channels this test pretends exist, standing in for the list the core
+	 * update site would publish. Applied to every collection the test builds.
+	 */
+	protected java.util.List<String> CHANNELS_IN_EXISTENCE = Channels.EMBEDDED;
+
+	/** A collection that sees the channels this test says exist. */
+	private FilesCollection collection(final java.io.File ijRoot) {
+		final FilesCollection collection = new FilesCollection(ijRoot);
+		collection.setChannels(CHANNELS_IN_EXISTENCE);
+		return collection;
+	}
+
 	protected FilesCollection files;
 	protected StderrProgress progress = new StderrProgress();
 
 	@After
 	public void after() {
-		Channels.setKnown(null);
 		if (files != null) cleanup(files);
 	}
 
@@ -102,7 +114,7 @@ public class ChannelResolutionTest {
 	}
 
 	private FilesCollection reread(final File ijRoot) throws Exception {
-		final FilesCollection reread = new FilesCollection(ijRoot);
+		final FilesCollection reread = collection(ijRoot);
 		reread.prefix(".checksums").delete();
 		reread.downloadIndexAndChecksum(progress);
 		return reread;
@@ -239,9 +251,9 @@ public class ChannelResolutionTest {
 
 		// Channels exist in the world, but this installation cannot say which
 		// one it follows: there is no launcher configuration anywhere.
-		Channels.setKnown(java.util.Arrays.asList(CHANNEL));
+		CHANNELS_IN_EXISTENCE = java.util.Arrays.asList(CHANNEL);
 
-		final FilesCollection after = new FilesCollection(ijRoot);
+		final FilesCollection after = collection(ijRoot);
 		after.tryLoadingCollection();
 		assertFalse(after.getChannelState().isKnown());
 
@@ -266,7 +278,7 @@ public class ChannelResolutionTest {
 		files = initialize("macros/macro.ijm");
 		final File ijRoot = files.prefix("");
 
-		final FilesCollection after = new FilesCollection(ijRoot);
+		final FilesCollection after = collection(ijRoot);
 		after.tryLoadingCollection();
 		assertFalse(after.getChannelState().isKnown());
 
@@ -299,7 +311,7 @@ public class ChannelResolutionTest {
 		assertTrue(new File(webRoot, "db.xml.gz").delete());
 
 		// This installation is on the base channel and knows of no other.
-		final FilesCollection after = new FilesCollection(ijRoot);
+		final FilesCollection after = collection(ijRoot);
 		after.tryLoadingCollection();
 		final XMLFileDownloader downloader = new XMLFileDownloader(after);
 		downloader.start(false);
@@ -318,17 +330,17 @@ public class ChannelResolutionTest {
 		files = initialize("macros/macro.ijm");
 		final File ijRoot = files.prefix("");
 		publishChannel(getWebRoot(files), CHANNEL);
-		Channels.setKnown(java.util.Arrays.asList(CHANNEL));
+		CHANNELS_IN_EXISTENCE = java.util.Arrays.asList(CHANNEL);
 
 		// Without it, the run declines rather than guessing.
-		final FilesCollection unpinned = new FilesCollection(ijRoot);
+		final FilesCollection unpinned = collection(ijRoot);
 		unpinned.tryLoadingCollection();
 		final XMLFileDownloader refused = new XMLFileDownloader(unpinned);
 		refused.start(false);
 		assertTrue(refused.getWarnings().contains("Cannot determine"));
 
 		// With it, the named channel is used.
-		final FilesCollection pinned = new FilesCollection(ijRoot);
+		final FilesCollection pinned = collection(ijRoot);
 		pinned.pinChannel(CHANNEL);
 		pinned.tryLoadingCollection();
 		final XMLFileDownloader downloader = new XMLFileDownloader(pinned);
@@ -345,12 +357,12 @@ public class ChannelResolutionTest {
 		files = initialize("macros/macro.ijm");
 		final File ijRoot = files.prefix("");
 
-		final FilesCollection pinned = new FilesCollection(ijRoot);
+		final FilesCollection pinned = collection(ijRoot);
 		pinned.pinChannel(CHANNEL);
 		assertEquals(CHANNEL, pinned.getChannel());
 
 		// A fresh look at the installation still finds no channel declared.
-		assertFalse(new FilesCollection(ijRoot).getChannelState().isKnown());
+		assertFalse(collection(ijRoot).getChannelState().isKnown());
 	}
 
 	/** Publishes a manifest declaring which channels a site carries. */
@@ -373,12 +385,12 @@ public class ChannelResolutionTest {
 		files = initialize("macros/macro.ijm");
 		final File ijRoot = files.prefix("");
 		setChannel(ijRoot, CHANNEL);
-		Channels.setKnown(java.util.Arrays.asList(CHANNEL));
+		CHANNELS_IN_EXISTENCE = java.util.Arrays.asList(CHANNEL);
 
 		final FilesCollection after = reread(ijRoot);
 		assertNull(mainSite(after).getChannel());
 
-		final FilesCollection fresh = new FilesCollection(ijRoot);
+		final FilesCollection fresh = collection(ijRoot);
 		fresh.tryLoadingCollection();
 		final XMLFileDownloader downloader = new XMLFileDownloader(fresh);
 		downloader.start(false);
@@ -399,9 +411,9 @@ public class ChannelResolutionTest {
 		publishChannel(webRoot, "B.floridae");
 		publishManifest(webRoot, "B.floridae");
 		setChannel(ijRoot, CHANNEL);
-		Channels.setKnown(java.util.Arrays.asList("B.floridae", CHANNEL));
+		CHANNELS_IN_EXISTENCE = java.util.Arrays.asList("B.floridae", CHANNEL);
 
-		final FilesCollection fresh = new FilesCollection(ijRoot);
+		final FilesCollection fresh = collection(ijRoot);
 		fresh.tryLoadingCollection();
 		final XMLFileDownloader downloader = new XMLFileDownloader(fresh);
 		downloader.start(false);
@@ -420,9 +432,9 @@ public class ChannelResolutionTest {
 		publishChannel(webRoot, CHANNEL);
 		publishManifest(webRoot, CHANNEL);
 		setChannel(ijRoot, CHANNEL);
-		Channels.setKnown(java.util.Arrays.asList(CHANNEL));
+		CHANNELS_IN_EXISTENCE = java.util.Arrays.asList(CHANNEL);
 
-		final FilesCollection fresh = new FilesCollection(ijRoot);
+		final FilesCollection fresh = collection(ijRoot);
 		fresh.tryLoadingCollection();
 		final XMLFileDownloader downloader = new XMLFileDownloader(fresh);
 		downloader.start(false);
@@ -438,7 +450,7 @@ public class ChannelResolutionTest {
 		publishChannel(webRoot, CHANNEL);
 		publishManifest(webRoot, CHANNEL);
 
-		final FilesCollection fresh = new FilesCollection(ijRoot);
+		final FilesCollection fresh = collection(ijRoot);
 		fresh.tryLoadingCollection();
 		final XMLFileDownloader downloader = new XMLFileDownloader(fresh);
 		downloader.start(false);

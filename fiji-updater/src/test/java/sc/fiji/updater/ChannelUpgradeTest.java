@@ -64,12 +64,24 @@ public class ChannelUpgradeTest {
 
 	private static final String CHANNEL = "A.punctulata";
 
+	/**
+	 * The channels this test pretends exist, standing in for the list the core
+	 * update site would publish. Applied to every collection the test builds.
+	 */
+	protected java.util.List<String> CHANNELS_IN_EXISTENCE = Channels.EMBEDDED;
+
+	/** A collection that sees the channels this test says exist. */
+	private FilesCollection collection(final java.io.File ijRoot) {
+		final FilesCollection collection = new FilesCollection(ijRoot);
+		collection.setChannels(CHANNELS_IN_EXISTENCE);
+		return collection;
+	}
+
 	protected FilesCollection files;
 	protected StderrProgress progress = new StderrProgress();
 
 	@After
 	public void after() {
-		Channels.setKnown(null);
 		if (files != null) cleanup(files);
 	}
 
@@ -94,7 +106,7 @@ public class ChannelUpgradeTest {
 	{
 		final File dir = new File(webRoot, channel);
 		assertTrue(dir.exists() || dir.mkdirs());
-		final FilesCollection remote = new FilesCollection(files.prefix(""));
+		final FilesCollection remote = collection(files.prefix(""));
 		remote.read();
 		remote.downloadIndexAndChecksum(progress);
 		final FileObject drop = remote.get(dropped);
@@ -108,7 +120,7 @@ public class ChannelUpgradeTest {
 	}
 
 	private FilesCollection loaded(final File ijRoot) throws Exception {
-		final FilesCollection collection = new FilesCollection(ijRoot);
+		final FilesCollection collection = collection(ijRoot);
 		collection.read();
 		collection.prefix(".checksums").delete();
 		collection.downloadIndexAndChecksum(progress);
@@ -125,7 +137,7 @@ public class ChannelUpgradeTest {
 		files = initialize("macros/keep.ijm", "macros/drop.ijm");
 		final File ijRoot = files.prefix("");
 		declareChannel(ijRoot, null);
-		Channels.setKnown(Arrays.asList(CHANNEL));
+		CHANNELS_IN_EXISTENCE = Arrays.asList(CHANNEL);
 		publishChannelWithout(getWebRoot(files), CHANNEL, "macros/drop.ijm");
 
 		final FilesCollection collection = loaded(ijRoot);
@@ -145,7 +157,7 @@ public class ChannelUpgradeTest {
 		files = initialize("macros/keep.ijm", "macros/drop.ijm");
 		final File ijRoot = files.prefix("");
 		declareChannel(ijRoot, null);
-		Channels.setKnown(Arrays.asList(CHANNEL));
+		CHANNELS_IN_EXISTENCE = Arrays.asList(CHANNEL);
 		publishChannelWithout(getWebRoot(files), CHANNEL, "macros/drop.ijm");
 
 		final FilesCollection collection = loaded(ijRoot);
@@ -160,7 +172,7 @@ public class ChannelUpgradeTest {
 		files = initialize("macros/keep.ijm");
 		final File ijRoot = files.prefix("");
 		declareChannel(ijRoot, null);
-		Channels.setKnown(Arrays.asList(CHANNEL));
+		CHANNELS_IN_EXISTENCE = Arrays.asList(CHANNEL);
 		publishChannelWithout(getWebRoot(files), CHANNEL, "macros/keep.ijm");
 
 		final FilesCollection collection = loaded(ijRoot);
@@ -169,11 +181,11 @@ public class ChannelUpgradeTest {
 
 		// Not yet: an abandoned upgrade must leave the installation knowing
 		// what it is.
-		assertNull(new FilesCollection(ijRoot).getDeclaredChannelState().channel());
+		assertNull(collection(ijRoot).getDeclaredChannelState().channel());
 
 		upgrade.commit();
 		assertEquals(CHANNEL,
-			new FilesCollection(ijRoot).getDeclaredChannelState().channel());
+			collection(ijRoot).getDeclaredChannelState().channel());
 	}
 
 	/** Reconciling alone changes nothing on disk. */
@@ -182,7 +194,7 @@ public class ChannelUpgradeTest {
 		files = initialize("macros/keep.ijm", "macros/drop.ijm");
 		final File ijRoot = files.prefix("");
 		declareChannel(ijRoot, null);
-		Channels.setKnown(Arrays.asList(CHANNEL));
+		CHANNELS_IN_EXISTENCE = Arrays.asList(CHANNEL);
 		publishChannelWithout(getWebRoot(files), CHANNEL, "macros/drop.ijm");
 
 		final FilesCollection collection = loaded(ijRoot);
@@ -190,7 +202,7 @@ public class ChannelUpgradeTest {
 
 		assertTrue("the file must still be on disk until the move is applied",
 			new File(ijRoot, "macros/drop.ijm").exists());
-		assertNull(new FilesCollection(ijRoot).getDeclaredChannelState().channel());
+		assertNull(collection(ijRoot).getDeclaredChannelState().channel());
 	}
 
 	/** Moving to the channel already followed is refused rather than staged. */
@@ -230,7 +242,7 @@ public class ChannelUpgradeTest {
 		files = initialize("macros/keep.ijm");
 		final File ijRoot = files.prefix("");
 		declareChannel(ijRoot, "B.floridae");
-		Channels.setKnown(Arrays.asList("B.floridae", CHANNEL));
+		CHANNELS_IN_EXISTENCE = Arrays.asList("B.floridae", CHANNEL);
 
 		final ChannelUpgrade down =
 			new ChannelUpgrade(loaded(ijRoot), CHANNEL);
@@ -249,7 +261,7 @@ public class ChannelUpgradeTest {
 		files = initialize("macros/keep.ijm");
 		final File ijRoot = files.prefix("");
 		declareChannel(ijRoot, null);
-		Channels.setKnown(Arrays.asList(CHANNEL));
+		CHANNELS_IN_EXISTENCE = Arrays.asList(CHANNEL);
 		publishChannelWithout(getWebRoot(files), CHANNEL, "macros/keep.ijm");
 
 		final FilesCollection collection = loaded(ijRoot);
@@ -273,14 +285,14 @@ public class ChannelUpgradeTest {
 		files = initialize("macros/keep.ijm", "macros/drop.ijm");
 		final File ijRoot = files.prefix("");
 		declareChannel(ijRoot, null);
-		Channels.setKnown(Arrays.asList(CHANNEL));
+		CHANNELS_IN_EXISTENCE = Arrays.asList(CHANNEL);
 		publishChannelWithout(getWebRoot(files), CHANNEL, "macros/drop.ijm");
 
 		CommandLine.main(ijRoot, -1, progress, "upgrade", CHANNEL);
 
 		// The installation now says what it is, so the next run agrees.
 		assertEquals(CHANNEL,
-			new FilesCollection(ijRoot).getDeclaredChannelState().channel());
+			collection(ijRoot).getDeclaredChannelState().channel());
 
 		// And the dropped file is gone. Note that removal is staged differently
 		// by file type: a JAR cannot be deleted while the running JVM holds it,
@@ -302,29 +314,33 @@ public class ChannelUpgradeTest {
 		files = initialize("macros/keep.ijm", "macros/drop.ijm");
 		final File ijRoot = files.prefix("");
 		declareChannel(ijRoot, null);
-		Channels.setKnown(Arrays.asList(CHANNEL));
+		CHANNELS_IN_EXISTENCE = Arrays.asList(CHANNEL);
 		publishChannelWithout(getWebRoot(files), CHANNEL, "macros/drop.ijm");
 
 		CommandLine.main(ijRoot, -1, progress, "upgrade", "--simulate", CHANNEL);
 
 		assertNull("simulating must not move the installation",
-			new FilesCollection(ijRoot).getDeclaredChannelState().channel());
+			collection(ijRoot).getDeclaredChannelState().channel());
 		assertFalse(new File(ijRoot, "update/macros/drop.ijm").exists());
 		assertTrue(new File(ijRoot, "macros/drop.ijm").exists());
 	}
 
-	/** With no channel named, the newest one is the destination. */
+	/**
+	 * With no channel named, the newest one is the destination -- and the
+	 * command line learns which that is from the core site's manifest, since it
+	 * builds its own collection and has nothing else to go on.
+	 */
 	@Test
 	public void testUpgradeDefaultsToNewest() throws Exception {
 		files = initialize("macros/keep.ijm");
 		final File ijRoot = files.prefix("");
 		declareChannel(ijRoot, null);
-		Channels.setKnown(Arrays.asList(CHANNEL));
 		publishChannelWithout(getWebRoot(files), CHANNEL, "macros/keep.ijm");
+		publishManifest(getWebRoot(files), CHANNEL);
 
 		CommandLine.main(ijRoot, -1, progress, "upgrade");
 		assertEquals(CHANNEL,
-			new FilesCollection(ijRoot).getDeclaredChannelState().channel());
+			collection(ijRoot).getDeclaredChannelState().channel());
 	}
 
 	/**
@@ -347,7 +363,7 @@ public class ChannelUpgradeTest {
 		files = initialize("macros/keep.ijm");
 		final File ijRoot = files.prefix("");
 		declareChannel(ijRoot, null);
-		Channels.setKnown(Arrays.asList(CHANNEL));
+		CHANNELS_IN_EXISTENCE = Arrays.asList(CHANNEL);
 		publishChannelWithout(getWebRoot(files), CHANNEL, "macros/keep.ijm");
 
 		// What is in place today: this installation runs on Java 21.
@@ -386,7 +402,7 @@ public class ChannelUpgradeTest {
 		files = initialize("macros/keep.ijm");
 		final File ijRoot = files.prefix("");
 		declareChannel(ijRoot, null);
-		Channels.setKnown(Arrays.asList(CHANNEL));
+		CHANNELS_IN_EXISTENCE = Arrays.asList(CHANNEL);
 		publishChannelWithout(getWebRoot(files), CHANNEL, "macros/keep.ijm");
 
 		final FilesCollection collection = loaded(ijRoot);
@@ -436,8 +452,7 @@ public class ChannelUpgradeTest {
 	public void testCoreManifestSuppliesTheOrdering() throws Exception {
 		files = initialize("macros/keep.ijm");
 		final File ijRoot = files.prefix("");
-		declareChannel(ijRoot, CHANNEL);
-		Channels.setKnown(null); // this updater has never heard of any channel
+		declareChannel(ijRoot, CHANNEL); // this updater has never heard of any channel
 		publishManifest(getWebRoot(files), "C.elegans", "B.floridae", CHANNEL);
 
 		assertEquals("C.elegans",

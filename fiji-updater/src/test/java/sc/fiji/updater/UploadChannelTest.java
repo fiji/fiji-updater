@@ -68,12 +68,24 @@ import sc.fiji.updater.util.UpdaterUserInterface;
  */
 public class UploadChannelTest {
 
+	/**
+	 * The channels this test pretends exist, standing in for the list the core
+	 * update site would publish. Applied to every collection the test builds.
+	 */
+	protected java.util.List<String> CHANNELS_IN_EXISTENCE = Channels.EMBEDDED;
+
+	/** A collection that sees the channels this test says exist. */
+	private FilesCollection collection(final java.io.File ijRoot) {
+		final FilesCollection collection = new FilesCollection(ijRoot);
+		collection.setChannels(CHANNELS_IN_EXISTENCE);
+		return collection;
+	}
+
 	protected FilesCollection files;
 	protected StderrProgress progress = new StderrProgress();
 
 	@After
 	public void after() {
-		Channels.setKnown(null);
 		if (files != null) cleanup(files);
 	}
 
@@ -87,7 +99,7 @@ public class UploadChannelTest {
 	}
 
 	private FilesUploader uploaderFor(final File ijRoot) throws Exception {
-		final FilesCollection collection = new FilesCollection(ijRoot);
+		final FilesCollection collection = collection(ijRoot);
 		collection.read();
 		return new FilesUploader(null, collection,
 			FilesCollection.DEFAULT_UPDATE_SITE, progress);
@@ -117,10 +129,10 @@ public class UploadChannelTest {
 	public void testDoesNotFollowTheNewestChannel() throws Exception {
 		files = initialize("macros/macro.ijm");
 		final File ijRoot = files.prefix("");
-		Channels.setKnown(Arrays.asList("B.floridae", "A.punctulata"));
+		CHANNELS_IN_EXISTENCE = Arrays.asList("B.floridae", "A.punctulata");
 		declareChannel(ijRoot, "A.punctulata");
 
-		assertEquals("B.floridae", Channels.newest());
+		assertEquals("B.floridae", Channels.newest(CHANNELS_IN_EXISTENCE));
 		assertEquals("the upload must follow the installation, not the newest " +
 			"channel in existence", "A.punctulata",
 			uploaderFor(ijRoot).getUploadChannel());
@@ -133,7 +145,7 @@ public class UploadChannelTest {
 	@Test
 	public void testRefusesWhenChannelUnknown() throws Exception {
 		files = initialize("macros/macro.ijm");
-		Channels.setKnown(Arrays.asList("A.punctulata"));
+		CHANNELS_IN_EXISTENCE = Arrays.asList("A.punctulata");
 		try {
 			uploaderFor(files.prefix("")).getUploadChannel();
 			fail("expected a refusal");
@@ -152,7 +164,7 @@ public class UploadChannelTest {
 	 */
 	@Test
 	public void testNewSiteIsCreatedAtTheBase() throws Exception {
-		Channels.setKnown(Arrays.asList("A.punctulata"));
+		CHANNELS_IN_EXISTENCE = Arrays.asList("A.punctulata");
 		final FilesUploader uploader = FilesUploader.initialUploader(null,
 			"file:/tmp/nonesuch/", "file:localhost", "/tmp/nonesuch/", progress);
 		assertNull(uploader.getUploadChannel());
@@ -195,7 +207,7 @@ public class UploadChannelTest {
 		final UpdaterUserInterface previous = UpdaterUserInterface.get();
 		UpdaterUserInterface.set(ui);
 		try {
-			final FilesCollection collection = new FilesCollection(ijRoot);
+			final FilesCollection collection = collection(ijRoot);
 			collection.read();
 			collection.downloadIndexAndChecksum(progress);
 			final File macro = new File(ijRoot, "macros/macro.ijm");
@@ -252,9 +264,9 @@ public class UploadChannelTest {
 		files = initialize("macros/macro.ijm");
 		final File ijRoot = files.prefix("");
 		declareChannel(ijRoot, "A.punctulata");
-		Channels.setKnown(Arrays.asList("B.floridae", "A.punctulata"));
+		CHANNELS_IN_EXISTENCE = Arrays.asList("B.floridae", "A.punctulata");
 
-		final FilesCollection collection = new FilesCollection(ijRoot);
+		final FilesCollection collection = collection(ijRoot);
 		collection.read();
 		collection.pinChannel("B.floridae");
 
@@ -276,9 +288,9 @@ public class UploadChannelTest {
 	@Test
 	public void testOverrideDoesNotSatisfyAnUnknownChannel() throws Exception {
 		files = initialize("macros/macro.ijm");
-		Channels.setKnown(Arrays.asList("A.punctulata"));
+		CHANNELS_IN_EXISTENCE = Arrays.asList("A.punctulata");
 
-		final FilesCollection collection = new FilesCollection(files.prefix(""));
+		final FilesCollection collection = collection(files.prefix(""));
 		collection.read();
 		assertFalse("no launcher configuration exists here",
 			collection.getDeclaredChannelState().isKnown());

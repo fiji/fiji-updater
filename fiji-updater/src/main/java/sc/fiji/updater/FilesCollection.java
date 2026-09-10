@@ -68,7 +68,9 @@ import sc.fiji.updater.util.HTTPSUtil;
 import sc.fiji.updater.util.Platforms;
 import sc.fiji.updater.util.Progress;
 import sc.fiji.updater.util.UpdateCanceledException;
+import sc.fiji.updater.util.ChannelManifest;
 import sc.fiji.updater.util.ChannelState;
+import sc.fiji.updater.util.Channels;
 import sc.fiji.updater.util.UpdateSiteNetwork;
 import sc.fiji.updater.util.UpdaterUtil;
 import org.scijava.log.LogService;
@@ -117,6 +119,7 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 		UpdateSiteNetwork.MAIN_SITE_NAME;
 	private final File appRoot;
 	private ChannelState declaredChannelState;
+	private List<String> channels;
 	private ChannelState pinnedChannelState;
 	public final LogService log;
 	protected Set<FileObject> ignoredConflicts = new HashSet<>();
@@ -186,6 +189,48 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	 */
 	public void pinChannel(final String channel) {
 		pinnedChannelState = ChannelState.pinned(channel);
+	}
+
+	/**
+	 * The update channels in existence, newest first, as published by the core
+	 * update site.
+	 * <p>
+	 * Fetched once per collection, on first use. The core site is the authority
+	 * on both which channels exist and what order they came in, and it has to be:
+	 * an updater is always built before the channels that come after it, so an
+	 * installation deciding from a list compiled into its updater would dead-end
+	 * the moment that updater predated the next codename.
+	 * </p>
+	 * <p>
+	 * This is why the list lives here rather than in a static on {@link Channels}
+	 * -- it is a property of the network an installation is on, it requires a
+	 * fetch to learn, and asking the installation for it is what makes the fetch
+	 * happen. A static could be read before anything had primed it, and would
+	 * then quietly answer with an ordering that skips every channel it had not
+	 * been told about.
+	 * </p>
+	 * <p>
+	 * A core site with no manifest, or one that cannot be reached, yields
+	 * {@link Channels#EMBEDDED}: this updater's own list, which says only what it
+	 * was built knowing.
+	 * </p>
+	 */
+	public List<String> getChannels() {
+		if (channels == null) {
+			final UpdateSite core = getUpdateSite(DEFAULT_UPDATE_SITE, false);
+			final ChannelManifest manifest = core == null
+				? ChannelManifest.absent() : ChannelManifest.read(core.getURL());
+			channels = manifest.isPresent() ? manifest.channels() : Channels.EMBEDDED;
+		}
+		return channels;
+	}
+
+	/**
+	 * Overrides the channel list, instead of reading it from the core update
+	 * site. Chiefly for callers that already have it, and for tests.
+	 */
+	public void setChannels(final List<String> channels) {
+		this.channels = channels;
 	}
 
 	/**
