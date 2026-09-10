@@ -110,23 +110,6 @@ public class FilesUploader {
 		Thread.currentThread().setContextClassLoader(thisLoader);
 	}
 
-	/**
-	 * @deprecated use {@link #FilesUploader(UploaderService, FilesCollection, String, Progress)} instead
-	 */
-	@Deprecated
-	public FilesUploader(final FilesCollection files, final String updateSite) {
-		this(createUploaderService(), files, updateSite);
-	}
-
-	/**
-	 * @deprecated use {@link #FilesUploader(UploaderService, FilesCollection, String, Progress)} instead
-	 */
-	@Deprecated
-	public FilesUploader(final UploaderService uploaderService,
-			final FilesCollection files, final String updateSite) {
-		this(uploaderService, files, updateSite, null);
-	}
-
 	public FilesUploader(UploaderService uploaderService,
 			final FilesCollection files, final String updateSite,
 			final Progress progress) {
@@ -614,13 +597,6 @@ public class FilesUploader {
 	public void logout() {
 		if (uploader != null)
 			uploader.logout();
-	}
-
-	@Deprecated
-	public static FilesUploader initialUpload(final String url,
-		final String sshHost, final String uploadDirectory)
-	{
-		return initialUploader(null, url, sshHost, uploadDirectory, null);
 	}
 
 	public static FilesUploader initialUploader(

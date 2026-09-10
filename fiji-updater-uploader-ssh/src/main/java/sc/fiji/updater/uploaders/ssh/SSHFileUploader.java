@@ -50,7 +50,6 @@ import sc.fiji.updater.AbstractUploader;
 import sc.fiji.updater.FilesUploader;
 import sc.fiji.updater.Uploadable;
 import sc.fiji.updater.Uploader;
-import sc.fiji.updater.util.InputStream2OutputStream;
 import sc.fiji.updater.util.UpdateCanceledException;
 import sc.fiji.updater.util.UpdaterUserInterface;
 

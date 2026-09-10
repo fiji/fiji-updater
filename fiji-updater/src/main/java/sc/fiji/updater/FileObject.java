@@ -156,11 +156,6 @@ public class FileObject {
 			for (final Action action : actions) validActions[action.ordinal()] = true;
 		}
 
-		@Deprecated
-		public Action[] getActions() {
-			return actions;
-		}
-
 		public Action[] getDeveloperActions() {
 			return actions;
 		}
@@ -466,13 +461,6 @@ public class FileObject {
 		return previous;
 	}
 
-	@Deprecated
-	public void addPreviousVersion(final String checksum, final long timestamp, final String filename) {
-		final Version version = new Version(checksum, timestamp);
-		if (filename != null && !"".equals(filename)) version.filename = filename;
-		if (!previous.contains(version)) previous.add(version);
-	}
-
 	public void addPreviousVersion(Version version) {
 		if (!previous.contains(version)) previous.add(new Version(version));
 	}
@@ -552,11 +540,6 @@ public class FileObject {
 			}
 			setVersion(localChecksum, localTimestamp);
 		}
-	}
-
-	@Deprecated
-	public void markRemoved() {
-		throw new UnsupportedOperationException("Use #markRemoved(FilesCollection) instead!");
 	}
 
 	public void markRemoved(final FilesCollection files) {
@@ -692,11 +675,6 @@ public class FileObject {
 
 	public boolean isLocallyModified() {
 		return status.getNoAction() == Action.MODIFIED;
-	}
-
-	@Deprecated
-	public boolean isUploadable(final FilesCollection files) {
-		return isUploadable(files, false);
 	}
 
 	/**

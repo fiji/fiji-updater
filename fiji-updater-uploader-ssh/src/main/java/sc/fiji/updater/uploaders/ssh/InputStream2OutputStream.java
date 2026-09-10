@@ -29,26 +29,44 @@
  * #L%
  */
 
-package sc.fiji.updater.util;
+package sc.fiji.updater.uploaders.ssh;
 
-import org.scijava.log.AbstractLogService;
-import org.scijava.log.LogMessage;
+import java.io.IOException;
+import java.io.InputStream;
+import java.io.OutputStream;
+
+import sc.fiji.updater.util.UpdaterUserInterface;
 
 /**
- * Deprecated; do not use.
- * <p>
- * This class is here solely to keep the Updater process running even if only
- * {@code fiji-updater} is updated but not its GUI.
- * </p>
+ * Copies an {@link InputStream} into an {@link OutputStream}.
  * 
  * @author Johannes Schindelin
- * @deprecated Use {@link org.scijava.log.StderrLogService} instead.
  */
-@Deprecated
-public class StderrLogService extends AbstractLogService {
+class InputStream2OutputStream extends Thread {
+
+	protected InputStream in;
+	protected OutputStream out;
+
+	InputStream2OutputStream(final InputStream in, final OutputStream out)
+	{
+		this.in = in;
+		this.out = out;
+		start();
+	}
 
 	@Override
-	protected void messageLogged(LogMessage message) {
-		System.err.print(message);
+	public void run() {
+		final byte[] buffer = new byte[16384];
+		try {
+			for (;;) {
+				final int count = in.read(buffer);
+				if (count < 0) break;
+				out.write(buffer, 0, count);
+			}
+			in.close();
+		}
+		catch (final IOException e) {
+			UpdaterUserInterface.get().handleException(e);
+		}
 	}
 }

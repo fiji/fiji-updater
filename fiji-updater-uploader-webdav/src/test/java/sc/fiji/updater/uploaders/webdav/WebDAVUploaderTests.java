@@ -117,7 +117,7 @@ public class WebDAVUploaderTests extends AbstractUploaderTestBase {
 	public void testLogin() throws IOException {
 		FilesCollection files = new FilesCollection(folder.getRoot());
 		files.addUpdateSite("test", base, "webdav:" + getProperty("username"), null, 0);
-		FilesUploader fUploader = new FilesUploader(files, "test");
+		FilesUploader fUploader = new FilesUploader(null, files, "test", null);
 		assertTrue(uploader.isAllowed());
 	}
 

@@ -80,37 +80,6 @@ public class Conflicts {
 		private final String conflict;
 		protected final Resolution[] resolutions;
 
-		@Deprecated
-		public Conflict(final FileObject file, final String conflict,
-			final Resolution... resolutions)
-		{
-			this(Severity.ERROR, file, conflict, resolutions);
-		}
-
-		@Deprecated
-		public Conflict(final boolean isError, final FileObject file,
-			final String conflict, final Resolution... resolutions)
-		{
-			this(isError ? Severity.ERROR : Severity.WARNING, file, conflict, resolutions);
-		}
-
-		@Deprecated
-		public Conflict(final boolean isError, final boolean isCritical,
-			final FileObject file, final String conflict,
-			final Resolution... resolutions)
-		{
-			this(isCritical ? Severity.CRITICAL_ERROR : (isError ? Severity.ERROR : Severity.WARNING),
-					file == null ? null : file.getFilename(), conflict, resolutions);
-		}
-
-		@Deprecated
-		public Conflict(final boolean isError, final boolean isCritical,
-				final String filename, final String conflict,
-				final Resolution... resolutions) {
-			this(isCritical ? Severity.CRITICAL_ERROR : (isError ? Severity.ERROR : Severity.WARNING),
-					filename, conflict, resolutions);
-		}
-
 		public Conflict(final Severity severity,
 				final FileObject file, final String conflict,
 				final Resolution... resolutions) {

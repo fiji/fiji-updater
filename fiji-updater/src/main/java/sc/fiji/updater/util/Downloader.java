@@ -55,11 +55,6 @@ public class Downloader extends AbstractProgressable {
 	protected String error;
 	protected boolean cancelled;
 
-	@Deprecated
-	public Downloader() {
-		this(null);
-	}
-
 	public Downloader(final Progress progress) {
 		if (progress != null) addProgress(progress);
 	}

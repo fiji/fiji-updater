@@ -104,11 +104,6 @@ public class CommandLine {
 	 */
 	private boolean standalone;
 
-	@Deprecated
-	public CommandLine() {
-		this(AppUtils.getBaseDirectory("ij.dir", CommandLine.class, "updater"), 80);
-	}
-
 	public CommandLine(final File ijDir, final int columnCount) {
 		this(ijDir, columnCount, null);
 	}
@@ -1477,17 +1472,6 @@ public class CommandLine {
 		});
 		if(!simulate) {
 			AvailableSites.applySitesURLUpdates(files, urlChanges);
-		}
-	}
-
-	@Deprecated
-	public static CommandLine getInstance() {
-		try {
-			return new CommandLine();
-		} catch (final Exception e) {
-			e.printStackTrace();
-			log.error("Could not parse db.xml.gz: " + e.getMessage());
-			throw new RuntimeException(e);
 		}
 	}
 

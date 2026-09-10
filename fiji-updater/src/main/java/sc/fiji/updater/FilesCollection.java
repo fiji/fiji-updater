@@ -49,7 +49,6 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
-import java.util.TreeSet;
 import java.util.zip.GZIPOutputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -386,22 +385,10 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 		sites.forEach(site -> addUpdateSite(site));
 	}
 
-	/** @deprecated use {@link #getUpdateSite(String, boolean)} instead */
-	@Deprecated
-	public UpdateSite getUpdateSite(final String name) {
-		return getUpdateSite(name, false);
-	}
-
 	public UpdateSite getUpdateSite(final String name, final boolean evenDisabled) {
 		if (name == null) return null;
 		final UpdateSite site = updateSites.get(name);
 		return evenDisabled || site == null || site.isActive() ? site : null;
-	}
-
-	/** @deprecated use {@link #getUpdateSiteNames(boolean)} instead */
-	@Deprecated
-	public Collection<String> getUpdateSiteNames() {
-		return getUpdateSiteNames(false);
 	}
 
 	/** Gets the names of known update sites. */
@@ -584,37 +571,6 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 			}
 		}
 		return actions;
-	}
-
-	@Deprecated
-	public Action[] getActions(final FileObject file) {
-		return file.isUploadable(this, false) ? file.getStatus().getDeveloperActions()
-			: file.getStatus().getActions();
-	}
-
-	@Deprecated
-	public Action[] getActions(final Iterable<FileObject> files) {
-		List<Action> result = null;
-		for (final FileObject file : files) {
-			final Action[] actions = getActions(file);
-			if (result == null) {
-				result = new ArrayList<>();
-				for (final Action action : actions)
-					result.add(action);
-			}
-			else {
-				final Set<Action> set = new TreeSet<>();
-				for (final Action action : actions)
-					set.add(action);
-				final Iterator<Action> iter = result.iterator();
-				while (iter.hasNext())
-					if (!set.contains(iter.next())) iter.remove();
-			}
-		}
-		if (result == null) {
-			return new Action[0];
-		}
-		return result.toArray(new Action[result.size()]);
 	}
 
 	public void read() throws IOException, ParserConfigurationException,
@@ -1291,11 +1247,6 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	@Override
 	public String toString() {
 		return UpdaterUtil.join(", ", this);
-	}
-
-	@Deprecated
-	public FileObject get(final int index) {
-		throw new UnsupportedOperationException();
 	}
 
 	public void add(final FileObject file) {

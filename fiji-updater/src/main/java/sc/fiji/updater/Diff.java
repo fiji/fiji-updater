@@ -101,7 +101,6 @@ public class Diff {
 	 * 
 	 * @param out this is where the output goes
 	 */
-	@Deprecated
 	public Diff(final PrintStream out) {
 		this.out = out;
 	}
