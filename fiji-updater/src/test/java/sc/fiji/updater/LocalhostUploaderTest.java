@@ -68,6 +68,13 @@ public class LocalhostUploaderTest extends AbstractUploaderTestBase {
 		test(new FileDeleter(), "file:localhost", tmp.getAbsolutePath());
 	}
 
+	@Test
+	public void testLocalhostChannelUpload() throws Exception {
+		tmp = TestUtils.createTemporaryDirectory("localhost-channel-upload");
+		testChannelUpload(new FileDeleter(), "file:localhost",
+			tmp.getAbsolutePath(), "A.punctulata");
+	}
+
 	@Override
 	public String getURL() {
 		try {

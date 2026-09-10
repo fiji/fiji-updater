@@ -43,6 +43,7 @@ import java.net.MalformedURLException;
 import java.net.URL;
 
 import static sc.fiji.updater.UpdaterTestUtils.*;
+import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeNotNull;
@@ -69,6 +70,101 @@ public abstract class AbstractUploaderTestBase {
 		if (files != null) {
 			files.removeUpdateSite(updateSiteName);
 			cleanup(files);
+		}
+	}
+
+	/**
+	 * Verifies that this transport can publish an index into a channel
+	 * subdirectory of an update site.
+	 * <p>
+	 * Channels put the index at {@code <site>/<channel>/db.xml.gz}, so both the
+	 * upload target and the lock rename that publishes it acquire a directory
+	 * component. Every transport already creates intermediate directories --
+	 * FileUploader calls mkdirs, WebDAVUploader does a recursive MKCOL,
+	 * SFTPOperations calls mkParentDirs and SSHFileUploader emits scp
+	 * D-directives -- so nothing here should need transport changes. This test
+	 * exists so that remains true rather than merely having been true when
+	 * somebody read the code.
+	 * </p>
+	 * <p>
+	 * Also asserts that the base index is left alone. A channel is an additional
+	 * index alongside the one at the site root, not a replacement for it: sites
+	 * serve the base index to every client that has not adopted the channel, and
+	 * clobbering it would cut those clients off.
+	 * </p>
+	 */
+	public void testChannelUpload(final Deleter deleter, final String host,
+		final String uploadDirectory, final String channel) throws Exception
+	{
+		getURL();
+		files = initialize();
+
+		final File ijRoot = files.prefix("");
+		CommandLine.main(ijRoot, -1, "add-update-site",
+				updateSiteName, url, host, uploadDirectory);
+
+		if (!isUpdateSiteEmpty()) {
+			assertTrue(deleter.login());
+			deleter.delete(UpdaterUtil.XML_COMPRESSED);
+			deleter.delete(channel + "/");
+			deleter.delete("plugins/");
+			deleter.logout();
+		}
+
+		// Guard against a vacuous test: nothing is published yet, so the probe
+		// must be able to say so.
+		assertFalse("probe reports a channel index before anything was published",
+			indexExists(channel));
+
+		// Publish once to the base channel, so there is something to leave alone.
+		final String basePath = "plugins/Base_Only.bsh";
+		writeFile(new File(ijRoot, basePath), "print(\"base\");");
+		CommandLine.main(ijRoot, -1, "upload", "--update-site", updateSiteName,
+			basePath);
+		assertTrue(indexExists(null));
+
+		// Now publish to the channel.
+		final String channelPath = "plugins/Channel_Only.bsh";
+		writeFile(new File(ijRoot, channelPath), "print(\"channel\");");
+
+		final FilesCollection published = new FilesCollection(ijRoot);
+		published.read();
+		published.downloadIndexAndChecksum(new StderrProgress());
+		published.get(channelPath).stageForUpload(published, updateSiteName);
+
+		final FilesUploader uploader =
+			new FilesUploader(null, published, updateSiteName, new StderrProgress());
+		uploader.setUploadChannel(channel);
+		assertEquals(channel, uploader.getUploadChannel());
+		assertTrue(uploader.login());
+		uploader.upload(new StderrProgress());
+
+		// The nested index exists, and the lock file was renamed away.
+		assertTrue("channel index should have been published",
+			indexExists(channel));
+		assertFalse("lock file should have been renamed into place",
+			exists(UpdateSite.getIndexPath(channel) + ".lock"));
+
+		// And the base index is still there for everyone who has not adopted it.
+		assertTrue("base index must survive a channel upload", indexExists(null));
+
+		// A channel nobody published to is still absent, so the assertions above
+		// are about this channel rather than about any path resolving.
+		assertFalse(indexExists("Z.mays"));
+	}
+
+	/** Whether the index for the given channel is readable on the site. */
+	protected boolean indexExists(final String channel) {
+		return exists(UpdateSite.getIndexPath(channel));
+	}
+
+	/** Whether the given site-relative path is readable. */
+	protected boolean exists(final String path) {
+		try {
+			return UpdaterUtil.getLastModified(new URL(url + path)) != -1;
+		}
+		catch (final MalformedURLException e) {
+			throw new RuntimeException(e);
 		}
 	}
 

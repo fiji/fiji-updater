@@ -63,6 +63,15 @@ public class WebDAVUpdaterITCase extends AbstractUploaderTestBase {
 		test(new WebDAVDeleter(username, password), "webdav:" + username + ":" + password, "");
 	}
 
+	@Test
+	public void testWebDAVChannelUpload() throws Exception {
+		final String username = getProperty("username");
+		final String password = getProperty("password");
+
+		testChannelUpload(new WebDAVDeleter(username, password),
+			"webdav:" + username + ":" + password, "", "A.punctulata");
+	}
+
 	private class WebDAVDeleter extends WebDAVUploader implements AbstractUploaderTestBase.Deleter {
 		public WebDAVDeleter(final String username, final String password) {
 			setCredentials(username, password);

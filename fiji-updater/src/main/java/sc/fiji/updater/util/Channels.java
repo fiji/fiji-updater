@@ -92,6 +92,21 @@ public final class Channels {
 	}
 
 	/**
+	 * The newest known channel, or null if none exists.
+	 * <p>
+	 * This is the right default when <em>publishing</em>: content should be
+	 * offered to the current edition of the application. Defaulting instead to
+	 * whichever channel the maintainer's own installation happens to follow is a
+	 * quiet way to publish into a channel nobody reads any more, with no error on
+	 * either side.
+	 * </p>
+	 */
+	public static String newest() {
+		final List<String> channels = known();
+		return channels.isEmpty() ? null : channels.get(0);
+	}
+
+	/**
 	 * Whether any channel exists at all.
 	 * <p>
 	 * While this is false, an installation whose channel cannot be determined is

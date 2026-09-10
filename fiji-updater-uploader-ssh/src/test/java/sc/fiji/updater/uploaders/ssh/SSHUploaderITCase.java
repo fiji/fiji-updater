@@ -75,4 +75,20 @@ public class SSHUploaderITCase extends AbstractUploaderTestBase {
 		final String uploadDirectory = getDirectoryProperty("upload-directory");
 		test(new SSHDeleter(host, uploadDirectory), "sftp:" + host, uploadDirectory);
 	}
+
+	@Test
+	public void testSSHChannelUpload() throws Exception {
+		final String host = getProperty("host");
+		final String uploadDirectory = getDirectoryProperty("upload-directory");
+		testChannelUpload(new SSHDeleter(host, uploadDirectory), "ssh:" + host,
+			uploadDirectory, "A.punctulata");
+	}
+
+	@Test
+	public void testSFTPChannelUpload() throws Exception {
+		final String host = getProperty("host");
+		final String uploadDirectory = getDirectoryProperty("upload-directory");
+		testChannelUpload(new SSHDeleter(host, uploadDirectory), "sftp:" + host,
+			uploadDirectory, "A.punctulata");
+	}
 }

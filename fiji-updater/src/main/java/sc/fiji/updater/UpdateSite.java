@@ -150,7 +150,22 @@ public class UpdateSite implements Cloneable, Comparable<UpdateSite> {
 	 * </p>
 	 */
 	public String getIndexURL() {
-		return getChannelURL() + UpdaterUtil.XML_COMPRESSED;
+		return getURL() + getIndexPath();
+	}
+
+	/**
+	 * Gets the path of this site's index relative to the site root, which is both
+	 * where a client reads it from and where a maintainer publishes it to.
+	 *
+	 * @param channel the channel to address; null for the base channel.
+	 */
+	public static String getIndexPath(final String channel) {
+		return (channel == null ? "" : channel + "/") + UpdaterUtil.XML_COMPRESSED;
+	}
+
+	/** Gets the index path for the channel this site is resolved to. */
+	public String getIndexPath() {
+		return getIndexPath(channel);
 	}
 
 	/**

@@ -42,6 +42,7 @@ import java.util.List;
 
 import sc.fiji.updater.Conflicts.Conflict;
 import sc.fiji.updater.FileObject.Action;
+import sc.fiji.updater.util.Channels;
 import sc.fiji.updater.util.Progress;
 import sc.fiji.updater.util.StderrProgress;
 import sc.fiji.updater.util.UpdaterUserInterface;
@@ -73,7 +74,12 @@ public class FilesUploader {
 	private final String siteName;
 	private final UpdateSite site;
 	private List<Uploadable> uploadables;
-	private final String compressed;
+	/**
+	 * The channel being published to, or null for the base channel. Distinct from
+	 * the channel the site currently <em>resolves</em> to, which is where this
+	 * installation reads from and may be an older fallback.
+	 */
+	private String uploadChannel;
 	private boolean loggedIn;
 
 	private static UploaderService createUploaderService() {
@@ -123,7 +129,9 @@ public class FilesUploader {
 		this.files = files;
 		siteName = updateSite;
 		site = files.getUpdateSite(updateSite, false);
-		compressed = UpdaterUtil.XML_COMPRESSED;
+		// Publish to the current edition by default, not to whichever channel this
+		// maintainer's own installation happens to follow -- see Channels.newest.
+		uploadChannel = Channels.newest();
 		final String protocol = site.getUploadProtocol();
 		uploader = uploaderService.installUploader(protocol, files,
 				progress == null ? new StderrProgress() : progress);
@@ -135,6 +143,35 @@ public class FilesUploader {
 
 	public boolean hasUploader() {
 		return uploader != null;
+	}
+
+	/**
+	 * Gets the channel this upload will publish to, or null for the base channel.
+	 */
+	public String getUploadChannel() {
+		return uploadChannel;
+	}
+
+	/**
+	 * Sets the channel to publish to.
+	 * <p>
+	 * Callers that offer this as a choice should show the resulting target: a
+	 * maintainer publishing to the wrong channel produces no error on either
+	 * side, just content their users never see.
+	 * </p>
+	 *
+	 * @param uploadChannel the channel, or null for the base channel.
+	 */
+	public void setUploadChannel(final String uploadChannel) {
+		this.uploadChannel = uploadChannel;
+	}
+
+	/**
+	 * The index's path relative to the site root: what gets uploaded, and what
+	 * the final rename targets.
+	 */
+	private String indexPath() {
+		return UpdateSite.getIndexPath(uploadChannel);
 	}
 
 	public FilesCollection getFilesCollection() {
@@ -176,7 +213,7 @@ public class FilesUploader {
 
 		@Override
 		public String getFilename() {
-			return compressed + ".lock";
+			return indexPath() + ".lock";
 		}
 
 		@Override
@@ -196,7 +233,7 @@ public class FilesUploader {
 
 		@Override
 		public String toString() {
-			return compressed;
+			return indexPath();
 		}
 	}
 
@@ -244,7 +281,7 @@ public class FilesUploader {
 		}
 
 		// must be last lock
-		locks.add(UpdaterUtil.XML_COMPRESSED);
+		locks.add(indexPath());
 
 		// verify that the files have not changed in the meantime
 		final long[] timestamps = new long[uploadables.size()];
