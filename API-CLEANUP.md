@@ -12,6 +12,17 @@ referenced against every call site in all four modules plus tests.
 - 84 of those public members are called from nowhere outside their own file.
 - 23 `@Deprecated` members still ship.
 
+## What has landed
+
+Steps 1, 2, 4 and the `FilesCollection` half of step 5 are done; the suite
+is green throughout. Not done: the package split and `module-info` (step 3),
+`FileObject` encapsulation, and the bootstrap consolidation. See
+"Still outstanding" at the end for what that leaves and why.
+
+Two claims below turned out to be wrong when checked against the code, and
+are corrected in place: `Diff(PrintStream)` and `UpdaterUtil.getJarDigest`'s
+3-argument overload.
+
 ## Package layout for JPMS
 
 The core's problem is not the root package, it is `sc.fiji.updater.util` --
@@ -118,11 +129,17 @@ Dead, or dead the moment we stop pretending imagej-updater callers exist.
 - **Four `@Deprecated` `Conflicts.Conflict` constructors**, on a class that
   already has two good ones.
 - **The remaining `@Deprecated` set**, all with live replacements:
-  `FilesUploader.initialUpload(String,String,String)`, `Diff(PrintStream)`,
+  `FilesUploader.initialUpload(String,String,String)`,
   `Downloader()`, `FilesCollection.getUpdateSite(String)`,
   `FilesCollection.getUpdateSiteNames()`,
   `FileObject.addPreviousVersion(String,long,String)`,
   `FileObject.isUploadable(FilesCollection)`, `UpdaterUtil.getPlatform()`.
+  Also the two superseded `FilesUploader` constructors and
+  `FilesCollection.get(int)`, whose body threw.
+
+  Not `Diff(PrintStream)`: it is the class's *only* constructor, with three
+  live call sites, so there is nothing to migrate to. The misleading
+  `@Deprecated` came off instead.
 
 ### Demote from public to package-private
 
@@ -238,14 +255,16 @@ That is roughly 80 members off the exported surface.
 - `Diff` has 11 `protected static` helpers -- `copy`, `getClassVersion`
   twice, `offsetOfFirstDiff`, `isLocal`, `cacheFile` -- that are generic IO,
   not diffing.
-- `UpdaterUtil.getJarDigest` has three overloads chaining into one; only the
-  1-arg and 4-arg forms are ever called.
+- `UpdaterUtil.getJarDigest` has three overloads chaining into one; the 3-arg
+  form is called only from tests, which can pass the flag explicitly.
 - `Conflicts` has six `Conflict` constructors for what is now one `Severity`
   enum plus two shapes.
 - The five `GroupAction` implementations each restate `toString()` as either
-  a literal or `getLabel(null, emptyList())`; `GroupAction` could default
-  `toString()`. `KeepAsIs` and `Uninstall` are stateless and are `new`'d on
-  every `getValidActions()` call.
+  a literal or `getLabel(null, emptyList())`. They cannot be collapsed into a
+  default method: Java forbids an interface from defaulting an `Object`
+  method, so this needs `GroupAction` to become an abstract class first.
+  `KeepAsIs` and `Uninstall` are stateless and are `new`'d on every
+  `getValidActions()` call.
 
 ## Suggested order
 
@@ -267,3 +286,34 @@ Note the two documents interact: the bootstrap consolidation and the
 `FileObject.updateSite` encapsulation are both prerequisites in spirit for
 "Identify sites by URL, not by name". If that work is happening anyway, doing
 it after this pass is meaningfully cheaper.
+
+## Still outstanding
+
+What steps 1, 2, 4 and the `FilesCollection` composition did not cover, and
+what each is waiting on.
+
+- **The package split and `module-info.java`** (step 3). The largest churn
+  in the document and the one with a decision in it: the package names above
+  are a proposal, and every import in 118 files follows whatever is chosen.
+  Two of its prerequisites are now in place -- `Installer` no longer extends
+  `Downloader`, so `Downloader` and `Downloadable` are free to be internal --
+  but `UpdaterUtil` still needs its 8 externally-used members split out
+  before `sc.fiji.updater.internal` can hold it.
+
+- **`FileObject`'s public mutable fields.** Mechanical but very wide:
+  `filename`, `updateSite`, `current`, `previous` and the rest are read
+  directly from every module. Worth doing, and worth doing with the
+  accessor names agreed first, since they are the API that replaces them.
+
+- **The bootstrap sequence.** Still four orderings in four entry points.
+  This one is not mechanical -- it needs the shape of the URL-change
+  callback decided -- and it is the place where `REMAINING-WORK.md`'s
+  "Identify sites by URL, not by name" wants to land. Doing them together
+  is what makes both cheap.
+
+- **Smaller DRY not yet taken:** folding `HTTPSUtil.checkHTTPSSupport` into
+  the bootstrap (waits on the bootstrap), `Diff`'s generic-IO helpers (they
+  are `protected static`, so not public surface, and moving them is a
+  judgement call about where they belong), and the stateless `GroupAction`
+  singletons (three allocations per `getValidActions()` call, against a new
+  public constant on each of three classes).

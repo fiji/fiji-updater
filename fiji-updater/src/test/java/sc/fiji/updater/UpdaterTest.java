@@ -892,8 +892,8 @@ public class UpdaterTest {
 		File jar =
 			UpdaterTestUtils.writeJarWithDatedFile(files, "jars/new.jar", 2012, 6, 17, fileName, newContents);
 
-		final String checksumOld = UpdaterUtil.getJarDigest(jar, false, false);
-		final String checksumNew = UpdaterUtil.getJarDigest(jar, true, true);
+		final String checksumOld = UpdaterUtil.getJarDigest(jar, false, false, false);
+		final String checksumNew = UpdaterUtil.getJarDigest(jar, true, true, false);
 		assertNotEqual(checksumOld, checksumNew);
 
 		final String[][] data =
@@ -1217,8 +1217,8 @@ public class UpdaterTest {
 		File jar =
 			UpdaterTestUtils.writeJarWithDatedFile(files, "jars/new.jar", 2012, 6, 17, fileName, contents);
 
-		final String checksumOld = UpdaterUtil.getJarDigest(jar, false, false);
-		final String checksumNew = UpdaterUtil.getJarDigest(jar, true, true);
+		final String checksumOld = UpdaterUtil.getJarDigest(jar, false, false, false);
+		final String checksumNew = UpdaterUtil.getJarDigest(jar, true, true, false);
 
 		files = new FilesCollection(files.prefix(""));
 		files.read();

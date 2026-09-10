@@ -170,10 +170,6 @@ public final class UpdaterUtil {
 		return getJarDigest(file, true, true, true);
 	}
 
-	public static String getJarDigest(final File file, boolean treatPropertiesSpecially, boolean treatManifestsSpecially) throws FileNotFoundException, IOException {
-		return getJarDigest(file, treatPropertiesSpecially, treatManifestsSpecially, false);
-	}
-
 	public static String getJarDigest(final File file, boolean treatPropertiesSpecially, boolean treatManifestsSpecially, boolean keepOnlyMainClassInManifest) throws FileNotFoundException, IOException {
 		MessageDigest digest = null;
 		try {
