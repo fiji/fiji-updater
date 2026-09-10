@@ -1,7 +1,6 @@
 package sc.fiji.updater.util;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
@@ -50,25 +49,6 @@ public final class Channels {
 	private Channels() {
 		// NB: prevent instantiation of utility class
 	}
-
-	/**
-	 * The channels compiled into this updater, newest first.
-	 * <p>
-	 * A fallback, used only when the authoritative list -- published by the core
-	 * update site, and read by {@code FilesCollection.getChannels} -- cannot be
-	 * fetched. Deliberately empty until the first channel is minted: with no
-	 * channels in existence, every installation is on the base channel and
-	 * resolution is exactly what it always was.
-	 * </p>
-	 * <p>
-	 * Note that a compiled-in list can never be the authority. An updater is
-	 * always built before the channels that come after it, so an installation
-	 * deciding from this one would dead-end the moment its updater predated the
-	 * next codename.
-	 * </p>
-	 */
-	public static final List<String> EMBEDDED =
-		Collections.unmodifiableList(Arrays.<String> asList());
 
 	/**
 	 * Whether any channel exists at all.

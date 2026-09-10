@@ -36,6 +36,7 @@ import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Test;
@@ -52,8 +53,8 @@ import org.junit.Test;
  */
 public class ChannelsTest {
 
-	/** Newest first, as the core site publishes them. */
-	private static final List<String> NONE = Channels.EMBEDDED;
+	/** No channel exists yet, which is the world every installation is in today. */
+	private static final List<String> NONE = Collections.emptyList();
 
 	private static final List<String> THREE =
 		Arrays.asList("C.elegans", "B.floridae", "A.punctulata");
@@ -154,16 +155,6 @@ public class ChannelsTest {
 
 		// A channel is not newer than itself.
 		assertFalse(Channels.isNewerThan(NONE, "A.punctulata", "A.punctulata"));
-	}
-
-	/**
-	 * Nothing is compiled in, because a compiled-in list can never be the
-	 * authority: an updater is always built before the channels that follow it.
-	 */
-	@Test
-	public void testNothingIsCompiledIn() {
-		assertFalse(Channels.anyExist(Channels.EMBEDDED));
-		assertTrue(Channels.EMBEDDED.isEmpty());
 	}
 
 	@Test

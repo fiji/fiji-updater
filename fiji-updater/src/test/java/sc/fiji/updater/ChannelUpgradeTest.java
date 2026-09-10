@@ -68,7 +68,7 @@ public class ChannelUpgradeTest {
 	 * The channels this test pretends exist, standing in for the list the core
 	 * update site would publish. Applied to every collection the test builds.
 	 */
-	protected java.util.List<String> CHANNELS_IN_EXISTENCE = Channels.EMBEDDED;
+	protected java.util.List<String> CHANNELS_IN_EXISTENCE = java.util.Collections.emptyList();
 
 	/** A collection that sees the channels this test says exist. */
 	private FilesCollection collection(final java.io.File ijRoot) {

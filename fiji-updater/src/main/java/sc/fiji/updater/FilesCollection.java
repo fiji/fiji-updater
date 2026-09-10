@@ -210,9 +210,11 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	 * been told about.
 	 * </p>
 	 * <p>
-	 * A core site with no manifest, or one that cannot be reached, yields
-	 * {@link Channels#EMBEDDED}: this updater's own list, which says only what it
-	 * was built knowing.
+	 * A core site with no manifest, or one that cannot be reached, yields an
+	 * empty list, which is to say "no channel exists". There is deliberately no
+	 * compiled-in list to fall back on: it could only ever say what this updater
+	 * was built knowing, which is never the answer once a newer channel has been
+	 * minted, and a stale ordering is worse than no ordering at all.
 	 * </p>
 	 */
 	public List<String> getChannels() {
@@ -220,7 +222,8 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 			final UpdateSite core = getCoreSite();
 			final ChannelManifest manifest = core == null
 				? ChannelManifest.absent() : ChannelManifest.read(core.getURL());
-			channels = manifest.isPresent() ? manifest.channels() : Channels.EMBEDDED;
+			channels = manifest.isPresent() ? manifest.channels()
+				: Collections.<String> emptyList();
 		}
 		return channels;
 	}
