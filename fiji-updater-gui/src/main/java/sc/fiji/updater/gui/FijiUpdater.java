@@ -49,7 +49,6 @@ import org.scijava.log.Logger;
 import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
-import org.scijava.util.AppUtils;
 
 import sc.fiji.updater.Conflicts.Conflict;
 import sc.fiji.updater.FileObject;
@@ -206,9 +205,7 @@ public class FijiUpdater implements UpdaterUI {
 	}
 
 	static File getAppDirectory() {
-		String imagejDirProperty = System.getProperty("imagej.dir");
-		return imagejDirProperty != null ? new File(imagejDirProperty) :
-			AppUtils.getBaseDirectory("ij.dir", FilesCollection.class, "updater");
+		return AppLayout.appRoot();
 	}
 
 	private void refreshUpdateSites(FilesCollection files)

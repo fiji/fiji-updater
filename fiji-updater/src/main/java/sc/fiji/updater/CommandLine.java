@@ -1554,16 +1554,8 @@ public class CommandLine {
 	}
 
 	public static void main(final String... args) {
-		if (System.getProperty("imagej.dir") == null) {
-			final String ijDir = System.getProperty("ij.dir");
-			if (ijDir != null) System.setProperty("imagej.dir", ijDir);
-			else {
-				final String fijiDir = System.getProperty("fiji.dir");
-				if (fijiDir != null) System.setProperty("imagej.dir", fijiDir);
-			}
-		}
 		try {
-			main(AppUtils.getBaseDirectory("imagej.dir", CommandLine.class, "updater"), 79, null, true, args);
+			main(AppLayout.appRoot(), 79, null, true, args);
 		} catch (final RuntimeException e) {
 			log.error(e);
 			System.exit(1);

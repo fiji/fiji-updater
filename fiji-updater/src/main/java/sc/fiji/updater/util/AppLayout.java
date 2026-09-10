@@ -30,6 +30,10 @@
  */
 package sc.fiji.updater.util;
 
+import java.io.File;
+
+import org.scijava.util.AppUtils;
+
 /**
  * What a Fiji installation looks like on disk.
  * <p>
@@ -130,6 +134,38 @@ public final class AppLayout {
 			if (value != null) return value;
 		}
 		return null;
+	}
+
+	/**
+	 * The installation root to operate on.
+	 * <p>
+	 * This is the one answer to "which installation is being updated": every
+	 * entry point -- the GUI, the command line, the {@code UpdateService} and
+	 * the startup check -- goes through here, so that they cannot disagree.
+	 * </p>
+	 * <p>
+	 * It is {@link #appDirectory()} whenever the launcher declared one, which is
+	 * every real installation. Only when no property is set -- a JVM started by
+	 * something other than a launcher, i.e. a developer setting -- does it fall
+	 * back to guessing from the location of this class's JAR.
+	 * </p>
+	 */
+	public static File appRoot() {
+		final String dir = appDirectory();
+		if (dir != null) return new File(dir);
+		return AppUtils.getBaseDirectory(AppLayout.class, "updater");
+	}
+
+	/**
+	 * Whether we are running outside a launcher, i.e. in a developer setting.
+	 * <p>
+	 * A launcher always declares the installation root; nothing else does. So
+	 * the absence of every {@link #APP_DIRECTORY_PROPERTIES} is the signal, and
+	 * {@link #appRoot()} is a guess rather than a fact.
+	 * </p>
+	 */
+	public static boolean isDeveloperSetup() {
+		return appDirectory() == null;
 	}
 
 	/**

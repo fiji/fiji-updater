@@ -46,11 +46,11 @@ import java.util.Enumeration;
 
 import javax.xml.parsers.ParserConfigurationException;
 
+import sc.fiji.updater.util.AppLayout;
 import sc.fiji.updater.util.AvailableSites;
 import sc.fiji.updater.util.HTTPSUtil;
 import sc.fiji.updater.util.UpdaterUtil;
 
-import org.scijava.util.AppUtils;
 import org.scijava.util.Prefs;
 import org.xml.sax.SAXException;
 
@@ -92,7 +92,7 @@ public class UpToDate {
 	public static Result check() throws IOException,
 		ParserConfigurationException, SAXException
 	{
-		return check(AppUtils.getBaseDirectory("ij.dir", UpToDate.class, "updater"));
+		return check(AppLayout.appRoot());
 	}
 
 	/**
@@ -172,11 +172,11 @@ public class UpToDate {
 	}
 
 	/**
-	 * @return whether we started in a developer setting (i.e., not using the
-	 *         Launcher, which sets the imagej.dir property)
+	 * @return whether we started in a developer setting (i.e., not using a
+	 *         launcher, which declares the installation root)
 	 */
 	public static boolean isDeveloper() {
-		return System.getProperty("imagej.dir") == null;
+		return AppLayout.isDeveloperSetup();
 	}
 
 	/**

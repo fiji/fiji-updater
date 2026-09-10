@@ -32,6 +32,7 @@ package sc.fiji.updater.util;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 
@@ -90,6 +91,37 @@ public class AppLayoutTest {
 			set(property, "/somewhere");
 			assertEquals(property, "/somewhere", AppLayout.appDirectory());
 		}
+	}
+
+	/**
+	 * {@link AppLayout#appRoot()} honours whichever property the launcher set --
+	 * not just the legacy {@code imagej.dir} that the entry points used to
+	 * consult individually. Jaunch sets {@code scijava.app.directory} and
+	 * {@code fiji.dir} and neither of the legacy two, so a regression here means
+	 * every entry point silently operating on a guessed directory.
+	 */
+	@Test
+	public void testAppRootFollowsAnyProperty() {
+		for (final String property : AppLayout.APP_DIRECTORY_PROPERTIES) {
+			clearProperties();
+			set(property, "/somewhere");
+			assertEquals(property, new java.io.File("/somewhere"), AppLayout.appRoot());
+		}
+	}
+
+	/** With no property set, there is nothing to trust, so it is a guess. */
+	@Test
+	public void testAppRootFallsBackWhenUndeclared() {
+		assertTrue(AppLayout.isDeveloperSetup());
+		assertNotNull(AppLayout.appRoot());
+	}
+
+	/** A declared root means a launcher started us, i.e. not a developer setup. */
+	@Test
+	public void testDeveloperSetupDetection() {
+		assertTrue(AppLayout.isDeveloperSetup());
+		set("scijava.app.directory", "/app");
+		assertFalse(AppLayout.isDeveloperSetup());
 	}
 
 	@Test

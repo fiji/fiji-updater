@@ -37,7 +37,6 @@ import java.io.IOException;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.scijava.Priority;
-import org.scijava.app.AppService;
 import org.scijava.command.CommandService;
 import org.scijava.event.EventHandler;
 import org.scijava.log.LogService;
@@ -50,6 +49,7 @@ import org.scijava.ui.event.UIShownEvent;
 import org.scijava.ui.headless.HeadlessUI;
 import org.xml.sax.SAXException;
 
+import sc.fiji.updater.util.AppLayout;
 import sc.fiji.updater.util.AvailableSites;
 import sc.fiji.updater.util.HTTPSUtil;
 
@@ -70,9 +70,6 @@ public class DefaultUpdateService extends AbstractService implements
 
 	@Parameter
 	private CommandService commandService;
-
-	@Parameter
-	private AppService appService;
 
 	@Parameter
 	private PrefService prefService;
@@ -130,7 +127,7 @@ public class DefaultUpdateService extends AbstractService implements
 	// -- Helper methods --
 
 	private File rootDir() {
-		return appService.getApp().getBaseDirectory();
+		return AppLayout.appRoot();
 	}
 
 	private FilesCollection filesCollection() {
