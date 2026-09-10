@@ -307,4 +307,49 @@ public class ChannelResolutionTest {
 		assertTrue("expected the site to be reported unreadable, got: " + warnings,
 			warnings.contains("Could not update from site"));
 	}
+
+	/**
+	 * The --channel flag reaches resolution, so a run with no launcher in the
+	 * picture can still say which edition it is operating on. This is the escape
+	 * hatch that the refusal in testRefusesToResolveWhenChannelUnknown points at,
+	 * and the reason a container or CI job is not simply stuck.
+	 */
+	@Test
+	public void testChannelFlagDrivesResolution() throws Exception {
+		files = initialize("macros/macro.ijm");
+		final File ijRoot = files.prefix("");
+		publishChannel(getWebRoot(files), CHANNEL);
+		Channels.setKnown(java.util.Arrays.asList(CHANNEL));
+
+		// Without it, the run declines rather than guessing.
+		final FilesCollection unpinned = new FilesCollection(ijRoot);
+		unpinned.tryLoadingCollection();
+		final XMLFileDownloader refused = new XMLFileDownloader(unpinned);
+		refused.start(false);
+		assertTrue(refused.getWarnings().contains("Cannot determine"));
+
+		// With it, the named channel is used.
+		final FilesCollection pinned = new FilesCollection(ijRoot);
+		pinned.pinChannel(CHANNEL);
+		pinned.tryLoadingCollection();
+		final XMLFileDownloader downloader = new XMLFileDownloader(pinned);
+		downloader.start(false);
+
+		assertEquals("", downloader.getWarnings().trim());
+		assertEquals(CHANNEL, mainSite(pinned).getChannel());
+	}
+
+	/** Pinning does not write anything back: the installation is unchanged. */
+	@Test
+	public void testChannelFlagDoesNotChangeTheInstallation() throws Exception {
+		files = initialize("macros/macro.ijm");
+		final File ijRoot = files.prefix("");
+
+		final FilesCollection pinned = new FilesCollection(ijRoot);
+		pinned.pinChannel(CHANNEL);
+		assertEquals(CHANNEL, pinned.getChannel());
+
+		// A fresh look at the installation still finds no channel declared.
+		assertFalse(new FilesCollection(ijRoot).getChannelState().isKnown());
+	}
 }

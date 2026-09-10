@@ -170,6 +170,17 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	 * callers must not confuse with the base channel; see {@link ChannelState}.
 	 * </p>
 	 */
+	/**
+	 * Overrides this installation's channel for the lifetime of this collection,
+	 * without changing the installation itself.
+	 *
+	 * @param channel the channel, or null for the base channel.
+	 * @see ChannelState#pinned(String)
+	 */
+	public void pinChannel(final String channel) {
+		channelState = ChannelState.pinned(channel);
+	}
+
 	public ChannelState getChannelState() {
 		if (channelState == null) channelState = ChannelState.read(appRoot);
 		return channelState;

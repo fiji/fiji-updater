@@ -96,6 +96,31 @@ public final class ChannelState {
 	}
 
 	/**
+	 * A channel named explicitly rather than read from a launcher configuration.
+	 * <p>
+	 * This is how a headless or scripted run says which edition it is operating
+	 * on, in the situations where the launcher is not involved and the channel
+	 * would otherwise be {@link #isKnown() unknown}. It is an override for the
+	 * run, not a change to the installation: there is no configuration file
+	 * behind it, so {@link #write} refuses, and the next launch reads whatever
+	 * the installation actually says. Changing an installation's channel is an
+	 * upgrade, and an upgrade is not a command-line flag.
+	 * </p>
+	 *
+	 * @param channel the channel, or null for the base channel. The base
+	 *          channel's display name is also accepted, case-insensitively.
+	 */
+	public static ChannelState pinned(final String channel) {
+		String name = channel == null ? null : channel.trim();
+		if (name != null &&
+			(name.isEmpty() || name.equalsIgnoreCase(BASE_CHANNEL_NAME)))
+		{
+			name = null;
+		}
+		return new ChannelState(name, true, null);
+	}
+
+	/**
 	 * Whether the channel could be determined. When false, the updater must not
 	 * resolve any update site: assuming the base channel here is the
 	 * mass-downgrade bug.

@@ -1438,7 +1438,16 @@ public class CommandLine {
 		}
 		diffOptions.append(" ]");
 
-		throw die("Usage: ImageJ --update <command>\n"
+		throw die("Usage: fiji --update [--channel <name>] <command>\n"
+				+ "\n"
+				+ "Options:\n"
+				+ "\t--channel <name>\n"
+				+ "\t\tOperate as though this installation followed the named\n"
+				+ "\t\tupdate channel, instead of reading it from the launcher\n"
+				+ "\t\tconfiguration. Use '" + ChannelState.BASE_CHANNEL_NAME
+				+ "' for the base channel. Needed when\n"
+				+ "\t\tthe launcher is not involved, as in a container or a\n"
+				+ "\t\tscript. Does not change the installation.\n"
 				+ "\n"
 				+ "Commands:\n"
 				+ "\tdiff "
@@ -1502,7 +1511,7 @@ public class CommandLine {
 
 	private static void main(final File ijDir, final int columnCount,
 			final Progress progress, final boolean standalone,
-			final String[] args) {
+			String[] args) {
 		String http_proxy = System.getenv("http_proxy");
 		if (http_proxy != null && http_proxy.startsWith("http://")) {
 			final int colon = http_proxy.indexOf(':', 7);
@@ -1528,6 +1537,21 @@ public class CommandLine {
 		final CommandLine instance = new CommandLine(ijDir, columnCount,
 				progress);
 		instance.standalone = standalone;
+
+		// Global options, consumed before the command. Only options listed here
+		// are taken; anything else is left alone, since several commands take
+		// options of their own.
+		int argIndex = 0;
+		while (argIndex < args.length && "--channel".equals(args[argIndex])) {
+			if (argIndex + 1 >= args.length) {
+				throw instance.die("--channel requires a channel name");
+			}
+			instance.files.pinChannel(args[argIndex + 1]);
+			argIndex += 2;
+		}
+		if (argIndex > 0) {
+			args = Arrays.copyOfRange(args, argIndex, args.length);
+		}
 
 		if (args.length == 0) {
 			instance.usage();

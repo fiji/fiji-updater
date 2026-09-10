@@ -186,4 +186,40 @@ public class ChannelStateTest {
 			// pass
 		}
 	}
+
+	/** A named channel is known even with no configuration file anywhere. */
+	@Test
+	public void testPinnedChannel() {
+		final ChannelState state = ChannelState.pinned("A.punctulata");
+		assertTrue(state.isKnown());
+		assertEquals("A.punctulata", state.channel());
+	}
+
+	/** The base channel can be named explicitly, by its display name or empty. */
+	@Test
+	public void testPinnedBaseChannel() {
+		for (final String name : new String[] { null, "", "  ",
+			ChannelState.BASE_CHANNEL_NAME,
+			ChannelState.BASE_CHANNEL_NAME.toLowerCase() })
+		{
+			final ChannelState state = ChannelState.pinned(name);
+			assertTrue(String.valueOf(name), state.isKnown());
+			assertNull(String.valueOf(name), state.channel());
+		}
+	}
+
+	/**
+	 * Pinning is an override for one run, not a change to the installation.
+	 * Writing it back would turn a command-line flag into an upgrade.
+	 */
+	@Test
+	public void testPinnedChannelCannotBeWritten() throws IOException {
+		try {
+			ChannelState.pinned("A.punctulata").write("B.floridae");
+			fail("expected an IOException");
+		}
+		catch (final IOException expected) {
+			// pass
+		}
+	}
 }

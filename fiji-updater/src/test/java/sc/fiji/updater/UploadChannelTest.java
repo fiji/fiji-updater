@@ -235,4 +235,39 @@ public class UploadChannelTest {
 		final FilesUploader uploader = uploaderFor(files.prefix(""));
 		assertFalse(uploader.isFirstUploadToChannel());
 	}
+
+	/**
+	 * The escape hatch the refusal message promises: with no launcher in the
+	 * picture, naming the channel explicitly is what lets a scripted upload
+	 * proceed.
+	 */
+	@Test
+	public void testPinnedChannelSatisfiesTheUploadTarget() throws Exception {
+		files = initialize("macros/macro.ijm");
+		Channels.setKnown(Arrays.asList("A.punctulata"));
+
+		final FilesCollection collection = new FilesCollection(files.prefix(""));
+		collection.read();
+		assertFalse("no launcher configuration exists here",
+			collection.getChannelState().isKnown());
+
+		collection.pinChannel("A.punctulata");
+		final FilesUploader uploader = new FilesUploader(null, collection,
+			FilesCollection.DEFAULT_UPDATE_SITE, progress);
+		assertEquals("A.punctulata", uploader.getUploadChannel());
+	}
+
+	/** Pinning the base channel by name works too, for symmetry. */
+	@Test
+	public void testPinnedBaseChannelUpload() throws Exception {
+		files = initialize("macros/macro.ijm");
+		Channels.setKnown(Arrays.asList("A.punctulata"));
+
+		final FilesCollection collection = new FilesCollection(files.prefix(""));
+		collection.read();
+		collection.pinChannel(ChannelState.BASE_CHANNEL_NAME);
+		final FilesUploader uploader = new FilesUploader(null, collection,
+			FilesCollection.DEFAULT_UPDATE_SITE, progress);
+		assertNull(uploader.getUploadChannel());
+	}
 }
