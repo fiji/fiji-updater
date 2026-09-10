@@ -1,5 +1,7 @@
-/.classpath
-/.idea
-/.project
-/.settings/
+# IDE and build output, in the root and in every module.
+.classpath
+.factorypath
+.project
+.settings/
+.idea/
 target/
