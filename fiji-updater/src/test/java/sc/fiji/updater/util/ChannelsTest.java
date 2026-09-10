@@ -37,18 +37,29 @@ import static org.junit.Assert.assertTrue;
 import java.util.Arrays;
 import java.util.List;
 
+import org.junit.After;
 import org.junit.Test;
 
 /**
  * Tests {@link Channels}' candidate ordering.
  * <p>
- * These exercise the ordering rules directly rather than through
- * {@link Channels#KNOWN}, which is empty until the first channel is minted.
+ * Most of these install a channel list of their own, since the embedded one is
+ * empty until the first channel is minted and the ordering rules are exactly
+ * what needs to work when it is not.
  * </p>
  *
  * @author Curtis Rueden
  */
 public class ChannelsTest {
+
+	/** Newest first, as the core site publishes them. */
+	private static final List<String> THREE =
+		Arrays.asList("C.elegans", "B.floridae", "A.punctulata");
+
+	@After
+	public void resetChannels() {
+		Channels.setKnown(null);
+	}
 
 	/**
 	 * With no channel, there is one candidate and it is the base -- byte for
@@ -108,5 +119,66 @@ public class ChannelsTest {
 
 		// A channel is not newer than itself.
 		assertFalse(Channels.isNewerThan("A.punctulata", "A.punctulata"));
+	}
+
+	/** No channels exist yet, so nothing can be unknown in a dangerous way. */
+	@Test
+	public void testNoneExistByDefault() {
+		assertFalse(Channels.anyExist());
+		assertTrue(Channels.known().isEmpty());
+	}
+
+	@Test
+	public void testSetKnown() {
+		Channels.setKnown(THREE);
+		assertTrue(Channels.anyExist());
+		assertEquals(THREE, Channels.known());
+
+		// Null or empty restores the compiled-in fallback.
+		Channels.setKnown(null);
+		assertEquals(Channels.EMBEDDED, Channels.known());
+	}
+
+	/** From the newest channel, every older one is a fallback, base last. */
+	@Test
+	public void testFallbackWalksDownward() {
+		Channels.setKnown(THREE);
+		assertEquals(Arrays.asList("C.elegans", "B.floridae", "A.punctulata", null),
+			Channels.candidates("C.elegans"));
+	}
+
+	/** From the middle, only what is below it -- never C.elegans. */
+	@Test
+	public void testFallbackNeverGoesUp() {
+		Channels.setKnown(THREE);
+		assertEquals(Arrays.asList("B.floridae", "A.punctulata", null),
+			Channels.candidates("B.floridae"));
+	}
+
+	/** The oldest named channel falls back only to the base. */
+	@Test
+	public void testOldestChannelFallsBackToBase() {
+		Channels.setKnown(THREE);
+		assertEquals(Arrays.asList("A.punctulata", null),
+			Channels.candidates("A.punctulata"));
+	}
+
+	/**
+	 * An installation on the base channel is offered nothing else, even with
+	 * three channels published. Moving up is an upgrade, and upgrades are opt-in.
+	 */
+	@Test
+	public void testBaseChannelStaysOnBase() {
+		Channels.setKnown(THREE);
+		assertEquals(Arrays.asList((String) null), Channels.candidates(null));
+	}
+
+	@Test
+	public void testIsNewerThanWithKnownChannels() {
+		Channels.setKnown(THREE);
+		assertTrue(Channels.isNewerThan("C.elegans", "A.punctulata"));
+		assertTrue(Channels.isNewerThan("B.floridae", "A.punctulata"));
+		assertFalse(Channels.isNewerThan("A.punctulata", "C.elegans"));
+		assertFalse(Channels.isNewerThan("B.floridae", "B.floridae"));
 	}
 }

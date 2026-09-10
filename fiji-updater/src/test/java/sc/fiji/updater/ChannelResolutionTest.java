@@ -32,6 +32,7 @@ package sc.fiji.updater;
 
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static sc.fiji.updater.UpdaterTestUtils.cleanup;
@@ -48,6 +49,7 @@ import org.junit.Test;
 
 import sc.fiji.updater.util.AppLayout;
 import sc.fiji.updater.util.ChannelState;
+import sc.fiji.updater.util.Channels;
 import sc.fiji.updater.util.StderrProgress;
 
 /**
@@ -72,6 +74,7 @@ public class ChannelResolutionTest {
 
 	@After
 	public void after() {
+		Channels.setKnown(null);
 		if (files != null) cleanup(files);
 	}
 
@@ -211,5 +214,65 @@ public class ChannelResolutionTest {
 		assertNotNull(orphan);
 		assertEquals(FileObject.Status.LOCAL_ONLY, orphan.getStatus());
 		assertNull(orphan.updateSite);
+	}
+
+	/**
+	 * The regression test for the worst thing that can go wrong.
+	 * <p>
+	 * An installation that has been upgraded to a channel, run somewhere its
+	 * launcher configuration cannot be found -- PyImageJ, CI, an IDE -- must not
+	 * be resolved as though it were on the base channel. Doing so would point
+	 * every site at its oldest index and roll the entire installation backwards,
+	 * while reporting a perfectly successful update.
+	 * </p>
+	 * <p>
+	 * Here the channel is genuinely undeterminable and channels exist, so the
+	 * updater must decline to check anything and say why.
+	 * </p>
+	 */
+	@Test
+	public void testRefusesToResolveWhenChannelUnknown() throws Exception {
+		files = initialize("macros/macro.ijm");
+		final File ijRoot = files.prefix("");
+		publishChannel(getWebRoot(files), CHANNEL);
+
+		// Channels exist in the world, but this installation cannot say which
+		// one it follows: there is no launcher configuration anywhere.
+		Channels.setKnown(java.util.Arrays.asList(CHANNEL));
+
+		final FilesCollection after = new FilesCollection(ijRoot);
+		after.tryLoadingCollection();
+		assertFalse(after.getChannelState().isKnown());
+
+		final XMLFileDownloader downloader = new XMLFileDownloader(after);
+		downloader.start(false);
+
+		final String warnings = downloader.getWarnings();
+		assertTrue("expected a refusal, got: " + warnings,
+			warnings.contains("Cannot determine which update channel"));
+		assertNull("no site may be resolved when the channel is unknown",
+			mainSite(after).getChannel());
+	}
+
+	/**
+	 * The same situation before any channel exists is not dangerous: the base
+	 * channel is the only one there is, so an unknown channel and the base
+	 * channel are the same thing. The updater must not refuse here, or it would
+	 * refuse on every installation in the world today.
+	 */
+	@Test
+	public void testDoesNotRefuseWhenNoChannelsExist() throws Exception {
+		files = initialize("macros/macro.ijm");
+		final File ijRoot = files.prefix("");
+
+		final FilesCollection after = new FilesCollection(ijRoot);
+		after.tryLoadingCollection();
+		assertFalse(after.getChannelState().isKnown());
+
+		final XMLFileDownloader downloader = new XMLFileDownloader(after);
+		downloader.start(false);
+
+		assertEquals("", downloader.getWarnings().trim());
+		assertNotNull(after.get("macros/macro.ijm"));
 	}
 }

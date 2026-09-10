@@ -45,6 +45,7 @@ import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 import sc.fiji.updater.util.AbstractProgressable;
+import sc.fiji.updater.util.ChannelState;
 import sc.fiji.updater.util.Channels;
 import sc.fiji.updater.util.UpdaterUtil;
 
@@ -78,6 +79,26 @@ public class XMLFileDownloader extends AbstractProgressable {
 
 	public void start(boolean closeProgressAtEnd) {
 		if (updateSites == null || updateSites.isEmpty()) return;
+
+		// Refuse to resolve anything if we cannot tell which channel this
+		// installation follows. Treating an undeterminable channel as the base one
+		// would resolve every site to its oldest index and downgrade the whole
+		// installation -- quietly, and in a way that looks like a successful
+		// update. While no channel exists there is nothing to get wrong, so this
+		// only bites once one does.
+		final ChannelState channel = files.getChannelState();
+		if (!channel.isKnown() && Channels.anyExist()) {
+			if (warnings == null) warnings = new StringBuilder();
+			appendWarning("Cannot determine which update channel this " +
+				"installation follows, so no update sites were checked.\n" +
+				"This usually means the application was not started by its " +
+				"launcher.\n" +
+				"Run the updater from the launcher, or name the channel " +
+				"explicitly.");
+			if (closeProgressAtEnd) done();
+			return;
+		}
+
 		setTitle("Updating the index of available files");
 		final XMLFileReader reader = new XMLFileReader(files);
 		final int current = 0, total = updateSites.size();

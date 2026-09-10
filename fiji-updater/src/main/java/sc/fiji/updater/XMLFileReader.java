@@ -100,6 +100,14 @@ public class XMLFileReader extends DefaultHandler {
 			throw new IOException("Unknown update site: " + updateSite);
 		}
 
+		if (!files.getChannelState().isKnown() && Channels.anyExist()) {
+			// See XMLFileDownloader.start: resolving against a guessed channel is
+			// how an installation gets silently rolled backwards.
+			throw new IOException("Cannot determine which update channel this " +
+				"installation follows, so update site '" + updateSite +
+				"' cannot be read.");
+		}
+
 		// Try each candidate channel in turn, exactly as XMLFileDownloader does;
 		// a site being activated has had no more chance to adopt this
 		// installation's channel than any other.

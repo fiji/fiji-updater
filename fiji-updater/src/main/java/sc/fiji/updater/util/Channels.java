@@ -48,20 +48,61 @@ public final class Channels {
 	}
 
 	/**
-	 * The channels this updater knows, newest first.
+	 * The channels compiled into this updater, newest first.
 	 * <p>
 	 * The base channel is not listed: it is the implicit last resort, and is
 	 * represented throughout as a null channel name.
 	 * </p>
 	 * <p>
-	 * This list is a fallback for when the authoritative one -- published by the
-	 * core update site -- cannot be fetched. It is deliberately empty until the
-	 * first channel is minted; with no channels in existence, every installation
-	 * is on the base channel and resolution is exactly what it always was.
+	 * This is a fallback for when the authoritative list -- published by the core
+	 * update site -- cannot be fetched. It is deliberately empty until the first
+	 * channel is minted; with no channels in existence, every installation is on
+	 * the base channel and resolution is exactly what it always was.
 	 * </p>
 	 */
-	public static final List<String> KNOWN =
+	public static final List<String> EMBEDDED =
 		Collections.unmodifiableList(Arrays.<String> asList());
+
+	private static volatile List<String> known = EMBEDDED;
+
+	/**
+	 * The channels this updater currently knows about, newest first.
+	 * <p>
+	 * Mutable because the list is meant to be discovered rather than compiled in:
+	 * an updater can only ever have been built before the channels that come
+	 * after it, so a fixed list would dead-end every installation whose updater
+	 * predates the next codename. The core update site publishes the
+	 * authoritative, ordered list, and {@link #setKnown} replaces the embedded
+	 * fallback with it.
+	 * </p>
+	 */
+	public static List<String> known() {
+		return known;
+	}
+
+	/**
+	 * Replaces the known channel list, as published by the core update site.
+	 *
+	 * @param channels the channels, newest first; null or empty restores the
+	 *          {@link #EMBEDDED} fallback.
+	 */
+	public static void setKnown(final List<String> channels) {
+		known = channels == null || channels.isEmpty() ? EMBEDDED
+			: Collections.unmodifiableList(new ArrayList<>(channels));
+	}
+
+	/**
+	 * Whether any channel exists at all.
+	 * <p>
+	 * While this is false, an installation whose channel cannot be determined is
+	 * indistinguishable from one on the base channel, because the base channel is
+	 * the only one there is. Once it is true, that is no longer so, and guessing
+	 * becomes dangerous; see {@link ChannelState}.
+	 * </p>
+	 */
+	public static boolean anyExist() {
+		return !known().isEmpty();
+	}
 
 	/**
 	 * The channels to try for an installation following the given channel, in
@@ -84,7 +125,7 @@ public final class Channels {
 			// cannot order what we do not know -- leaving the declared channel and
 			// then the base, which is the oldest thing any site serves.
 			boolean below = false;
-			for (final String channel : KNOWN) {
+			for (final String channel : known()) {
 				if (below) candidates.add(channel);
 				else if (channel.equals(current)) below = true;
 			}
@@ -104,8 +145,8 @@ public final class Channels {
 		if (channel == null) return false; // base is the oldest there is
 		if (current == null) return true; // anything named beats the base
 		if (channel.equals(current)) return false;
-		for (final String known : KNOWN) {
-			// KNOWN is newest first, so whichever we meet first is the newer one.
+		for (final String known : known()) {
+			// The list is newest first, so whichever we meet first is the newer one.
 			if (known.equals(channel)) return true;
 			if (known.equals(current)) return false;
 		}
