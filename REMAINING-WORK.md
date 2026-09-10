@@ -30,40 +30,57 @@ is exactly when it will be too late to notice.
   case-insensitively, always emit the canonical form. `Channels` and
   `ChannelManifest` are the places.
 
-- **Fail fast when the core manifest cannot be *reached*.** There is no longer
-  a compiled-in channel list; a core site with no readable `channels.txt` yields
-  an empty list, i.e. "no channel exists". That is right for the reason it looks
-  wrong: today no site has a manifest, so an absent one is not an error, it is
-  the pre-channel world, and refusing there would refuse on every installation
-  alive.
+- **A failed fetch must never become a negative answer.** The general rule
+  behind several of the hazards here, and the one worth stating once: reporting
+  a failure is fine, inferring *absence* from a failure is not. It is the second
+  that silently rewrites an installation.
 
-  What the empty list cannot distinguish is **absent** (a 404 — channels were
-  never minted) from **unreachable** (DNS, timeout, a captive portal answering
-  200 with HTML). `ChannelManifest.read` conflates them deliberately, and for a
-  third-party site that is correct. For the core site it stops being correct the
-  moment a channel exists, and the case it lets through is the dangerous one:
-  an installation whose own channel is undeterminable is only allowed to proceed
-  because `Channels.anyExist` said no channels exist — an answer we did not
-  actually learn. That is the mass-downgrade path, reached by a transient
-  network failure.
+  Not the same as failing fast on any network error, which would be a serious
+  regression: a dead third-party site is routine, today yields "Could not update
+  from site X" and lets the run continue, and making that fatal would let one
+  abandoned site block every user of it from updating anything. Sorted by what
+  each failure currently *claims*:
 
-  So the rule wanted is: if the core site's manifest could not be *fetched*, as
-  opposed to being *absent*, and this installation cannot say which channel it
-  follows, refuse — the same refusal `XMLFileDownloader.start` already issues,
-  extended to cover "we could not find out". Needs `ChannelManifest.read` to
-  report the difference, along the lines of `XMLFileDownloader.isUnreachable`.
+  - A third-party site is unreachable — reported as a failure. Correct; leave
+    it.
+  - The available-site list is unreachable — yields an empty list, local sites
+    are all kept, nothing is deleted. Mild; leave it.
+  - The core site's `channels.txt` is unreachable — yields an empty channel
+    list, which *means* "no channel exists". This is the one. `ChannelManifest`
+    conflates absent with unfetchable deliberately, and for a third-party site
+    that is right; for the core site it stops being right the moment a channel
+    exists. The case it lets through is the dangerous one: an installation that
+    cannot name its own channel proceeds only because `Channels.anyExist` said
+    there are none — an answer we never actually learned. That is the
+    mass-downgrade path, reached by a transient network failure. Wanted:
+    `ChannelManifest.read` reporting the difference, along the lines of
+    `XMLFileDownloader.isUnreachable`, and the existing `XMLFileDownloader.start`
+    refusal extended to cover "we could not find out".
 
-  Note what is *not* wanted: refusing whenever the manifest is unfetchable
-  regardless of the declared channel. An installation that knows it is on
-  channel X resolves the core site against X with or without the list — the only
-  loss is the intermediate fallback steps for third-party sites, which is a mild
-  degradation and not worth blocking an update over.
+  Note the absent case must keep working: today no site has a manifest, so an
+  absent one is not an error, it is the pre-channel world, and refusing there
+  would refuse on every installation alive. Note also what is *not* wanted --
+  refusing whenever the manifest is unfetchable regardless of the declared
+  channel. An installation that knows it is on channel X resolves the core site
+  against X with or without the list; the only loss is the intermediate fallback
+  steps for third-party sites, which is a mild degradation and not worth
+  blocking an update over.
+
+  Two narrower places the same rule applies. The **core site's own index** is a
+  precondition for interpreting everything else, so failing to read it should
+  abort the run rather than degrade it — the loud message added in "Stop the
+  core site falling back to an older channel" says the right thing but still
+  lets the run finish. And `XMLFileDownloader.read` marks a site
+  `setLastModified(0)` — "it was deleted" — on `FileNotFoundException`, which
+  a captive portal or proxy answering 404 for everything would take for every
+  site at once. Not traced to a consequence yet, so not yet a claim that it is a
+  bug, but it is the same shape and wants a look.
 
 ## Depends on `list-of-update-sites`
 
-All three of these are the same blocker: the updater still scrapes the
-wikitable, which flattens to name/url/description/maintainer and has nowhere
-to put anything else.
+Both of these are the same blocker: the updater still scrapes the wikitable,
+which flattens to name/url/description/maintainer and has nowhere to put
+anything else.
 
 - **Consume `sites.yml` directly.** It is live and serving at
   `https://imagej.net/list-of-update-sites/sites.yml`. No YAML dependency and no
@@ -83,12 +100,6 @@ to put anything else.
   `AvailableSites.parseWikiPage` and the inlined `getPageSource` go away
   together when it lands.
 
-- **Adopt the site `id` field.** Resolves the standing `// TODO use site id` at
-  `AvailableSites.java:280`. Name-based matching currently needs
-  `findIndexByName` plus a `makeSureNamesAreUnique` hack that appends `-2` to
-  collisions, and a stable id is also the right cache key for per-site channel
-  resolution.
-
 - **Move mirrors into the site list.** `UpdateSiteNetwork.MIRROR_URL_PREFIXES`
   and `MAIN_SITE_MIRRORS` are a hardcoded stopgap, labelled as such. Mirrors
   are a property of a site and belong next to the site they mirror, at which
@@ -96,6 +107,55 @@ to put anything else.
   property of `UpdateSite` rather than a separate named site, which would also
   retire the odd bit of migration logic that infers "you are on the Europe
   mirror of Java-8, so you want the Europe mirror of Fiji-Latest".
+
+## Update site identity
+
+The updater keys update sites by **name**, in three places at once:
+`FilesCollection.updateSites` is a `Map<String, UpdateSite>` keyed by name,
+`FileObject.updateSite` is a name, and the local `db.xml.gz` stores
+`<update-site name=...>` alongside `<plugin update-site="Name">`. `UpdateSite`
+has no id field at all; the lone `// TODO use site id` at
+`AvailableSites.java:327` is the whole of the concept's presence in this
+codebase.
+
+That is what makes renaming a site a data-model problem rather than a string
+change, and it is the direct cause of the `Fiji` collision below.
+
+- **Identify sites by URL, not by name.** The first half, and it depends on
+  nothing: the URL is already in every local `db.xml.gz`, so this needs no
+  `sites.yml` and no format change. `findIndexByName` becomes a URL match, and
+  on a match the local site adopts the published *name*, rewriting the
+  `update-site` attribute of every file that referred to it. A rename in the
+  published list then propagates by itself, and the `Fiji` collision stops
+  existing: the main site matches the local `Fiji-Latest` by URL and is renamed,
+  while the legacy `update.fiji.sc` entry matches nothing and is left alone as
+  the disabled leftover it is.
+
+  Two things to fix on the way. `makeSureNamesAreUnique` `continue`s on active
+  sites *before* `names.add`, so its set only ever holds inactive names and an
+  inactive duplicate of an **active** name is never disambiguated — which is
+  precisely the case here, two entries named `Fiji`. And URL matching has to
+  happen after `OBSOLETE_URLS` rewriting, with mirrors accounted for, or a user
+  on a mirror looks like a user of an unrelated site.
+
+- **Then adopt the site `id`.** The second half, which does depend on consuming
+  `sites.yml`, and which handles the one case URL matching cannot: a site whose
+  *URL* changes. Ids also give per-site channel resolution a stable cache key,
+  and retire the `-2` suffixing in `makeSureNamesAreUnique` outright. Note the
+  id can never be the sole key — a user's own private site will never have one
+  — so it layers over URL identity rather than replacing it.
+
+- **A published blocklist of retired site URLs** — deferred, and deliberately
+  not the mechanism for the `Fiji` rename. Anything fetched cannot be a
+  precondition for a constant compiled into the same release: an offline or
+  proxied machine would flip `MAIN_SITE_NAME` without ever receiving the prune
+  and land in the collision the prune existed to prevent. Worth having for
+  retirements after this one, with three constraints — key on URL rather than
+  name, since the name is the thing being freed and users rename sites locally;
+  prune only sites that are both disabled and accounting for no installed files,
+  reconciling rather than dropping anything that still owns files on disk; and
+  exact-match only, never prefix, because it is a remote lever that unmanages
+  content on every installation at once.
 
 ## Server and release process
 
@@ -139,14 +199,11 @@ to put anything else.
     ends up following the main site twice under two names, with every
     `FileObject.updateSite` still saying `Fiji-Latest`.
 
-  So the rename needs a **client-side migration shipped in the same release that
-  flips the constant**, running before `initializeAndAddSites`: rename the local
-  `Fiji-Latest` site to `Fiji` and rewrite the `update-site` attribute of every
-  file that names it, and retire the legacy entries. Retiring them is not simply
-  deletion — an inactive legacy site with no installed files can go, but one
-  that is somehow still active, or still accounting for files on disk, must be
-  renamed and reported instead, on the same reasoning as `ChannelUpgrade`'s
-  stranded-file handling: never silently unmanage content.
+  So the rename is gated on **URL identity** (see *Update site identity*),
+  shipped in or before the release that flips the constant. That is a better
+  answer than a bespoke one-shot migration: it fixes the mechanism rather than
+  this instance of it, needs nothing fetched at run time, and leaves every
+  future rename a no-op.
 
   Note this is independent of recognizing the core site, which no longer depends
   on the name at all: `UpdateSiteNetwork.isCoreSite` asks the URL first.
