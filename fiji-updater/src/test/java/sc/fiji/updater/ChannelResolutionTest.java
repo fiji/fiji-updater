@@ -310,13 +310,11 @@ public class ChannelResolutionTest {
 	}
 
 	/**
-	 * The --channel flag reaches resolution, so a run with no launcher in the
-	 * picture can still say which edition it is operating on. This is the escape
-	 * hatch that the refusal in testRefusesToResolveWhenChannelUnknown points at,
-	 * and the reason a container or CI job is not simply stuck.
+	 * Resolving against a channel the installation does not follow, which is how
+	 * an upgrade works out what moving would do before committing to it.
 	 */
 	@Test
-	public void testChannelFlagDrivesResolution() throws Exception {
+	public void testOverrideDrivesResolution() throws Exception {
 		files = initialize("macros/macro.ijm");
 		final File ijRoot = files.prefix("");
 		publishChannel(getWebRoot(files), CHANNEL);
@@ -340,9 +338,10 @@ public class ChannelResolutionTest {
 		assertEquals(CHANNEL, mainSite(pinned).getChannel());
 	}
 
-	/** Pinning does not write anything back: the installation is unchanged. */
+	/** An override writes nothing back: the installation still declares what it
+	 * declared, so an abandoned upgrade leaves it knowing what it is. */
 	@Test
-	public void testChannelFlagDoesNotChangeTheInstallation() throws Exception {
+	public void testOverrideDoesNotChangeTheInstallation() throws Exception {
 		files = initialize("macros/macro.ijm");
 		final File ijRoot = files.prefix("");
 

@@ -182,6 +182,84 @@ public class CommandLine {
 			}
 	}
 
+	/**
+	 * Moves this installation to another update channel.
+	 * <p>
+	 * The only command that changes which channel an installation follows.
+	 * Everything else reads and writes against the channel the installation
+	 * already declares, so that its files and its declaration cannot disagree.
+	 * </p>
+	 */
+	public void upgrade(final List<String> list) {
+		boolean simulate = false;
+		while (!list.isEmpty() && list.get(0).startsWith("--")) {
+			final String option = list.remove(0);
+			if (option.equals("--simulate")) simulate = true;
+			else throw die("Unknown option: " + option);
+		}
+		if (list.size() > 1) throw die("Usage: upgrade [--simulate] [<channel>]");
+
+		// The reconciliation compares the file set before and after, so the
+		// "before" has to exist: without this the snapshot is empty and every
+		// dropped file goes unnoticed.
+		ensureChecksummed();
+
+		final String target = list.isEmpty() ? Channels.newest() : list.get(0);
+		if (list.isEmpty() && target == null) {
+			throw die("No update channels exist yet, so there is nowhere to " +
+				"move this installation.");
+		}
+
+		final ChannelUpgrade upgrade;
+		try {
+			upgrade = new ChannelUpgrade(files, target);
+		}
+		catch (final IllegalStateException | IllegalArgumentException e) {
+			throw die(e.getMessage());
+		}
+
+		log.info((upgrade.isDowngrade() ? "Downgrading" : "Upgrading") + " from " +
+			ChannelUpgrade.describe(upgrade.from()) + " to " +
+			ChannelUpgrade.describe(upgrade.to()));
+
+		final String warnings;
+		try {
+			warnings = upgrade.reconcile(progress);
+		}
+		catch (final Exception e) {
+			throw die("Could not read the update sites for " +
+				ChannelUpgrade.describe(upgrade.to()) + ": " + e);
+		}
+		if (warnings != null && !warnings.trim().isEmpty()) log.warn(warnings);
+
+		for (final String filename : upgrade.stranded()) {
+			log.info("  [REMOVE] " + filename +
+				" (not offered by " + ChannelUpgrade.describe(upgrade.to()) + ")");
+		}
+		for (final FileObject file : files.changes()) {
+			log.info("  [" + file.getAction() + "] " + file.getFilename());
+		}
+
+		if (simulate) {
+			log.info("Simulated only; nothing was changed.");
+			return;
+		}
+
+		try {
+			upgrade.stage();
+			final Installer installer = new Installer(files, progress);
+			installer.start();
+			installer.done();
+			upgrade.commit();
+		}
+		catch (final Exception e) {
+			throw die("Failed to move to " +
+				ChannelUpgrade.describe(upgrade.to()) + ": " + e);
+		}
+		log.info("Now following " + ChannelUpgrade.describe(upgrade.to()) +
+			". Restart for the changes to take effect.");
+	}
+
 	public void listCurrent(final List<String> list) {
 		ensureChecksummed();
 		for (final FileObject file : files.filter(new FileFilter(list)))
@@ -1438,19 +1516,7 @@ public class CommandLine {
 		}
 		diffOptions.append(" ]");
 
-		throw die("Usage: fiji --update [--channel <name>] <command>\n"
-				+ "\n"
-				+ "Options:\n"
-				+ "\t--channel <name>\n"
-				+ "\t\tRead update sites as though this installation followed\n"
-				+ "\t\tthe named channel. Use '" + ChannelState.BASE_CHANNEL_NAME
-				+ "' for the base channel.\n"
-				+ "\t\tAffects reading only, and does not change the\n"
-				+ "\t\tinstallation. Uploads always publish to the channel the\n"
-				+ "\t\tinstallation itself declares, because the index they\n"
-				+ "\t\tgenerate describes the versions installed here; to\n"
-				+ "\t\tpublish for another channel, move to it and update\n"
-				+ "\t\tfirst.\n"
+		throw die("Usage: fiji --update <command>\n"
 				+ "\n"
 				+ "Commands:\n"
 				+ "\tdiff "
@@ -1479,7 +1545,15 @@ public class CommandLine {
 				+ "\tremove-update-site <nick1> [<nick2> ...]\n"
 				+ "\tdeactivate-update-site <nick> [<nick2> ...]\n"
 				+ "\tedit-update-site <nick> <url> [<host> <upload-directory>]\n"
-				+ "\trefresh-update-sites [--simulate] [--updateall]");
+				+ "\trefresh-update-sites [--simulate] [--updateall]\n"
+				+ "\tupgrade [--simulate] [<channel>]\n"
+				+ "\t\tMove this installation to another update channel,\n"
+				+ "\t\tinstalling what that channel offers and removing what\n"
+				+ "\t\tit does not. With no channel named, moves to the newest\n"
+				+ "\t\tone; name '" + ChannelState.BASE_CHANNEL_NAME
+				+ "' for the base channel. This is the\n"
+				+ "\t\tonly command that changes which channel an\n"
+				+ "\t\tinstallation follows.");
 	}
 
 	public static void main(final String... args) {
@@ -1514,7 +1588,7 @@ public class CommandLine {
 
 	private static void main(final File ijDir, final int columnCount,
 			final Progress progress, final boolean standalone,
-			String[] args) {
+			final String[] args) {
 		String http_proxy = System.getenv("http_proxy");
 		if (http_proxy != null && http_proxy.startsWith("http://")) {
 			final int colon = http_proxy.indexOf(':', 7);
@@ -1540,21 +1614,6 @@ public class CommandLine {
 		final CommandLine instance = new CommandLine(ijDir, columnCount,
 				progress);
 		instance.standalone = standalone;
-
-		// Global options, consumed before the command. Only options listed here
-		// are taken; anything else is left alone, since several commands take
-		// options of their own.
-		int argIndex = 0;
-		while (argIndex < args.length && "--channel".equals(args[argIndex])) {
-			if (argIndex + 1 >= args.length) {
-				throw instance.die("--channel requires a channel name");
-			}
-			instance.files.pinChannel(args[argIndex + 1]);
-			argIndex += 2;
-		}
-		if (argIndex > 0) {
-			args = Arrays.copyOfRange(args, argIndex, args.length);
-		}
 
 		if (args.length == 0) {
 			instance.usage();
@@ -1615,6 +1674,8 @@ public class CommandLine {
 			instance.removeUploadSite(makeList(args, 1));
 		} else if (command.equals("deactivate-update-site")) {
 			instance.deactivateUpdateSite(makeList(args, 1));
+		} else if (command.equals("upgrade")) {
+			instance.upgrade(makeList(args, 1));
 		} else if (command.equals("refresh-update-sites")) {
 			instance.refreshUpdateSites(makeList(args, 1));
 		// hidden commands, i.e. not for public consumption

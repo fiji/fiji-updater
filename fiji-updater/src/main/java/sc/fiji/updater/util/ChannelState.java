@@ -98,13 +98,15 @@ public final class ChannelState {
 	/**
 	 * A channel named explicitly rather than read from a launcher configuration.
 	 * <p>
-	 * This is how a headless or scripted run says which edition it is operating
-	 * on, in the situations where the launcher is not involved and the channel
-	 * would otherwise be {@link #isKnown() unknown}. It is an override for the
-	 * run, not a change to the installation: there is no configuration file
-	 * behind it, so {@link #write} refuses, and the next launch reads whatever
-	 * the installation actually says. Changing an installation's channel is an
-	 * upgrade, and an upgrade is not a command-line flag.
+	 * Used to resolve update sites against a channel the installation does not
+	 * yet follow, which is how {@code ChannelUpgrade} works out what moving there
+	 * would do before anything is committed to disk.
+	 * </p>
+	 * <p>
+	 * It is a view, not a change: there is no configuration file behind it, so
+	 * {@link #write} refuses, and the installation continues to declare whatever
+	 * it declared. Recording a move is the upgrade's own last step, after the
+	 * files are staged.
 	 * </p>
 	 *
 	 * @param channel the channel, or null for the base channel. The base
