@@ -86,7 +86,6 @@ import sc.fiji.updater.util.HTTPSUtil;
 import sc.fiji.updater.util.UpdaterUtil;
 
 import org.scijava.log.Logger;
-import org.scijava.ui.swing.StaticSwingUtils;
 
 /**
  * The dialog in which the user can choose which update sites to follow.
@@ -479,7 +478,7 @@ public class SitesDialog extends JDialog implements ActionListener {
 		tableModel.rowsChanged();
 		tableModel.rowChanged(row);
 		table.setRowSelectionInterval(row, row);
-		StaticSwingUtils.scrollToBottom(scrollpane);
+		SwingTools.scrollToBottom(scrollpane);
 	}
 
 	private String makeUniqueSiteName(final String prefix) {

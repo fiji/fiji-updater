@@ -39,6 +39,7 @@ import java.awt.GridBagLayout;
 import java.awt.Insets;
 import java.awt.event.ActionEvent;
 import java.awt.event.ActionListener;
+import java.awt.Point;
 import java.lang.reflect.InvocationTargetException;
 import java.util.List;
 
@@ -52,6 +53,7 @@ import javax.swing.JLabel;
 import javax.swing.JOptionPane;
 import javax.swing.JPanel;
 import javax.swing.JScrollPane;
+import javax.swing.JViewport;
 import javax.swing.JTabbedPane;
 import javax.swing.JTextPane;
 import javax.swing.KeyStroke;
@@ -67,6 +69,21 @@ import javax.swing.event.DocumentListener;
  */
 @SuppressWarnings("serial")
 public class SwingTools {
+
+	/**
+	 * Scrolls a scroll pane to the bottom of its content.
+	 * <p>
+	 * Previously borrowed from {@code org.scijava.ui.swing.StaticSwingUtils},
+	 * which was the only thing this GUI used from scijava-ui-swing -- and which
+	 * brought jfreechart, jfreesvg, scijava-plot, scijava-table and four more
+	 * artifacts along with it. An updater that drags in a charting library to
+	 * scroll a pane is an updater with more ways to fail on a version clash.
+	 * </p>
+	 */
+	public static void scrollToBottom(final JScrollPane scrollPane) {
+		final JViewport viewport = scrollPane.getViewport();
+		viewport.setViewPosition(new Point(0, viewport.getView().getHeight()));
+	}
 
 	public static JTabbedPane tab(final Component component, final String title,
 		final String tooltip, final int width, final int height,
