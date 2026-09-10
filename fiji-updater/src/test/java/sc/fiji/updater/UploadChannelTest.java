@@ -1,0 +1,156 @@
+/*
+ * #%L
+ * Fiji distribution of ImageJ for the life sciences.
+ * %%
+ * Copyright (C) 2009 - 2026 Board of Regents of the University of
+ * Wisconsin-Madison, Broad Institute of MIT and Harvard, and Max Planck
+ * Institute of Molecular Cell Biology and Genetics.
+ * %%
+ * Redistribution and use in source and binary forms, with or without
+ * modification, are permitted provided that the following conditions are met:
+ * 
+ * 1. Redistributions of source code must retain the above copyright notice,
+ *    this list of conditions and the following disclaimer.
+ * 2. Redistributions in binary form must reproduce the above copyright notice,
+ *    this list of conditions and the following disclaimer in the documentation
+ *    and/or other materials provided with the distribution.
+ * 
+ * THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+ * AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+ * IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+ * ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT HOLDERS OR CONTRIBUTORS BE
+ * LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+ * CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+ * SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+ * INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+ * CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+ * ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+ * POSSIBILITY OF SUCH DAMAGE.
+ * #L%
+ */
+package sc.fiji.updater;
+
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assert.fail;
+import static sc.fiji.updater.UpdaterTestUtils.cleanup;
+import static sc.fiji.updater.UpdaterTestUtils.initialize;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Arrays;
+
+import org.junit.After;
+import org.junit.Test;
+
+import sc.fiji.updater.util.AppLayout;
+import sc.fiji.updater.util.ChannelState;
+import sc.fiji.updater.util.Channels;
+import sc.fiji.updater.util.StderrProgress;
+
+/**
+ * Verifies which channel an upload publishes to.
+ * <p>
+ * The index being uploaded is generated from the local
+ * {@link FilesCollection}, so it describes the state this installation
+ * actually resolved. That makes the upload channel a consequence of the
+ * installation rather than a choice: publishing elsewhere would assert, of
+ * some other channel, a set of versions nobody has run.
+ * </p>
+ *
+ * @author Curtis Rueden
+ */
+public class UploadChannelTest {
+
+	protected FilesCollection files;
+	protected StderrProgress progress = new StderrProgress();
+
+	@After
+	public void after() {
+		Channels.setKnown(null);
+		if (files != null) cleanup(files);
+	}
+
+	private void declareChannel(final File ijRoot, final String channel)
+		throws IOException
+	{
+		final File dir = new File(ijRoot, AppLayout.CONFIG_DIRECTORY);
+		assertTrue(dir.exists() || dir.mkdirs());
+		Files.write(new File(dir, "fiji.cfg").toPath(),
+			(ChannelState.CHANNEL_KEY + "=" + channel + "\n").getBytes("UTF-8"));
+	}
+
+	private FilesUploader uploaderFor(final File ijRoot) throws Exception {
+		final FilesCollection collection = new FilesCollection(ijRoot);
+		collection.read();
+		return new FilesUploader(null, collection,
+			FilesCollection.DEFAULT_UPDATE_SITE, progress);
+	}
+
+	/** No channel declared and none in existence: the base is the only target. */
+	@Test
+	public void testBaseChannelUpload() throws Exception {
+		files = initialize("macros/macro.ijm");
+		assertNull(uploaderFor(files.prefix("")).getUploadChannel());
+	}
+
+	/** The upload follows the installation's channel, without being asked. */
+	@Test
+	public void testFollowsInstallationChannel() throws Exception {
+		files = initialize("macros/macro.ijm");
+		final File ijRoot = files.prefix("");
+		declareChannel(ijRoot, "A.punctulata");
+		assertEquals("A.punctulata", uploaderFor(ijRoot).getUploadChannel());
+	}
+
+	/**
+	 * Being on an older channel than the newest published does not redirect the
+	 * upload to the newest. The maintainer publishes what they ran.
+	 */
+	@Test
+	public void testDoesNotFollowTheNewestChannel() throws Exception {
+		files = initialize("macros/macro.ijm");
+		final File ijRoot = files.prefix("");
+		Channels.setKnown(Arrays.asList("B.floridae", "A.punctulata"));
+		declareChannel(ijRoot, "A.punctulata");
+
+		assertEquals("B.floridae", Channels.newest());
+		assertEquals("the upload must follow the installation, not the newest " +
+			"channel in existence", "A.punctulata",
+			uploaderFor(ijRoot).getUploadChannel());
+	}
+
+	/**
+	 * With channels in existence and no way to tell which one this installation
+	 * follows, there is no honest target, so the upload must not proceed.
+	 */
+	@Test
+	public void testRefusesWhenChannelUnknown() throws Exception {
+		files = initialize("macros/macro.ijm");
+		Channels.setKnown(Arrays.asList("A.punctulata"));
+		try {
+			uploaderFor(files.prefix("")).getUploadChannel();
+			fail("expected a refusal");
+		}
+		catch (final IllegalStateException expected) {
+			assertTrue(expected.getMessage(),
+				expected.getMessage().contains("which channel to publish to"));
+		}
+	}
+
+	/**
+	 * Creating a site is different: its index is empty, so it asserts nothing
+	 * about any channel and belongs at the site root, where every client can see
+	 * that the site exists. The first real upload then adopts the maintainer's
+	 * channel.
+	 */
+	@Test
+	public void testNewSiteIsCreatedAtTheBase() throws Exception {
+		Channels.setKnown(Arrays.asList("A.punctulata"));
+		final FilesUploader uploader = FilesUploader.initialUploader(null,
+			"file:/tmp/nonesuch/", "file:localhost", "/tmp/nonesuch/", progress);
+		assertNull(uploader.getUploadChannel());
+	}
+}

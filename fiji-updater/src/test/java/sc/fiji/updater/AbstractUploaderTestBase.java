@@ -31,6 +31,8 @@
 
 package sc.fiji.updater;
 
+import sc.fiji.updater.util.AppLayout;
+import sc.fiji.updater.util.ChannelState;
 import sc.fiji.updater.util.StderrProgress;
 import sc.fiji.updater.util.UpdaterUtil;
 import org.apache.commons.lang.NotImplementedException;
@@ -127,6 +129,12 @@ public abstract class AbstractUploaderTestBase {
 		final String channelPath = "plugins/Channel_Only.bsh";
 		writeFile(new File(ijRoot, channelPath), "print(\"channel\");");
 
+		// Declare the installation's channel, the way the launcher would. The
+		// upload target follows from this rather than being chosen: the index is
+		// generated from local state, so it can only honestly be published to the
+		// channel that state came from.
+		declareChannel(ijRoot, channel);
+
 		final FilesCollection published = new FilesCollection(ijRoot);
 		published.read();
 		published.downloadIndexAndChecksum(new StderrProgress());
@@ -134,7 +142,6 @@ public abstract class AbstractUploaderTestBase {
 
 		final FilesUploader uploader =
 			new FilesUploader(null, published, updateSiteName, new StderrProgress());
-		uploader.setUploadChannel(channel);
 		assertEquals(channel, uploader.getUploadChannel());
 		assertTrue(uploader.login());
 		uploader.upload(new StderrProgress());
@@ -151,6 +158,17 @@ public abstract class AbstractUploaderTestBase {
 		// A channel nobody published to is still absent, so the assertions above
 		// are about this channel rather than about any path resolving.
 		assertFalse(indexExists("Z.mays"));
+	}
+
+	/** Writes a launcher configuration declaring the installation's channel. */
+	protected static void declareChannel(final File ijRoot, final String channel)
+		throws IOException
+	{
+		final File dir = new File(ijRoot, AppLayout.CONFIG_DIRECTORY);
+		assertTrue(dir.exists() || dir.mkdirs());
+		final String contents = ChannelState.CHANNEL_KEY + "=" + channel + "\n";
+		java.nio.file.Files.write(new File(dir, "fiji.cfg").toPath(),
+			contents.getBytes("UTF-8"));
 	}
 
 	/** Whether the index for the given channel is readable on the site. */

@@ -42,6 +42,7 @@ import java.util.List;
 
 import sc.fiji.updater.Conflicts.Conflict;
 import sc.fiji.updater.FileObject.Action;
+import sc.fiji.updater.util.ChannelState;
 import sc.fiji.updater.util.Channels;
 import sc.fiji.updater.util.Progress;
 import sc.fiji.updater.util.StderrProgress;
@@ -75,11 +76,10 @@ public class FilesUploader {
 	private final UpdateSite site;
 	private List<Uploadable> uploadables;
 	/**
-	 * The channel being published to, or null for the base channel. Distinct from
-	 * the channel the site currently <em>resolves</em> to, which is where this
-	 * installation reads from and may be an older fallback.
+	 * Whether this uploader exists only to bring a brand-new update site into
+	 * being, rather than to publish content to an existing one.
 	 */
-	private String uploadChannel;
+	private boolean initialUpload;
 	private boolean loggedIn;
 
 	private static UploaderService createUploaderService() {
@@ -129,9 +129,6 @@ public class FilesUploader {
 		this.files = files;
 		siteName = updateSite;
 		site = files.getUpdateSite(updateSite, false);
-		// Publish to the current edition by default, not to whichever channel this
-		// maintainer's own installation happens to follow -- see Channels.newest.
-		uploadChannel = Channels.newest();
 		final String protocol = site.getUploadProtocol();
 		uploader = uploaderService.installUploader(protocol, files,
 				progress == null ? new StderrProgress() : progress);
@@ -146,24 +143,47 @@ public class FilesUploader {
 	}
 
 	/**
-	 * Gets the channel this upload will publish to, or null for the base channel.
-	 */
-	public String getUploadChannel() {
-		return uploadChannel;
-	}
-
-	/**
-	 * Sets the channel to publish to.
+	 * Gets the channel this upload publishes to, or null for the base channel.
 	 * <p>
-	 * Callers that offer this as a choice should show the resulting target: a
-	 * maintainer publishing to the wrong channel produces no error on either
-	 * side, just content their users never see.
+	 * This is not a choice, and deliberately so. The index being uploaded is
+	 * generated from the local {@link FilesCollection} -- see the XMLFileWriter
+	 * call in {@code updateUploadables} -- so it describes the state this
+	 * installation actually resolved. Publishing it to any other channel would
+	 * publish an index that was never true of that channel: a maintainer running
+	 * A.punctulata would be asserting, of B.floridae, a set of versions they
+	 * have never had installed and cannot have tested.
+	 * </p>
+	 * <p>
+	 * The existing advice for maintainers is to upload from a Fiji that is fully
+	 * up to date, with as few update sites enabled as possible, so that the
+	 * generated index reflects something they actually ran. Channels extend that
+	 * rather than complicate it: be up to date <em>on the channel you are
+	 * publishing to</em>. Wanting to publish elsewhere is wanting to skip the
+	 * testing, and the way to publish for another channel is to run one.
 	 * </p>
 	 *
-	 * @param uploadChannel the channel, or null for the base channel.
+	 * @throws IllegalStateException if the channel cannot be determined.
 	 */
-	public void setUploadChannel(final String uploadChannel) {
-		this.uploadChannel = uploadChannel;
+	public String getUploadChannel() {
+		if (initialUpload) {
+			// A new site is created with an empty index, which asserts nothing
+			// about any channel and so is safe to serve as the base -- where every
+			// client can see that the site exists. Its first real upload adopts
+			// the maintainer's channel.
+			return null;
+		}
+		final ChannelState state = files.getChannelState();
+		if (!state.isKnown()) {
+			// While no channel exists there is only one place to publish, so an
+			// undeterminable channel costs nothing. Once channels exist, guessing
+			// would mean publishing an index into a channel it was never true of.
+			if (!Channels.anyExist()) return null;
+			throw new IllegalStateException("Cannot determine which update " +
+				"channel this installation follows, so there is no way to know " +
+				"which channel to publish to. Upload from the launcher, or name " +
+				"the channel explicitly.");
+		}
+		return state.channel();
 	}
 
 	/**
@@ -171,7 +191,7 @@ public class FilesUploader {
 	 * the final rename targets.
 	 */
 	private String indexPath() {
-		return UpdateSite.getIndexPath(uploadChannel);
+		return UpdateSite.getIndexPath(getUploadChannel());
 	}
 
 	public FilesCollection getFilesCollection() {
@@ -469,7 +489,10 @@ public class FilesUploader {
 		final FilesCollection files = new FilesCollection(null);
 		files.addUpdateSite(updateSiteName, url, sshHost, uploadDirectory, Long
 			.parseLong(UpdaterUtil.timestamp(-1)));
-		return new FilesUploader(uploaderService, files, updateSiteName, progress);
+		final FilesUploader uploader =
+			new FilesUploader(uploaderService, files, updateSiteName, progress);
+		uploader.initialUpload = true;
+		return uploader;
 	}
 
 	public LogService getLog() {
