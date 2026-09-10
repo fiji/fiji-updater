@@ -157,13 +157,14 @@ public class FijiUpdater implements UpdaterUI {
 
 		files.markForUpdate(false);
 
-		// NB: This is where an upgrade to a newer update channel will be offered,
-		// gated on the installation being fully up to date within its current
-		// channel first -- an upgrade should not have to contend with a
-		// half-updated installation. When that lands, note that the gate must
-		// say so when it blocks: failing silently here means one un-updateable
-		// file, for any unrelated reason, quietly denies the user an upgrade
-		// their colleague was offered.
+		// Offer to move to a newer channel, before the main window opens. An
+		// accepted upgrade ends the session, since it stages changes that take
+		// effect on restart -- and because the collection every table model and
+		// dialog below is holding would no longer describe this installation.
+		if (new ChannelUpgradePrompt(main, files).offer()) {
+			main.dispose();
+			return;
+		}
 
 		try {
 			final String missingUploaders = main.files.protocolsMissingUploaders(main.getUploaderService(), main.getProgress(null));

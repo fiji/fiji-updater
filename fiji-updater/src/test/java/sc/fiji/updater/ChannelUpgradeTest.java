@@ -49,6 +49,7 @@ import org.junit.After;
 import org.junit.Test;
 
 import sc.fiji.updater.util.AppLayout;
+import sc.fiji.updater.util.ChannelManifest;
 import sc.fiji.updater.util.ChannelState;
 import sc.fiji.updater.util.JavaRequirement;
 import sc.fiji.updater.util.Channels;
@@ -403,5 +404,81 @@ public class ChannelUpgradeTest {
 		assertTrue(file.getParentFile().exists() || file.getParentFile().mkdirs());
 		Files.write(file.toPath(),
 			(String.join("\n", lines) + "\n").getBytes("UTF-8"));
+	}
+
+	/** Publishes the core site's manifest, which is the authority on channels. */
+	private void publishManifest(final File webRoot, final String... channels)
+		throws IOException
+	{
+		Files.write(new File(webRoot, ChannelManifest.FILENAME).toPath(),
+			ChannelManifest.of(Arrays.asList(channels)).toByteArray());
+	}
+
+	/** An installation on the base channel is offered the newest one published. */
+	@Test
+	public void testUpgradeIsOfferedFromTheCoreManifest() throws Exception {
+		files = initialize("macros/keep.ijm");
+		final File ijRoot = files.prefix("");
+		declareChannel(ijRoot, null);
+		publishManifest(getWebRoot(files), "B.floridae", CHANNEL);
+
+		assertEquals("B.floridae",
+			ChannelUpgrade.availableUpgrade(loaded(ijRoot)));
+	}
+
+	/**
+	 * The core manifest is also the ordering. An updater can only have been
+	 * built before the channels that come after it, so its own list must not be
+	 * what decides -- reading the site's is what keeps an old updater from
+	 * dead-ending its installation.
+	 */
+	@Test
+	public void testCoreManifestSuppliesTheOrdering() throws Exception {
+		files = initialize("macros/keep.ijm");
+		final File ijRoot = files.prefix("");
+		declareChannel(ijRoot, CHANNEL);
+		Channels.setKnown(null); // this updater has never heard of any channel
+		publishManifest(getWebRoot(files), "C.elegans", "B.floridae", CHANNEL);
+
+		assertEquals("C.elegans",
+			ChannelUpgrade.availableUpgrade(loaded(ijRoot)));
+	}
+
+	/** Nothing is offered to an installation already on the newest channel. */
+	@Test
+	public void testNoUpgradeWhenOnTheNewest() throws Exception {
+		files = initialize("macros/keep.ijm");
+		final File ijRoot = files.prefix("");
+		declareChannel(ijRoot, "B.floridae");
+		publishManifest(getWebRoot(files), "B.floridae", CHANNEL);
+
+		assertNull(ChannelUpgrade.availableUpgrade(loaded(ijRoot)));
+	}
+
+	/** An older channel published alongside is not an upgrade. */
+	@Test
+	public void testOlderChannelsAreNotOffered() throws Exception {
+		files = initialize("macros/keep.ijm");
+		final File ijRoot = files.prefix("");
+		declareChannel(ijRoot, "B.floridae");
+		publishManifest(getWebRoot(files), "B.floridae", CHANNEL);
+		assertNull(ChannelUpgrade.availableUpgrade(loaded(ijRoot)));
+	}
+
+	/** A core site that has not adopted channels offers no upgrade. */
+	@Test
+	public void testNoManifestMeansNoUpgrade() throws Exception {
+		files = initialize("macros/keep.ijm");
+		final File ijRoot = files.prefix("");
+		declareChannel(ijRoot, null);
+		assertNull(ChannelUpgrade.availableUpgrade(loaded(ijRoot)));
+	}
+
+	/** An installation that cannot say what it follows is not offered a move. */
+	@Test
+	public void testUnknownChannelIsOfferedNothing() throws Exception {
+		files = initialize("macros/keep.ijm");
+		publishManifest(getWebRoot(files), CHANNEL);
+		assertNull(ChannelUpgrade.availableUpgrade(loaded(files.prefix(""))));
 	}
 }

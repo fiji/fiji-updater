@@ -13,6 +13,7 @@ import sc.fiji.updater.FileObject.Status;
 import org.scijava.launcher.Java;
 
 import sc.fiji.updater.util.AppLayout;
+import sc.fiji.updater.util.ChannelManifest;
 import sc.fiji.updater.util.ChannelState;
 import sc.fiji.updater.util.Channels;
 import sc.fiji.updater.util.JavaRequirement;
@@ -82,6 +83,43 @@ public class ChannelUpgrade {
 			throw new IllegalArgumentException("This installation already " +
 				"follows " + describe(this.to) + ".");
 		}
+	}
+
+	/**
+	 * The channel this installation could move up to, or null if none is on
+	 * offer.
+	 * <p>
+	 * The core update site is the authority here, and only the core site: a
+	 * third-party site publishing for a channel this installation does not
+	 * follow says nothing about whether the application is ready for it. Its
+	 * manifest is also the authoritative <em>ordering</em> of channels -- an
+	 * updater can only have been built before the channels that come after it,
+	 * so a list compiled into this one would dead-end every installation whose
+	 * updater predates the next codename. Reading it here is what keeps that from
+	 * happening, and it updates {@link Channels} for the rest of the session.
+	 * </p>
+	 *
+	 * @param files the installation to check.
+	 * @return the channel to offer, or null if the installation is on the newest
+	 *         one the core site serves, or if its own channel is unknown.
+	 */
+	public static String availableUpgrade(final FilesCollection files) {
+		final ChannelState state = files.getDeclaredChannelState();
+		if (!state.isKnown()) return null;
+
+		final UpdateSite core =
+			files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, false);
+		if (core == null) return null;
+
+		final ChannelManifest manifest = ChannelManifest.read(core.getURL());
+		if (!manifest.isPresent()) return null;
+		Channels.setKnown(manifest.channels());
+
+		// Newest first, so the first one above us is the one to offer.
+		for (final String channel : manifest.channels()) {
+			if (Channels.isNewerThan(channel, state.channel())) return channel;
+		}
+		return null;
 	}
 
 	/** The channel being moved away from; null is the base channel. */
