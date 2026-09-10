@@ -167,6 +167,14 @@ public class FilesUploader {
 	 * testing, and the way to publish for another channel is to run one.
 	 * </p>
 	 *
+	 * <p>
+	 * Note that this reads the channel the installation <em>declares</em>, not
+	 * any override given for the run. An override changes which remote index is
+	 * read; it does not change which versions are installed here, and those are
+	 * what the uploaded index describes. To publish for another channel, move the
+	 * installation to it and update first.
+	 * </p>
+	 *
 	 * @throws IllegalStateException if the channel cannot be determined.
 	 */
 	public String getUploadChannel() {
@@ -187,7 +195,7 @@ public class FilesUploader {
 			// configuration to read a channel from even when the caller has one.
 			return null;
 		}
-		final ChannelState state = files.getChannelState();
+		final ChannelState state = files.getDeclaredChannelState();
 		if (!state.isKnown()) {
 			// While no channel exists there is only one place to publish, so an
 			// undeterminable channel costs nothing. Once channels exist, guessing
@@ -195,8 +203,7 @@ public class FilesUploader {
 			if (!Channels.anyExist()) return null;
 			throw new IllegalStateException("Cannot determine which update " +
 				"channel this installation follows, so there is no way to know " +
-				"which channel to publish to. Upload from the launcher, or name " +
-				"the channel explicitly.");
+				"which channel to publish to.");
 		}
 		return state.channel();
 	}

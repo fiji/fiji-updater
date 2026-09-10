@@ -116,7 +116,8 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	public final static String DEFAULT_UPDATE_SITE =
 		UpdateSiteNetwork.MAIN_SITE_NAME;
 	private final File appRoot;
-	private ChannelState channelState;
+	private ChannelState declaredChannelState;
+	private ChannelState pinnedChannelState;
 	public final LogService log;
 	protected Set<FileObject> ignoredConflicts = new HashSet<>();
 	protected List<Conflict> conflicts = new ArrayList<>();
@@ -163,27 +164,55 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	}
 
 	/**
-	 * Gets this installation's update channel, reading it from the launcher
-	 * configuration on first use.
+	 * Gets the update channel this collection resolves update sites against:
+	 * whatever {@link #pinChannel} named, or failing that the channel the
+	 * installation declares.
 	 * <p>
 	 * Note that the result may be {@link ChannelState#isKnown() unknown}, which
 	 * callers must not confuse with the base channel; see {@link ChannelState}.
 	 * </p>
 	 */
 	/**
-	 * Overrides this installation's channel for the lifetime of this collection,
-	 * without changing the installation itself.
+	 * Overrides, for reading, the channel this collection resolves update sites
+	 * against, without changing the installation itself.
+	 * <p>
+	 * Affects resolution only. What gets <em>published</em> follows the channel
+	 * the installation declares, never this: see
+	 * {@link #getDeclaredChannelState()}.
+	 * </p>
 	 *
 	 * @param channel the channel, or null for the base channel.
 	 * @see ChannelState#pinned(String)
 	 */
 	public void pinChannel(final String channel) {
-		channelState = ChannelState.pinned(channel);
+		pinnedChannelState = ChannelState.pinned(channel);
+	}
+
+	/**
+	 * The channel this installation declares it follows, ignoring any override.
+	 * <p>
+	 * This is the one that governs publishing. An override says which remote
+	 * index to read; it says nothing about which versions are actually installed
+	 * here, and the index an upload generates is built from those. Publishing
+	 * against an override would therefore assert, of some channel, a set of
+	 * versions this installation may never have had.
+	 * </p>
+	 * <p>
+	 * The way to publish for another channel is to move the installation to it
+	 * and update, which is what makes the assertion true, and is the same
+	 * sequence a maintainer follows in the GUI.
+	 * </p>
+	 */
+	public ChannelState getDeclaredChannelState() {
+		if (declaredChannelState == null) {
+			declaredChannelState = ChannelState.read(appRoot);
+		}
+		return declaredChannelState;
 	}
 
 	public ChannelState getChannelState() {
-		if (channelState == null) channelState = ChannelState.read(appRoot);
-		return channelState;
+		return pinnedChannelState != null ? pinnedChannelState
+			: getDeclaredChannelState();
 	}
 
 	/**

@@ -237,37 +237,61 @@ public class UploadChannelTest {
 	}
 
 	/**
-	 * The escape hatch the refusal message promises: with no launcher in the
-	 * picture, naming the channel explicitly is what lets a scripted upload
-	 * proceed.
+	 * An override says which remote index to read. It does not change which
+	 * versions are installed here, and those are what the uploaded index
+	 * describes -- so it must not redirect an upload.
+	 * <p>
+	 * Publishing against an override would assert, of the named channel, a set
+	 * of versions this installation may never have had. The way to publish for a
+	 * channel is to move the installation to it and update, which is what makes
+	 * the assertion true.
+	 * </p>
 	 */
 	@Test
-	public void testPinnedChannelSatisfiesTheUploadTarget() throws Exception {
+	public void testOverrideDoesNotRedirectTheUpload() throws Exception {
+		files = initialize("macros/macro.ijm");
+		final File ijRoot = files.prefix("");
+		declareChannel(ijRoot, "A.punctulata");
+		Channels.setKnown(Arrays.asList("B.floridae", "A.punctulata"));
+
+		final FilesCollection collection = new FilesCollection(ijRoot);
+		collection.read();
+		collection.pinChannel("B.floridae");
+
+		// Reading follows the override...
+		assertEquals("B.floridae", collection.getChannel());
+		// ...while publishing follows what the installation actually is.
+		assertEquals("A.punctulata",
+			collection.getDeclaredChannelState().channel());
+		final FilesUploader uploader = new FilesUploader(null, collection,
+			FilesCollection.DEFAULT_UPDATE_SITE, progress);
+		assertEquals("A.punctulata", uploader.getUploadChannel());
+	}
+
+	/**
+	 * And an override cannot conjure a target where the installation declares
+	 * none: with channels in existence and nothing to read, there is no honest
+	 * answer, and naming one for the run does not create one.
+	 */
+	@Test
+	public void testOverrideDoesNotSatisfyAnUnknownChannel() throws Exception {
 		files = initialize("macros/macro.ijm");
 		Channels.setKnown(Arrays.asList("A.punctulata"));
 
 		final FilesCollection collection = new FilesCollection(files.prefix(""));
 		collection.read();
 		assertFalse("no launcher configuration exists here",
-			collection.getChannelState().isKnown());
-
+			collection.getDeclaredChannelState().isKnown());
 		collection.pinChannel("A.punctulata");
+
 		final FilesUploader uploader = new FilesUploader(null, collection,
 			FilesCollection.DEFAULT_UPDATE_SITE, progress);
-		assertEquals("A.punctulata", uploader.getUploadChannel());
-	}
-
-	/** Pinning the base channel by name works too, for symmetry. */
-	@Test
-	public void testPinnedBaseChannelUpload() throws Exception {
-		files = initialize("macros/macro.ijm");
-		Channels.setKnown(Arrays.asList("A.punctulata"));
-
-		final FilesCollection collection = new FilesCollection(files.prefix(""));
-		collection.read();
-		collection.pinChannel(ChannelState.BASE_CHANNEL_NAME);
-		final FilesUploader uploader = new FilesUploader(null, collection,
-			FilesCollection.DEFAULT_UPDATE_SITE, progress);
-		assertNull(uploader.getUploadChannel());
+		try {
+			uploader.getUploadChannel();
+			fail("an override must not stand in for the installation's channel");
+		}
+		catch (final IllegalStateException expected) {
+			// pass
+		}
 	}
 }
