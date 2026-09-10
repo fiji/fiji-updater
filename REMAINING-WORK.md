@@ -111,14 +111,18 @@ to put anything else.
   **Old updaters read `api.php`, not the page.** `AvailableSites.getPageSource`
   fetches
   `imagej.net/api.php?action=query&export=true&titles=List of update sites` and
-  parses the wikitext `{| class="wikitable"` out of the XML export. So what
-  keeps a pre-`sites.yml` updater working is that *export query* continuing to
-  answer with a table carrying Name / Site-or-URL / Description / Maintainer
-  columns. Whether `imagej.net/List_of_update_sites` 301s or serves a static
-  `index.html` is invisible to those clients — a good idea for humans, but not
-  the compatibility lever. If `api.php` does stop answering, old updaters
-  degrade rather than break: `tryGetAvailableSites` logs and returns an empty
-  list, local sites are all kept, and no newly minted site is ever seen again.
+  parses the wikitext `{| class="wikitable"` out of the XML export. Whether
+  `imagej.net/List_of_update_sites` redirects or serves a static `index.html` is
+  invisible to those clients — worth doing for humans, but not the
+  compatibility lever.
+
+  The lever is already in place: Apache rewrites exactly that query, matched
+  condition by condition, to `list-of-update-sites/sites.xml`
+  (`loci-servers/apache/sites/imagej.net.include`). So freezing the generated
+  `sites.xml` is all that pre-`sites.yml` updaters need, and no MediaWiki has to
+  survive for them. Should the rewrite ever be dropped, they degrade rather than
+  break: `tryGetAvailableSites` logs and returns an empty list, local sites are
+  all kept, and no newly minted site is ever seen again.
 
   **Removing the legacy entries from the published list is not enough**, because
   the collision is with local state. `AvailableSites` seeds the list with
