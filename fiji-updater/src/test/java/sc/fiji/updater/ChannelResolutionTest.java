@@ -48,6 +48,7 @@ import org.junit.After;
 import org.junit.Test;
 
 import sc.fiji.updater.util.AppLayout;
+import sc.fiji.updater.util.ChannelManifest;
 import sc.fiji.updater.util.ChannelState;
 import sc.fiji.updater.util.Channels;
 import sc.fiji.updater.util.StderrProgress;
@@ -351,5 +352,97 @@ public class ChannelResolutionTest {
 
 		// A fresh look at the installation still finds no channel declared.
 		assertFalse(new FilesCollection(ijRoot).getChannelState().isKnown());
+	}
+
+	/** Publishes a manifest declaring which channels a site carries. */
+	private void publishManifest(final File webRoot, final String... channels)
+		throws IOException
+	{
+		Files.write(new File(webRoot, ChannelManifest.FILENAME).toPath(),
+			ChannelManifest.of(java.util.Arrays.asList(channels)).toByteArray());
+	}
+
+	/**
+	 * The property that keeps this warning credible: a site that has never
+	 * engaged with channels says nothing by falling back, and is not reported.
+	 * On the day channels ship this is every site in existence, so a rule keyed
+	 * on the fallback itself would produce hundreds of warnings that everyone
+	 * would learn to ignore.
+	 */
+	@Test
+	public void testSiteWithoutManifestIsNotReported() throws Exception {
+		files = initialize("macros/macro.ijm");
+		final File ijRoot = files.prefix("");
+		setChannel(ijRoot, CHANNEL);
+		Channels.setKnown(java.util.Arrays.asList(CHANNEL));
+
+		final FilesCollection after = reread(ijRoot);
+		assertNull(mainSite(after).getChannel());
+
+		final FilesCollection fresh = new FilesCollection(ijRoot);
+		fresh.tryLoadingCollection();
+		final XMLFileDownloader downloader = new XMLFileDownloader(fresh);
+		downloader.start(false);
+		assertEquals("", downloader.getWarnings().trim());
+	}
+
+	/**
+	 * A site that publishes a manifest has engaged with channels, so the absence
+	 * of this one from it is a statement rather than a silence.
+	 */
+	@Test
+	public void testSiteWithManifestLackingOurChannelIsReported()
+		throws Exception
+	{
+		files = initialize("macros/macro.ijm");
+		final File ijRoot = files.prefix("");
+		final File webRoot = getWebRoot(files);
+		publishChannel(webRoot, "B.floridae");
+		publishManifest(webRoot, "B.floridae");
+		setChannel(ijRoot, CHANNEL);
+		Channels.setKnown(java.util.Arrays.asList("B.floridae", CHANNEL));
+
+		final FilesCollection fresh = new FilesCollection(ijRoot);
+		fresh.tryLoadingCollection();
+		final XMLFileDownloader downloader = new XMLFileDownloader(fresh);
+		downloader.start(false);
+
+		final String warnings = downloader.getWarnings();
+		assertTrue(warnings, warnings.contains("have not published for " + CHANNEL));
+		assertTrue(warnings, warnings.contains(FilesCollection.DEFAULT_UPDATE_SITE));
+	}
+
+	/** A site that has published for this channel is not reported. */
+	@Test
+	public void testAdoptedSiteIsNotReported() throws Exception {
+		files = initialize("macros/macro.ijm");
+		final File ijRoot = files.prefix("");
+		final File webRoot = getWebRoot(files);
+		publishChannel(webRoot, CHANNEL);
+		publishManifest(webRoot, CHANNEL);
+		setChannel(ijRoot, CHANNEL);
+		Channels.setKnown(java.util.Arrays.asList(CHANNEL));
+
+		final FilesCollection fresh = new FilesCollection(ijRoot);
+		fresh.tryLoadingCollection();
+		final XMLFileDownloader downloader = new XMLFileDownloader(fresh);
+		downloader.start(false);
+		assertEquals("", downloader.getWarnings().trim());
+	}
+
+	/** An installation on the base channel has nothing to be behind. */
+	@Test
+	public void testBaseChannelInstallationIsNeverWarned() throws Exception {
+		files = initialize("macros/macro.ijm");
+		final File ijRoot = files.prefix("");
+		final File webRoot = getWebRoot(files);
+		publishChannel(webRoot, CHANNEL);
+		publishManifest(webRoot, CHANNEL);
+
+		final FilesCollection fresh = new FilesCollection(ijRoot);
+		fresh.tryLoadingCollection();
+		final XMLFileDownloader downloader = new XMLFileDownloader(fresh);
+		downloader.start(false);
+		assertEquals("", downloader.getWarnings().trim());
 	}
 }

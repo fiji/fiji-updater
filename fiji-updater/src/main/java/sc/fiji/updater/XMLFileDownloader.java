@@ -40,11 +40,13 @@ import java.net.SocketTimeoutException;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 import java.util.zip.GZIPInputStream;
 
 import sc.fiji.updater.util.AbstractProgressable;
+import sc.fiji.updater.util.ChannelManifest;
 import sc.fiji.updater.util.ChannelState;
 import sc.fiji.updater.util.Channels;
 import sc.fiji.updater.util.UpdaterUtil;
@@ -104,6 +106,7 @@ public class XMLFileDownloader extends AbstractProgressable {
 		final int current = 0, total = updateSites.size();
 		if (warnings == null) warnings = new StringBuilder();
 		else warnings.setLength(0);
+		final List<String> lagging = new ArrayList<>();
 		for (final String name : updateSites) {
 			final UpdateSite updateSite = files.getUpdateSite(name, true);
 			final String title =
@@ -111,11 +114,13 @@ public class XMLFileDownloader extends AbstractProgressable {
 			addItem(title);
 			setCount(current, total);
 			read(reader, name, updateSite);
+			if (hasNotAdopted(updateSite, channel.channel())) lagging.add(name);
 			itemDone(title);
 		}
 		if (closeProgressAtEnd) {
 			done();
 		}
+		appendWarning(laggingWarning(lagging, channel.channel()));
 		appendWarning(reader.getWarnings());
 	}
 
@@ -184,6 +189,44 @@ public class XMLFileDownloader extends AbstractProgressable {
 			files.log.error(failure);
 		}
 		appendWarning("Could not update from site '" + name + "': " + failure);
+	}
+
+	/**
+	 * Whether a site has engaged with channels but not published for this one.
+	 * <p>
+	 * The distinction that makes this worth reporting is between a site that has
+	 * never heard of channels and one that has. The first is the overwhelming
+	 * majority and says nothing by falling back -- its content is served from the
+	 * site root exactly as it always was. The second publishes a manifest listing
+	 * what it serves, and the absence of this installation's channel from that
+	 * list is a real statement: the maintainer thinks about channels and has not
+	 * got to this one.
+	 * </p>
+	 * <p>
+	 * Keying on the manifest rather than on the fallback itself is what keeps
+	 * this quiet. On the day channels ship, no site has a manifest, so nothing is
+	 * reported; the set of sites that can trigger it is exactly the set of
+	 * maintainers who have engaged with the system.
+	 * </p>
+	 */
+	private boolean hasNotAdopted(final UpdateSite site, final String channel) {
+		if (channel == null) return false; // nothing to be behind
+		if (channel.equals(site.getChannel())) return false; // adopted
+		return ChannelManifest.read(site.getURL()).isPresent();
+	}
+
+	/** One message for all the sites that lag, rather than one apiece. */
+	private static String laggingWarning(final List<String> lagging,
+		final String channel)
+	{
+		if (lagging.isEmpty()) return null;
+		final StringBuilder sb = new StringBuilder();
+		sb.append("The following update sites have not published for ")
+			.append(channel).append(" yet:\n    ");
+		sb.append(String.join(", ", lagging));
+		sb.append("\nThey are being read from their previous release, which may ")
+			.append("not work correctly with this edition.");
+		return sb.toString();
 	}
 
 	/**
