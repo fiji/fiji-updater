@@ -33,6 +33,8 @@ package sc.fiji.updater;
 
 import java.util.Optional;
 
+import sc.fiji.updater.util.UpdateSiteNetwork;
+
 /**
  * Class indicating automated changes to an update site.
  * These changes need to get approved for active updates.
@@ -105,8 +107,7 @@ public class URLChange {
 	 * Helper function checking if an update site URL is a known mirror URL.
 	 */
 	private static boolean isMirror(UpdateSite site) {
-		// NB: This might be changed into an extensible list of mirrors in the future.
-		return site.getURL().startsWith("https://downloads.micron.ox.ac.uk");
+		return UpdateSiteNetwork.isMirror(site.getURL());
 	}
 
 }

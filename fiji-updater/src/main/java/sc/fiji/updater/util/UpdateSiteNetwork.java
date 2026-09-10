@@ -88,6 +88,70 @@ public final class UpdateSiteNetwork {
 	/** Host maintainers upload the main update site's contents to. */
 	public static final String MAIN_SITE_SSH_HOST = "update.imagej.net";
 
+	/**
+	 * URL prefixes under which update sites are served by a mirror rather than by
+	 * their canonical host.
+	 * <p>
+	 * A mirror is a different source for the same content, not a different site,
+	 * so a user who has chosen one should be left on it: the updater must not
+	 * offer to "correct" their URL back to the canonical one. That is what
+	 * {@code URLChange} consults this for.
+	 * </p>
+	 * <p>
+	 * These are path prefixes, not host prefixes, and deliberately so. Mirror
+	 * operators also host update sites of their own -- SIMcheck lives at
+	 * {@code downloads.micron.ox.ac.uk/fiji_update/SIMcheck/}, alongside but not
+	 * inside that host's {@code /mirrors/} tree -- and matching on the host alone
+	 * would classify those as mirrors of something they are not.
+	 * </p>
+	 * <p>
+	 * This list is a stopgap. Mirrors are a property of a site, and belong in the
+	 * published site list next to the site they mirror, at which point no URL
+	 * needs to appear in this file at all. Until the updater reads that list
+	 * directly, adding a mirror means adding a line here.
+	 * </p>
+	 */
+	public static final String[] MIRROR_URL_PREFIXES = {
+		"https://downloads.micron.ox.ac.uk/fiji_update/mirrors/",
+		"https://mirrors.pasteur.fr/fiji/",
+	};
+
+	/**
+	 * Mirrors of the main update site, in no particular order.
+	 * <p>
+	 * Used to recognize that an installation is already following the main site,
+	 * whichever source it reads it from.
+	 * </p>
+	 */
+	public static final String[] MAIN_SITE_MIRRORS = {
+		"https://downloads.micron.ox.ac.uk/fiji_update/mirrors/sites-fiji/",
+		"https://mirrors.pasteur.fr/fiji/sites/Fiji/",
+	};
+
+	/** Whether the given URL is served by a known mirror. */
+	public static boolean isMirror(final String url) {
+		if (url == null) return false;
+		for (final String prefix : MIRROR_URL_PREFIXES) {
+			if (url.startsWith(prefix)) return true;
+		}
+		return false;
+	}
+
+	/**
+	 * Whether the given URL is the main update site, by any of its sources.
+	 *
+	 * @param url the URL to test; a trailing slash is not required.
+	 */
+	public static boolean isMainSite(final String url) {
+		if (url == null) return false;
+		final String normalized = url.endsWith("/") ? url : url + "/";
+		if (normalized.endsWith(MAIN_SITE_PATH)) return true;
+		for (final String mirror : MAIN_SITE_MIRRORS) {
+			if (normalized.equals(mirror)) return true;
+		}
+		return false;
+	}
+
 	/** Upload destination for the main update site. */
 	public static final String MAIN_SITE_UPLOAD_DIRECTORY =
 		"/home/imagej/update-site";

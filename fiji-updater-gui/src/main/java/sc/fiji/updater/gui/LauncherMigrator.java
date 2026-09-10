@@ -31,6 +31,7 @@ package sc.fiji.updater.gui;
 
 import sc.fiji.updater.*;
 import sc.fiji.updater.util.Platforms;
+import sc.fiji.updater.util.UpdateSiteNetwork;
 import org.scijava.Context;
 import org.scijava.app.AppService;
 import org.scijava.launcher.Java;
@@ -140,11 +141,12 @@ class LauncherMigrator {
 			throw new RuntimeException(e);
 		}
 
-		// If the new single Fiji update site is not active, proceed to upgrade
+		// If the new single Fiji update site is not active, proceed to upgrade.
+		// Any of its mirrors counts: a mirror is a different source for the same
+		// site, not a different site, so a user reading it is already migrated.
 		boolean fijiSiteActive = false;
 		for (UpdateSite site : files.getUpdateSites(false)) {
-			if (site.getURL().equals(FIJI_LATEST_URL) ||
-					site.getURL().equals(FIJI_LATEST_EURO_URL)) {
+			if (UpdateSiteNetwork.isMainSite(site.getURL())) {
 				fijiSiteActive = true;
 				break;
 			}
