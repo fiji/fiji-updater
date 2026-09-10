@@ -647,7 +647,7 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 		return filter(is(Action.UNINSTALL));
 	}
 
-	public Iterable<FileObject> toRemove() {
+	Iterable<FileObject> toRemove() {
 		return filter(is(Action.REMOVE));
 	}
 
@@ -833,7 +833,7 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 		};
 	}
 
-	public Filter doesPlatformMatch() {
+	Filter doesPlatformMatch() {
 		// If we're a developer or no platform was specified, return yes
 		if (hasUploadableSites()) return yes();
 		return new Filter() {
@@ -855,7 +855,7 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 		};
 	}
 
-	public Filter isNoAction() {
+	Filter isNoAction() {
 		return new Filter() {
 
 			@Override
@@ -888,7 +888,7 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 		};
 	}
 
-	public Filter hasMetadataChanges() {
+	Filter hasMetadataChanges() {
 		return new Filter() {
 
 			@Override
@@ -988,7 +988,7 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 		return filter(filter, this);
 	}
 
-	public FileObject
+	FileObject
 		getFileFromDigest(final String filename, final String digest)
 	{
 		for (final FileObject file : this)
@@ -997,7 +997,7 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 		return null;
 	}
 
-	public Iterable<String> analyzeDependencies(final FileObject file) {
+	Iterable<String> analyzeDependencies(final FileObject file) {
 		try {
 			if (dependencyAnalyzer == null) dependencyAnalyzer =
 				new DependencyAnalyzer(appRoot);
@@ -1349,7 +1349,7 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 	 *
 	 * @return the list of files known to the Updater, with versions, as a String
 	 */
-	public static String getInstalledVersions(final File ijDirectory, final Progress progress) {
+	static String getInstalledVersions(final File ijDirectory, final Progress progress) {
 		final StringBuilder sb = new StringBuilder();
 		final FilesCollection files = new FilesCollection(ijDirectory);
 		try {
@@ -1401,7 +1401,7 @@ public class FilesCollection extends LinkedHashMap<String, FileObject>
 		return sb.toString();
 	}
 
-	public Collection<String> getProtocols(Iterable<FileObject> selected) {
+	Collection<String> getProtocols(Iterable<FileObject> selected) {
 		final Set<String> protocols = new LinkedHashSet<>();
 		for (final FileObject file : selected) {
 			final UpdateSite site = getUpdateSite(file.updateSite, false);

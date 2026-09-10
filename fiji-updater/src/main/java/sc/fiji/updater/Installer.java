@@ -225,7 +225,7 @@ public class Installer extends Downloader {
 	 */
 	protected final static String UPDATER_GUI_JAR_NAME = AppLayout.UPDATER_GUI_JAR;
 
-	public static Set<FileObject> getUpdaterFiles(final FilesCollection files, final CommandService commandService, final boolean onlyUpdateable) {
+	static Set<FileObject> getUpdaterFiles(final FilesCollection files, final CommandService commandService, final boolean onlyUpdateable) {
 		final Set<FileObject> result = new HashSet<>();
 		final FileObject updater = files.get(UPDATER_JAR_NAME);
 		if (updater == null) return result;

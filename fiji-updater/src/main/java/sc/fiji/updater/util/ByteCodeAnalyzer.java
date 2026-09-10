@@ -82,14 +82,14 @@ public class ByteCodeAnalyzer implements Iterable<String> {
 		return getString(dereferenceOffset(thisOffset + 1));
 	}
 
-	public String getClassNameConstant(final int index) {
+	String getClassNameConstant(final int index) {
 		final int offset = poolOffsets[index - 1];
 		if (getU1(offset) != 7) throw new RuntimeException("Constant " + index +
 			" does not refer to a class");
 		return getStringConstant(getU2(offset + 1)).replace('/', '.');
 	}
 
-	public String getStringConstant(final int index) {
+	String getStringConstant(final int index) {
 		return getString(poolOffsets[index - 1]);
 	}
 

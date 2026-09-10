@@ -136,14 +136,14 @@ public class Checksummer extends AbstractProgressable {
 		return false;
 	}
 
-	public void queueDir(final String[] dirs, final String[] extensions) {
+	void queueDir(final String[] dirs, final String[] extensions) {
 		final Set<String> set = new HashSet<>();
 		Collections.addAll(set, extensions);
 		for (final String dir : dirs)
 			queueDir(dir, set);
 	}
 
-	public void queueDir(final String dir, final Set<String> extensions) {
+	void queueDir(final String dir, final Set<String> extensions) {
 		File file = files.prefix(dir);
 		if (!exists(file)) return;
 		for (final String item : file.list()) {

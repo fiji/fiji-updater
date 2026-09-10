@@ -126,7 +126,7 @@ public class Class2JarFilesMap extends HashMap<String, ArrayList<String>> {
 		}
 	}
 
-	public static void printJarsForClass(final Class2JarFilesMap map,
+	static void printJarsForClass(final Class2JarFilesMap map,
 		final String className, final boolean oneLine)
 	{
 		final String indent = "    ";

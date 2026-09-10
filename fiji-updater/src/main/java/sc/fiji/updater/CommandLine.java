@@ -132,7 +132,7 @@ public class CommandLine {
 		checksummed = true;
 	}
 
-	protected class FileFilter implements Filter {
+	private class FileFilter implements Filter {
 
 		protected Set<String> fileNames;
 
@@ -155,7 +155,7 @@ public class CommandLine {
 		}
 	}
 
-	public void diff(final List<String> list) {
+	private void diff(final List<String> list) {
 		ensureChecksummed();
 		final Diff diff = new Diff(System.out);
 
@@ -185,7 +185,7 @@ public class CommandLine {
 	 * already declares, so that its files and its declaration cannot disagree.
 	 * </p>
 	 */
-	public void upgrade(final List<String> list) {
+	private void upgrade(final List<String> list) {
 		boolean simulate = false;
 		while (!list.isEmpty() && list.get(0).startsWith("--")) {
 			final String option = list.remove(0);
@@ -268,13 +268,13 @@ public class CommandLine {
 			". Restart for the changes to take effect.");
 	}
 
-	public void listCurrent(final List<String> list) {
+	private void listCurrent(final List<String> list) {
 		ensureChecksummed();
 		for (final FileObject file : files.filter(new FileFilter(list)))
 			System.out.println(file.filename + "-" + file.getTimestamp());
 	}
 
-	public void list(final List<String> list, Filter filter) {
+	private void list(final List<String> list, Filter filter) {
 		ensureChecksummed();
 		if (filter == null) {
 			filter = new FileFilter(list);
@@ -288,39 +288,39 @@ public class CommandLine {
 		}
 	}
 
-	public void list(final List<String> list) {
+	private void list(final List<String> list) {
 		list(list, null);
 	}
 
-	public void listUptodate(final List<String> list) {
+	private void listUptodate(final List<String> list) {
 		list(list, files.is(Status.INSTALLED));
 	}
 
-	public void listNotUptodate(final List<String> list) {
+	private void listNotUptodate(final List<String> list) {
 		list(list,
 				files.not(files.oneOf(new Status[] { Status.OBSOLETE,
 						Status.INSTALLED, Status.LOCAL_ONLY })));
 	}
 
-	public void listUpdateable(final List<String> list) {
+	private void listUpdateable(final List<String> list) {
 		list(list, files.is(Status.UPDATEABLE));
 	}
 
-	public void listModified(final List<String> list) {
+	private void listModified(final List<String> list) {
 		list(list, files.is(Status.MODIFIED));
 	}
 
-	public void listLocalOnly(final List<String> list) {
+	private void listLocalOnly(final List<String> list) {
 		list(list, files.is(Status.LOCAL_ONLY));
 	}
 
-	public void listFromSite(final List<String> sites) {
+	private void listFromSite(final List<String> sites) {
 		if (sites.size() != 1)
 			throw die("Usage: list-from-site <name>");
 		list(null, files.isUpdateSite(sites.get(0)));
 	}
 
-	public void listShadowed(final List<String> list) {
+	private void listShadowed(final List<String> list) {
 		ensureChecksummed();
 		final FileFilter filter = new FileFilter(list);
 		files.sort();
@@ -342,13 +342,13 @@ public class CommandLine {
 		}
 	}
 
-	public void show(final List<String> list) {
+	private void show(final List<String> list) {
 		for (final String filename : list) {
 			show(filename);
 		}
 	}
 
-	public void show(final String filename) {
+	private void show(final String filename) {
 		ensureChecksummed();
 		final FileObject file = files.get(filename);
 		if (file == null) {
@@ -358,7 +358,7 @@ public class CommandLine {
 		}
 	}
 
-	public void show(final FileObject file) {
+	private void show(final FileObject file) {
 		ensureChecksummed();
 		if (dependencyMap == null) {
 			dependencyMap = files.getDependencies(files, false);
@@ -485,7 +485,7 @@ public class CommandLine {
 		}
 	}
 
-	public void history(final List<String> list) {
+	private void history(final List<String> list) {
 		ensureChecksummed();
 		class History extends TreeMap<Long, Set<FileObject>> implements
 			Comparator<FileObject>
@@ -569,7 +569,7 @@ public class CommandLine {
 		}
 	}
 
-	public void download(final FileObject file) {
+	private void download(final FileObject file) {
 		ensureChecksummed();
 		try {
 			new Downloader(progress).start(new OneFile(file));
@@ -589,7 +589,7 @@ public class CommandLine {
 		}
 	}
 
-	public void delete(final FileObject file) {
+	private void delete(final FileObject file) {
 		if (new File(file.filename).delete()) {
 			log.info("Deleted " + file.filename);
 		} else {
@@ -597,15 +597,15 @@ public class CommandLine {
 		}
 	}
 
-	public void update(final List<String> list) {
+	private void update(final List<String> list) {
 		update(list, false);
 	}
 
-	public void update(final List<String> list, final boolean force) {
+	private void update(final List<String> list, final boolean force) {
 		update(list, force, false);
 	}
 
-	public void update(final List<String> list, final boolean force,
+	private void update(final List<String> list, final boolean force,
 			final boolean pristine) {
 		ensureChecksummed();
 		if (list.size() > 0) {
@@ -675,7 +675,7 @@ public class CommandLine {
 		}
 	}
 
-	public void revertUnrealChanges(final List<String> list) {
+	private void revertUnrealChanges(final List<String> list) {
 		ensureChecksummed();
 		boolean simulate = false;
 		if (list != null && list.size() > 0 && "--simulate".equals(list.get(0))) {
@@ -742,7 +742,7 @@ public class CommandLine {
 		}
 	}
 
-	public void downgrade(final List<String> list) {
+	private void downgrade(final List<String> list) {
 		if (standalone) {
 			final Console console = System.console();
 			if (console == null) {
@@ -866,7 +866,7 @@ public class CommandLine {
 		}
 	}
 
-	public void upload(final List<String> list) {
+	private void upload(final List<String> list) {
 		if (list == null) {
 			throw die("Which files do you mean to upload?");
 		}
@@ -1008,7 +1008,7 @@ public class CommandLine {
 		upload(updateSite);
 	}
 
-	public void uploadCompleteSite(final List<String> list) {
+	private void uploadCompleteSite(final List<String> list) {
 		if (list == null) {
 			throw die("Which files do you mean to upload?");
 		}
@@ -1268,7 +1268,7 @@ public class CommandLine {
 		}
 	}
 
-	public String chooseUploadSite(final String file) {
+	private String chooseUploadSite(final String file) {
 		final List<String> names = new ArrayList<>();
 		final List<String> options = new ArrayList<>();
 		for (final String name : files.getUpdateSiteNames(false)) {
@@ -1290,7 +1290,7 @@ public class CommandLine {
 		return index < 0 ? null : names.get(index);
 	}
 
-	public String getLongUpdateSiteName(final String name) {
+	private String getLongUpdateSiteName(final String name) {
 		final UpdateSite site = files.getUpdateSite(name, true);
 		String host = site.getHost();
 		if (host == null || host.equals("")) {
@@ -1307,7 +1307,7 @@ public class CommandLine {
 		return name + " (" + host + site.getUploadDirectory() + ")";
 	}
 
-	public void listUpdateSites(Collection<String> args) {
+	private void listUpdateSites(Collection<String> args) {
 		ensureChecksummed();
 		if (args == null || args.size() == 0)
 			args = files.getUpdateSiteNames(true);
@@ -1324,7 +1324,7 @@ public class CommandLine {
 		}
 	}
 
-	public void addOrEditUploadSite(final List<String> args, final boolean add) {
+	private void addOrEditUploadSite(final List<String> args, final boolean add) {
 		if (args.size() != 2 && args.size() != 4)
 			throw die("Usage: " + (add ? "add" : "edit")
 					+ "-update-site <name> <url> [<host> <upload-directory>]");
@@ -1333,7 +1333,7 @@ public class CommandLine {
 				args.size() > 3 ? args.get(3) : null, add);
 	}
 
-	public void addOrEditUploadSite(final String name, final String url,
+	private void addOrEditUploadSite(final String name, final String url,
 			final String sshHost, final String uploadDirectory,
 			final boolean add) {
 		ensureChecksummed();
@@ -1357,7 +1357,7 @@ public class CommandLine {
 		}
 	}
 
-	public void addUploadSites(final List<String> names, final List<String> urls) {
+	private void addUploadSites(final List<String> names, final List<String> urls) {
 		final int size = Math.min(names.size(), urls.size());
 		ensureChecksummed();
 		for (int i = 0; i < size; i++) {
@@ -1378,14 +1378,14 @@ public class CommandLine {
 		}
 	}
 
-	public void removeUploadSite(final List<String> names) {
+	private void removeUploadSite(final List<String> names) {
 		if (names == null || names.size() < 1) {
 			throw die("Which update-site do you want to remove, exactly?");
 		}
 		removeUploadSite(names.toArray(new String[names.size()]));
 	}
 
-	public void removeUploadSite(final String... names) {
+	private void removeUploadSite(final String... names) {
 		ensureChecksummed();
 		for (final String name : names) {
 			files.removeUpdateSite(name);
@@ -1402,7 +1402,7 @@ public class CommandLine {
 	 * Turn off an update site without removing it from the list. Requires restart
 	 * to apply the update.
 	 */
-	public void deactivateUpdateSite(final List<String> names) {
+	private void deactivateUpdateSite(final List<String> names) {
 		if (names == null || names.size() < 1) {
 			throw die("Which update-site do you want to deactivate, exactly?");
 		}
@@ -1412,7 +1412,7 @@ public class CommandLine {
 	/**
 	 * See {@link #deactivateUpdateSite(List)}
 	 */
-	public void deactivateUpdateSite(final String... names) {
+	private void deactivateUpdateSite(final String... names) {
 		ensureChecksummed();
 
 		// Deactivate the indicated update site(s)
@@ -1435,7 +1435,7 @@ public class CommandLine {
 		}
 	}
 
-	public void refreshUpdateSites(List<String> list) {
+	private void refreshUpdateSites(List<String> list) {
 		boolean simulate = false, updateall = false;
 		while (list.size() > 0 && list.get(0).startsWith("-")) {
 			final String option = list.remove(0);
@@ -1501,7 +1501,7 @@ public class CommandLine {
 		return new RuntimeException(message);
 	}
 
-	public void usage() {
+	private void usage() {
 		final StringBuilder diffOptions = new StringBuilder();
 		diffOptions.append("[ ");
 		for (final Mode mode : Mode.values()) {

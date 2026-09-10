@@ -83,9 +83,9 @@ public final class UpdaterUtil {
 
 	public static String MAIN_URL =
 		HTTPSUtil.getProtocol() + UpdateSiteNetwork.MAIN_SITE_PATH;
-	public static String UPDATE_DIRECTORY =
+	static String UPDATE_DIRECTORY =
 		UpdateSiteNetwork.MAIN_SITE_UPLOAD_DIRECTORY;
-	public static String SSH_HOST = UpdateSiteNetwork.MAIN_SITE_SSH_HOST;
+	static String SSH_HOST = UpdateSiteNetwork.MAIN_SITE_SSH_HOST;
 
 	public static final String XML_COMPRESSED = "db.xml.gz";
 
@@ -101,7 +101,7 @@ public final class UpdaterUtil {
 		return string.substring(0, string.length() - suffix.length());
 	}
 
-	public static String stripPrefix(final String string, final String prefix) {
+	static String stripPrefix(final String string, final String prefix) {
 		if (!string.startsWith(prefix)) return string;
 		return string.substring(prefix.length());
 	}
@@ -145,7 +145,7 @@ public final class UpdaterUtil {
 		return result;
 	}
 
-	public static void updateDigest(final InputStream input,
+	static void updateDigest(final InputStream input,
 		final MessageDigest digest) throws IOException
 	{
 		final byte[] buffer = new byte[65536];
@@ -157,7 +157,7 @@ public final class UpdaterUtil {
 	public static final char[] hex = { '0', '1', '2', '3', '4', '5', '6', '7',
 		'8', '9', 'a', 'b', 'c', 'd', 'e', 'f' };
 
-	public static String toHex(final byte[] bytes) {
+	static String toHex(final byte[] bytes) {
 		final char[] buffer = new char[bytes.length * 2];
 		for (int i = 0; i < bytes.length; i++) {
 			buffer[i * 2] = hex[(bytes[i] & 0xf0) >> 4];

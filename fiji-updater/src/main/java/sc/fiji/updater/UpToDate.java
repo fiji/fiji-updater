@@ -155,7 +155,7 @@ public class UpToDate {
 	/**
 	 * @return whether the user specified not to be reminded again
 	 */
-	public static boolean neverRemind() {
+	static boolean neverRemind() {
 		final String latestNag = Prefs.get(UpToDate.class, KEY);
 		if (latestNag == null || latestNag.equals("")) return false;
 		final long time = Long.parseLong(latestNag);
@@ -165,7 +165,7 @@ public class UpToDate {
 	/**
 	 * @return whether the user said that she wanted to be reminded later
 	 */
-	public static boolean shouldRemindLater() {
+	static boolean shouldRemindLater() {
 		final String latestNag = Prefs.get(UpToDate.class, KEY);
 		if (latestNag == null || latestNag.equals("")) return false;
 		return now() - Long.parseLong(latestNag) < REMINDER_INTERVAL;
@@ -175,7 +175,7 @@ public class UpToDate {
 	 * @return whether we started in a developer setting (i.e., not using a
 	 *         launcher, which declares the installation root)
 	 */
-	public static boolean isDeveloper() {
+	static boolean isDeveloper() {
 		return AppLayout.isDeveloperSetup();
 	}
 
@@ -191,7 +191,7 @@ public class UpToDate {
 	 * @return whether we have a real network connection at the moment (not just
 	 *         localhost)
 	 */
-	public static boolean haveNetworkConnection() {
+	static boolean haveNetworkConnection() {
 		try {
 			final Enumeration<NetworkInterface> ifaces =
 				NetworkInterface.getNetworkInterfaces();

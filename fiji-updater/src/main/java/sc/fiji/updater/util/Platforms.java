@@ -158,11 +158,11 @@ public final class Platforms {
 		return platform.startsWith("win");
 	}
 
-	public static boolean isMac(String platform) {
+	static boolean isMac(String platform) {
 		return platform.startsWith("macos");
 	}
 
-	public static boolean isLinux(String platform) {
+	static boolean isLinux(String platform) {
 		return platform.startsWith("linux");
 	}
 
