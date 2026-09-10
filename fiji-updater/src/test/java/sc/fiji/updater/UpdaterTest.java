@@ -244,8 +244,7 @@ public class UpdaterTest {
 		assertTrue("Recorded remote timestamp", files.getUpdateSite(
 			FilesCollection.DEFAULT_UPDATE_SITE, false).isLastModified(
 			new File(webRoot, "db.xml.gz").lastModified()));
-		assertStatus(Status.INSTALLED, files, filename);
-		assertAction(Action.INSTALLED, files, filename);
+		assertNoAction(Status.INSTALLED, files, filename);
 
 		// Modified files should be left alone in a fresh install
 
@@ -255,8 +254,7 @@ public class UpdaterTest {
 		files = readDb(files);
 		assertCount(1, files);
 		assertCount(0, files.shownByDefault());
-		assertStatus(Status.MODIFIED, files, filename);
-		assertAction(Action.MODIFIED, files, filename);
+		assertNoAction(Status.MODIFIED, files, filename);
 
 	}
 
@@ -411,7 +409,7 @@ public class UpdaterTest {
 		assertStatus(Status.OBSOLETE, obsoleted);
 
 		dependencee.setAction(files, Action.INSTALL);
-		dependency.setAction(files, Action.NEW);
+		dependency.setNoAction();
 
 		final Conflicts conflicts = new Conflicts(files);
 		conflicts.conflicts = new ArrayList<>();
@@ -1047,8 +1045,7 @@ public class UpdaterTest {
 
 		files = readDb(files);
 		FileObject obsolete = files.get("jars/to-be-removed.jar");
-		assertStatus(Status.OBSOLETE, obsolete);
-		assertAction(Action.OBSOLETE, obsolete);
+		assertNoAction(Status.OBSOLETE, obsolete);
 
 		FileUtils.deleteRecursively(ijRoot2);
 	}

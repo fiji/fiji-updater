@@ -331,7 +331,7 @@ public class FileTable extends JTable {
 				case CHANNEL_COLUMN:
 					return String.class; // filename / update site / channel
 				case ACTION_COLUMN:
-					return FileObject.Action.class; // status/action
+					return String.class; // status label, or chosen action
 				default:
 					return Object.class;
 			}
@@ -388,7 +388,9 @@ public class FileTable extends JTable {
 			case NAME_COLUMN:
 				return file.getFilename(true);
 			case ACTION_COLUMN:
-				return file.getAction();
+				// NB: with no action chosen, the column shows what the file is.
+				return file.getAction() != null ? file.getAction().toString()
+					: file.getStatus().getLabel();
 			case SITE_COLUMN:
 				return file.updateSite;
 			case CHANNEL_COLUMN:

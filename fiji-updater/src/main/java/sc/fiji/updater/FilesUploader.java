@@ -45,6 +45,7 @@ import java.util.List;
 
 import sc.fiji.updater.Conflicts.Conflict;
 import sc.fiji.updater.FileObject.Action;
+import sc.fiji.updater.FileObject.Status;
 import sc.fiji.updater.util.ChannelManifest;
 import sc.fiji.updater.util.ChannelState;
 import sc.fiji.updater.util.Channels;
@@ -403,7 +404,8 @@ public class FilesUploader {
 		 * am looking at you!).
 		 */
 		for (final FileObject file : files.forUpdateSite(siteName)) {
-			if (file.getAction() == Action.INSTALLED && file.metadataChanged &&
+			if (!file.actionSpecified() && file.getStatus() == Status.INSTALLED &&
+				file.metadataChanged &&
 				file.localFilename != null && !file.localFilename.equals(file.filename))
 			{
 				file.addPreviousVersion(file.current.checksum, file.current.timestamp,

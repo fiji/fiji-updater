@@ -137,6 +137,7 @@ public class ChannelUpgradePrompt {
 
 		int updates = 0, installs = 0;
 		for (final FileObject file : files.changes()) {
+			if (file.getAction() == null) continue;
 			switch (file.getAction()) {
 				case INSTALL: installs++; break;
 				case UPDATE: updates++; break;

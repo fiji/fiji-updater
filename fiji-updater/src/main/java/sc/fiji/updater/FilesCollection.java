@@ -657,7 +657,7 @@ public class FilesCollection implements Iterable<FileObject> {
 	}
 
 	public Iterable<FileObject> upToDate() {
-		return filter(is(Action.INSTALLED));
+		return filter(is(Status.INSTALLED).and(file -> !file.actionSpecified()));
 	}
 
 	public Iterable<FileObject> toInstall() {
@@ -745,7 +745,7 @@ public class FilesCollection implements Iterable<FileObject> {
 	}
 
 	public Iterable<FileObject> changes() {
-		return filter(file -> file.getAction() != file.getStatus().getNoAction());
+		return filter(FileObject::actionSpecified);
 	}
 
 	public static Iterable<FileObject> filter(final Predicate<FileObject> filter,
@@ -1138,7 +1138,10 @@ public class FilesCollection implements Iterable<FileObject> {
 		// When upstream fixed dependencies, heed them
 		for (final FileObject file : upToDate()) {
 			for (final FileObject dependency : file.getFileDependencies(this, false)) {
-				if (dependency.getAction() == Action.NOT_INSTALLED && dependency.isActivePlatform(this)) {
+				if (!dependency.actionSpecified() &&
+					dependency.getStatus() == Status.NOT_INSTALLED &&
+					dependency.isActivePlatform(this))
+				{
 					dependency.setAction(this, Action.INSTALL);
 				}
 			}

@@ -33,6 +33,7 @@ package sc.fiji.updater;
 import static sc.fiji.updater.UpdaterTestUtils.addUpdateSite;
 import static sc.fiji.updater.UpdaterTestUtils.assertAction;
 import static sc.fiji.updater.UpdaterTestUtils.assertCount;
+import static sc.fiji.updater.UpdaterTestUtils.assertNoAction;
 import static sc.fiji.updater.UpdaterTestUtils.assertStatus;
 import static sc.fiji.updater.UpdaterTestUtils.cleanup;
 import static sc.fiji.updater.UpdaterTestUtils.initialize;
@@ -133,7 +134,7 @@ public class MultipleSitesTest {
 		assertCount(2, files.forUpdateSite("second"));
 
 		files.deactivateUpdateSite(files.getUpdateSite("second", false));
-		assertAction(Action.INSTALLED, files.get(installed));
+		assertNoAction(Status.INSTALLED, files.get(installed));
 		assertAction(Action.UPDATE, files.get(shadowed));
 		assertAction(Action.UNINSTALL, files.get(onlyOnSecond));
 		assertStatus(Status.LOCAL_ONLY, files.get(localOnly));
@@ -144,7 +145,7 @@ public class MultipleSitesTest {
 		assertCount(0, files.changes());
 
 		files.activateUpdateSite(files.getUpdateSite("second", true), progress);
-		assertAction(Action.INSTALLED, files.get(installed));
+		assertNoAction(Status.INSTALLED, files.get(installed));
 		assertAction(Action.UPDATE, files.get(shadowed));
 		assertAction(Action.INSTALL, files.get(onlyOnSecond));
 		assertStatus(Status.LOCAL_ONLY, files.get(localOnly));

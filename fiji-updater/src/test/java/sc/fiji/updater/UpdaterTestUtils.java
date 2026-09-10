@@ -35,6 +35,7 @@ import static sc.fiji.updater.FilesCollection.DEFAULT_UPDATE_SITE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.scijava.test.TestUtils.createTemporaryDirectory;
 
@@ -389,6 +390,23 @@ public class UpdaterTestUtils {
 	{
 		assertNotNull("Object " + file, file);
 		assertEquals("Action of " + file.filename, action, file.getAction());
+	}
+
+	/**
+	 * Asserts that no action is pending on the file -- what used to be asserted
+	 * as an {@code Action} named after the file's status.
+	 */
+	protected static void assertNoAction(final Status status,
+		final FilesCollection files, final String filename)
+	{
+		assertNoAction(status, files.get(filename));
+	}
+
+	protected static void assertNoAction(final Status status,
+		final FileObject file)
+	{
+		assertStatus(status, file);
+		assertNull("Action of " + file.filename, file.getAction());
 	}
 
 	protected static void assertNotEqual(final Object object1,

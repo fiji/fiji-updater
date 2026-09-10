@@ -34,8 +34,10 @@ package sc.fiji.updater;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collection;
 import java.util.Date;
+import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
@@ -112,12 +114,16 @@ public class FileObject {
 		}
 	}
 
+	/**
+	 * Something the user asks to have done to a file.
+	 * <p>
+	 * These are verbs, and all five of them. What a file <em>is</em> lives in
+	 * {@link Status}; the two used to share this enum, with seven of its twelve
+	 * constants being statuses wearing an action's label so that a status could
+	 * name itself in the GUI's Status/Action column.
+	 * </p>
+	 */
 	public enum Action {
-		// no changes
-		LOCAL_ONLY("Local-only"), NOT_INSTALLED("Not installed"), INSTALLED(
-				"Up-to-date"), UPDATEABLE("Update available"), MODIFIED(
-				"Locally modified"), NEW("New file"), OBSOLETE("Obsolete"),
-
 		// changes
 		UNINSTALL("Uninstall it"), INSTALL("Install it"), UPDATE("Update it"),
 
@@ -136,36 +142,40 @@ public class FileObject {
 		}
 	}
 
+	/**
+	 * What a file currently is, relative to its update site.
+	 * <p>
+	 * Each status carries the label to show when no action has been chosen, and
+	 * the set of actions that are valid from it.
+	 * </p>
+	 */
 	public enum Status {
-		NOT_INSTALLED(Action.NOT_INSTALLED, Action.INSTALL, Action.REMOVE),
-		INSTALLED(Action.INSTALLED, Action.UNINSTALL),
-		UPDATEABLE(Action.UPDATEABLE, Action.UNINSTALL, Action.UPDATE, Action.UPLOAD),
-		MODIFIED(Action.MODIFIED, Action.UNINSTALL, Action.UPDATE, Action.UPLOAD),
-		LOCAL_ONLY(Action.LOCAL_ONLY, Action.UNINSTALL, Action.UPLOAD),
-		NEW(Action.NEW, Action.INSTALL, Action.REMOVE),
-		OBSOLETE_UNINSTALLED( Action.NOT_INSTALLED),
-		OBSOLETE(Action.OBSOLETE, Action.UNINSTALL, Action.UPLOAD),
-		OBSOLETE_MODIFIED( Action.MODIFIED, Action.UNINSTALL, Action.UPLOAD);
+		NOT_INSTALLED("Not installed", Action.INSTALL, Action.REMOVE),
+		INSTALLED("Up-to-date", Action.UNINSTALL),
+		UPDATEABLE("Update available", Action.UNINSTALL, Action.UPDATE, Action.UPLOAD),
+		MODIFIED("Locally modified", Action.UNINSTALL, Action.UPDATE, Action.UPLOAD),
+		LOCAL_ONLY("Local-only", Action.UNINSTALL, Action.UPLOAD),
+		NEW("New file", Action.INSTALL, Action.REMOVE),
+		OBSOLETE_UNINSTALLED("Not installed"),
+		OBSOLETE("Obsolete", Action.UNINSTALL, Action.UPLOAD),
+		OBSOLETE_MODIFIED("Locally modified", Action.UNINSTALL, Action.UPLOAD);
 
-		private final Action[] actions;
-		private final boolean[] validActions;
+		private final String label;
+		private final Set<Action> validActions;
 
-		Status(final Action... actions) {
-			this.actions = actions;
-			validActions = new boolean[Action.values().length];
-			for (final Action action : actions) validActions[action.ordinal()] = true;
+		Status(final String label, final Action... actions) {
+			this.label = label;
+			validActions = actions.length == 0 ? EnumSet.noneOf(Action.class)
+				: EnumSet.copyOf(Arrays.asList(actions));
 		}
 
-		public Action[] getDeveloperActions() {
-			return actions;
+		/** How to describe a file in this status when no action is chosen. */
+		public String getLabel() {
+			return label;
 		}
 
 		public boolean isValid(final Action action) {
-			return validActions[action.ordinal()];
-		}
-
-		public Action getNoAction() {
-			return actions[0];
+			return validActions.contains(action);
 		}
 	}
 
@@ -289,8 +299,8 @@ public class FileObject {
 		else {
 			files.add(overridden);
 			if (getChecksum().equals(overridden.getChecksum()) && filename.equals(overridden.filename)) {
+				// NB: setStatus already clears the action.
 				overridden.setStatus(Status.INSTALLED);
-				overridden.setAction(files, Action.INSTALLED);
 			}
 			else if (overridden.current != null) {
 				overridden.setStatus(Status.MODIFIED);
@@ -472,8 +482,9 @@ public class FileObject {
 		addPreviousVersion(version);
 	}
 
+	/** Clears any chosen action, leaving the file to be judged by its status. */
 	public void setNoAction() {
-		action = status.getNoAction();
+		action = null;
 	}
 
 	public void setAction(final FilesCollection files, final Action action) {
@@ -674,7 +685,7 @@ public class FileObject {
 	}
 
 	public boolean isLocallyModified() {
-		return status.getNoAction() == Action.MODIFIED;
+		return status == Status.MODIFIED || status == Status.OBSOLETE_MODIFIED;
 	}
 
 	/**
@@ -697,7 +708,7 @@ public class FileObject {
 	}
 
 	public boolean actionSpecified() {
-		return action != status.getNoAction();
+		return action != null;
 	}
 
 	public boolean toUpdate() {
@@ -744,17 +755,18 @@ public class FileObject {
 
 	/* This returns true if the user marked the file for uninstall, too */
 	public boolean willNotBeInstalled() {
-		switch (action) {
+		if (action == null) switch (status) {
 			case NOT_INSTALLED:
+			case OBSOLETE_UNINSTALLED:
 			case NEW:
+				return true;
+			default:
+				return false;
+		}
+		switch (action) {
 			case UNINSTALL:
 			case REMOVE:
 				return true;
-			case LOCAL_ONLY:
-			case INSTALLED:
-			case UPDATEABLE:
-			case MODIFIED:
-			case OBSOLETE:
 			case INSTALL:
 			case UPDATE:
 			case UPLOAD:
@@ -766,20 +778,16 @@ public class FileObject {
 
 	/* This returns true if the user marked the file for uninstall, too */
 	public boolean willBeUpToDate() {
+		if (action == null) {
+			return status == Status.INSTALLED || status == Status.LOCAL_ONLY;
+		}
 		switch (action) {
-			case OBSOLETE:
 			case REMOVE:
-			case NOT_INSTALLED:
-			case NEW:
-			case UPDATEABLE:
-			case MODIFIED:
 			case UNINSTALL:
 				return false;
-			case INSTALLED:
 			case INSTALL:
 			case UPDATE:
 			case UPLOAD:
-			case LOCAL_ONLY:
 				return true;
 			default:
 				throw new RuntimeException("Unhandled action: " + action);

@@ -607,7 +607,7 @@ public class CommandLine {
 			for (final FileObject file : files) {
 				if (file.getStatus() == Status.NEW
 						&& file.getAction() == Action.INSTALL) {
-					file.setAction(files, Action.NEW);
+					file.setNoAction();
 				}
 			}
 		}

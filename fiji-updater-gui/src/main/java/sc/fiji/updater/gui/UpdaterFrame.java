@@ -651,7 +651,8 @@ public class UpdaterFrame extends JFrame implements TableModelListener,
 		int install = 0, uninstall = 0, upload = 0;
 		long bytesToDownload = 0, bytesToUpload = 0;
 
-		for (final FileObject file : files)
+		for (final FileObject file : files) {
+			if (file.getAction() == null) continue;
 			switch (file.getAction()) {
 				case INSTALL:
 				case UPDATE:
@@ -667,6 +668,7 @@ public class UpdaterFrame extends JFrame implements TableModelListener,
 					break;
 				default:
 			}
+		}
 		int implicated = 0;
 		final DependencyMap map = files.getDependencies(true);
 		for (final FileObject file : map.keySet()) {
