@@ -79,7 +79,6 @@ public class ChecksummerTest {
 		// and inside a macOS .app folder.
 		assertTrue(checksummer.isCandidate("config/jaunch/jaunch-linux-x64"));
 		assertTrue(checksummer.isCandidate("config/jaunch-linux-x64"));
-		assertTrue(checksummer.isCandidate("Contents/MacOS/ImageJ-macosx"));
 		assertTrue(checksummer.isCandidate("Fiji.app/Contents/MacOS/fiji-macos-arm64"));
 	}
 

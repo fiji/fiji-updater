@@ -63,13 +63,6 @@ public final class Platforms {
 		LAUNCHERS.put("config/jaunch/jaunch-linux-x64", "linux64");
 		LAUNCHERS.put("config/jaunch/jaunch-windows-arm64.exe", "win-arm64");
 		LAUNCHERS.put("config/jaunch/jaunch-windows-x64.exe", "winx");
-		// Deprecated ImageJ Launcher: https://github.com/imagej/imagej-launcher
-		LAUNCHERS.put("ImageJ-linux32", "linux32");
-		LAUNCHERS.put("ImageJ-linux64", "linux64");
-		LAUNCHERS.put("Contents/MacOS/ImageJ-macosx", "macosx");
-		LAUNCHERS.put("Contents/MacOS/ImageJ-tiger", "macosx");
-		LAUNCHERS.put("ImageJ-win32.exe", "win32");
-		LAUNCHERS.put("ImageJ-win64.exe", "win64");
 
 		// Note: All files within toplevel .app folders also count as launchers,
 		// so that e.g. Fiji.app stays together; see #platformForLauncher(String)
@@ -106,6 +99,13 @@ public final class Platforms {
 		//   systems can easily launch in emulated x86 mode if desired.
 
 		final Set<String> platformSet = new HashSet<>(LAUNCHERS.values());
+		// The 32-bit platforms have no launcher of their own any more -- the ImageJ
+		// launcher was the last thing that shipped one, and this updater never runs
+		// on an installation that has it. They remain platform names, though: an
+		// update site can still publish jars/win32 or lib/linux32 content, and
+		// Checksummer.guessPlatform validates what it finds there against this set.
+		platformSet.add("linux32");
+		platformSet.add("win32");
 		for (String arch : Arrays.asList("64", "-arm64", "x")) {
 			for (String os : Arrays.asList("linux", "macos", "win")) {
 				platformSet.add(os + arch);

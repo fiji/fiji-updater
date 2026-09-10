@@ -94,8 +94,8 @@ public class UpdaterTest {
 		// Write some files
 
 		// bend over for Microsoft
-		final String launcherName =
-			Platforms.isWindows(Platforms.current()) ? "ImageJ-win32.exe" : "ImageJ-linux32";
+		final String launcherName = Platforms.isWindows(Platforms.current())
+			? "fiji-windows-x64.exe" : "fiji-linux-x64";
 
 		final File ijLauncher = writeFile(files, launcherName, "false");
 		ijLauncher.setExecutable(true);
