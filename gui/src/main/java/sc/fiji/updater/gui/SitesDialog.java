@@ -77,15 +77,15 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.table.TableRowSorter;
 
-import sc.fiji.updater.FilesCollection;
-import sc.fiji.updater.URLChange;
-import sc.fiji.updater.UpdateSite;
-import sc.fiji.updater.UploaderService;
-import sc.fiji.updater.util.AvailableSites;
-import sc.fiji.updater.util.HTTPSUtil;
-import sc.fiji.updater.util.UpdaterUtil;
-
 import org.scijava.log.Logger;
+
+import sc.fiji.updater.FilesCollection;
+import sc.fiji.updater.UpdateSite;
+import sc.fiji.updater.channel.URLChange;
+import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.site.AvailableSites;
+import sc.fiji.updater.site.HTTPSUtil;
+import sc.fiji.updater.upload.UploaderService;
 
 /**
  * The dialog in which the user can choose which update sites to follow.

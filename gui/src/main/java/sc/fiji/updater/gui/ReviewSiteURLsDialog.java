@@ -28,10 +28,12 @@
  */
 package sc.fiji.updater.gui;
 
-import sc.fiji.updater.URLChange;
-import sc.fiji.updater.UpdateSite;
-import sc.fiji.updater.util.HTTPSUtil;
-import net.miginfocom.swing.MigLayout;
+import static sc.fiji.updater.gui.SitesDialog.escapeCancels;
+
+import java.awt.*;
+import java.awt.event.ActionEvent;
+import java.awt.event.ActionListener;
+import java.util.List;
 
 import javax.swing.*;
 import javax.swing.event.ListSelectionEvent;
@@ -45,12 +47,12 @@ import javax.swing.table.TableColumn;
 import javax.swing.table.TableColumnModel;
 import javax.swing.text.html.HTMLDocument;
 import javax.swing.text.html.HTMLEditorKit;
-import java.awt.*;
-import java.awt.event.ActionEvent;
-import java.awt.event.ActionListener;
-import java.util.List;
 
-import static sc.fiji.updater.gui.SitesDialog.escapeCancels;
+import net.miginfocom.swing.MigLayout;
+
+import sc.fiji.updater.UpdateSite;
+import sc.fiji.updater.channel.URLChange;
+import sc.fiji.updater.site.HTTPSUtil;
 
 /**
  * The dialog in which updated URLs of available update sites will be shown

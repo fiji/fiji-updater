@@ -29,18 +29,8 @@
 
 package sc.fiji.updater;
 
-import sc.fiji.updater.Conflicts.Conflict;
-import sc.fiji.updater.Conflicts.Resolution;
-import sc.fiji.updater.FileObject.Action;
-import sc.fiji.updater.FileObject.Status;
-import sc.fiji.updater.test.Dependencee;
-import sc.fiji.updater.test.Dependency;
-import sc.fiji.updater.util.Platforms;
-import sc.fiji.updater.util.UpdaterUtil;
-import org.junit.After;
-import org.junit.Test;
-import org.scijava.test.TestUtils;
-import org.scijava.util.FileUtils;
+import static org.junit.Assert.*;
+import static sc.fiji.updater.UpdaterTestUtils.*;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -51,8 +41,22 @@ import java.util.List;
 import java.util.regex.Pattern;
 import java.util.zip.GZIPOutputStream;
 
-import static sc.fiji.updater.UpdaterTestUtils.*;
-import static org.junit.Assert.*;
+import org.junit.After;
+import org.junit.Test;
+import org.scijava.test.TestUtils;
+import org.scijava.util.FileUtils;
+
+import sc.fiji.updater.Conflicts.Conflict;
+import sc.fiji.updater.Conflicts.Resolution;
+import sc.fiji.updater.FileObject.Action;
+import sc.fiji.updater.FileObject.Status;
+import sc.fiji.updater.app.Platforms;
+import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.test.Dependencee;
+import sc.fiji.updater.test.Dependency;
+import sc.fiji.updater.xml.XMLFileDownloader;
+import sc.fiji.updater.xml.XMLFileReader;
+import sc.fiji.updater.xml.XMLFileWriter;
 
 /**
  * Tests various classes of the {@link sc.fiji.updater} package and

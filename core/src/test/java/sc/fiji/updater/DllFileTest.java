@@ -36,6 +36,8 @@ import java.net.URL;
 
 import org.junit.Test;
 
+import sc.fiji.updater.internal.DllFile;
+
 /**
  * Tests the {@link DllFile} class.
  * 

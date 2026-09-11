@@ -79,14 +79,14 @@ import org.scijava.log.LogService;
 import org.scijava.log.StderrLogService;
 import org.scijava.plugin.Plugin;
 
-import sc.fiji.updater.AbstractUploader;
-import sc.fiji.updater.FilesUploader;
 import sc.fiji.updater.UpdateSite;
-import sc.fiji.updater.Uploadable;
-import sc.fiji.updater.Uploader;
+import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.upload.AbstractUploader;
+import sc.fiji.updater.upload.FilesUploader;
+import sc.fiji.updater.upload.Uploadable;
+import sc.fiji.updater.upload.Uploader;
 import sc.fiji.updater.uploaders.webdav.NetrcParser.Credentials;
-import sc.fiji.updater.util.UpdaterUserInterface;
-import sc.fiji.updater.util.UpdaterUtil;
 
 /**
  * Uploads files to an update server using WebDAV.

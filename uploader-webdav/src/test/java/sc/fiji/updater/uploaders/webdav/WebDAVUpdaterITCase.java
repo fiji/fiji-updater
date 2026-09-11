@@ -29,10 +29,12 @@
 
 package sc.fiji.updater.uploaders.webdav;
 
-import sc.fiji.updater.AbstractUploaderTestBase;
+import java.io.IOException;
+
 import org.junit.Test;
 
-import java.io.IOException;
+import sc.fiji.updater.AbstractUploaderTestBase;
+
 /**
  * A conditional JUnit test for uploading via WebDAV.
  * 

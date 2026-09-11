@@ -40,12 +40,12 @@ import javax.swing.JPanel;
 import javax.swing.JPasswordField;
 import javax.swing.JTextField;
 
-import sc.fiji.updater.util.UpdaterUserInterface;
 import net.miginfocom.swing.MigLayout;
-
 import org.scijava.app.StatusService;
 import org.scijava.log.LogService;
 import org.scijava.util.Prefs;
+
+import sc.fiji.updater.ui.UpdaterUserInterface;
 
 /**
  * TODO

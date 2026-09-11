@@ -29,8 +29,8 @@
 package sc.fiji.updater;
 
 import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static sc.fiji.updater.UpdaterTestUtils.cleanup;
@@ -45,11 +45,11 @@ import java.nio.file.StandardCopyOption;
 import org.junit.After;
 import org.junit.Test;
 
-import sc.fiji.updater.util.AppLayout;
-import sc.fiji.updater.util.ChannelManifest;
-import sc.fiji.updater.util.ChannelState;
-import sc.fiji.updater.util.Channels;
-import sc.fiji.updater.util.StderrProgress;
+import sc.fiji.updater.app.AppLayout;
+import sc.fiji.updater.channel.ChannelManifest;
+import sc.fiji.updater.channel.ChannelState;
+import sc.fiji.updater.progress.StderrProgress;
+import sc.fiji.updater.xml.XMLFileDownloader;
 
 /**
  * Verifies that an update site is resolved against the installation's channel,
@@ -57,7 +57,7 @@ import sc.fiji.updater.util.StderrProgress;
  * <p>
  * These run against real update sites on the filesystem, so they exercise the
  * actual read path -- connection, gzip, parse -- rather than a probe in
- * isolation. The channels used are ones {@link sc.fiji.updater.util.Channels}
+ * isolation. The channels used are ones {@link sc.fiji.updater.channel.Channels}
  * does not know, which is deliberate: an unrecognized channel yields exactly
  * the two interesting candidates, the channel itself and the base.
  * </p>

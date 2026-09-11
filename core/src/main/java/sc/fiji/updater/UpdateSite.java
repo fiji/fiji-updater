@@ -29,9 +29,9 @@
 
 package sc.fiji.updater;
 
-import sc.fiji.updater.util.HTTPSUtil;
-import sc.fiji.updater.util.UpdateSiteNetwork;
-import sc.fiji.updater.util.UpdaterUtil;
+import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.site.HTTPSUtil;
+import sc.fiji.updater.site.UpdateSiteNetwork;
 
 /**
  * Update sites for the updater.

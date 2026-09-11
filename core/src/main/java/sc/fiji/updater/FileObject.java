@@ -39,15 +39,15 @@ import java.util.EnumSet;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Map;
 import java.util.Set;
 import java.util.Stack;
 
-import sc.fiji.updater.util.Platforms;
-import sc.fiji.updater.util.UpdaterUtil;
-
 import org.scijava.util.FileUtils;
+
+import sc.fiji.updater.app.Platforms;
+import sc.fiji.updater.internal.UpdaterUtil;
 
 /**
  * This class represents a file handled by the updater.
@@ -72,7 +72,7 @@ public class FileObject {
 		// optional (can differ from FileObject.filename if the version differs)
 		public String filename;
 
-		Version(final String checksum, final long timestamp) {
+		public Version(final String checksum, final long timestamp) {
 			this.checksum = checksum;
 			this.timestamp = timestamp;
 		}
@@ -267,6 +267,20 @@ public class FileObject {
 		return !overriddenUpdateSites.isEmpty();
 	}
 
+	/**
+	 * The versions of this file shadowed by this one, keyed by update site.
+	 * <p>
+	 * A file present on more than one update site is represented by the object
+	 * from the site which wins, with the losers kept here so that disabling the
+	 * winning site can restore one of them.
+	 * </p>
+	 *
+	 * @return the live map, which callers may modify.
+	 */
+	public Map<String, FileObject> overriddenUpdateSites() {
+		return overriddenUpdateSites;
+	}
+
 	public synchronized void removeFromUpdateSite(final String updateSite, final FilesCollection files) {
 		if (!updateSite.equals(this.updateSite)) return;
 		switch (status) {
@@ -324,7 +338,7 @@ public class FileObject {
 		return true;
 	}
 
-	void setVersion(final String checksum, final long timestamp) {
+	public void setVersion(final String checksum, final long timestamp) {
 		if (current != null) previous.add(current);
 		current = new Version(checksum, timestamp);
 		current.filename = filename;

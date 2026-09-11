@@ -28,11 +28,11 @@
  */
 package sc.fiji.updater;
 
+import static org.junit.Assert.assertTrue;
 import static sc.fiji.updater.UpdaterTestUtils.addUpdateSite;
 import static sc.fiji.updater.UpdaterTestUtils.assertStatus;
 import static sc.fiji.updater.UpdaterTestUtils.initialize;
 import static sc.fiji.updater.UpdaterTestUtils.writeFile;
-import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 

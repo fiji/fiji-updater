@@ -29,11 +29,8 @@
 
 package sc.fiji.updater.uploaders.webdav;
 
-import sc.fiji.updater.*;
-import org.junit.Before;
-import org.junit.Rule;
-import org.junit.Test;
-import org.junit.rules.TemporaryFolder;
+import static junit.framework.TestCase.assertTrue;
+import static org.junit.Assert.assertFalse;
 
 import java.io.File;
 import java.io.IOException;
@@ -42,8 +39,16 @@ import java.io.RandomAccessFile;
 import java.util.ArrayList;
 import java.util.List;
 
-import static junit.framework.TestCase.assertTrue;
-import static org.junit.Assert.assertFalse;
+import org.junit.Before;
+import org.junit.Rule;
+import org.junit.Test;
+import org.junit.rules.TemporaryFolder;
+
+import sc.fiji.updater.AbstractUploaderTestBase;
+import sc.fiji.updater.FilesCollection;
+import sc.fiji.updater.upload.FilesUploader;
+import sc.fiji.updater.upload.Uploadable;
+import sc.fiji.updater.upload.UploadableFile;
 
 /**
  * A conditional JUnit test for uploading via WebDAV.

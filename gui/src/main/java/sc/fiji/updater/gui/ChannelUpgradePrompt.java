@@ -31,13 +31,15 @@ package sc.fiji.updater.gui;
 
 import java.util.List;
 
-import sc.fiji.updater.ChannelUpgrade;
 import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.Installer;
-import sc.fiji.updater.util.JavaRequirement;
-import sc.fiji.updater.util.Progress;
-import sc.fiji.updater.util.UpdaterUserInterface;
+import sc.fiji.updater.UpdateSite;
+import sc.fiji.updater.app.JavaRequirement;
+import sc.fiji.updater.channel.ChannelManifest;
+import sc.fiji.updater.channel.ChannelUpgrade;
+import sc.fiji.updater.progress.Progress;
+import sc.fiji.updater.ui.UpdaterUserInterface;
 
 /**
  * Offers to move this installation to a newer update channel.
@@ -192,7 +194,7 @@ public class ChannelUpgradePrompt {
 			// in the first place -- or the upgrade fails outright and says so.
 			if (files.isCoreSite(site)) continue;
 			if (channel != null && channel.equals(site.getChannel())) continue;
-			if (sc.fiji.updater.util.ChannelManifest.read(site.getURL())
+			if (sc.fiji.updater.channel.ChannelManifest.read(site.getURL())
 				.isPresent())
 			{
 				lagging.add(name);

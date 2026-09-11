@@ -29,6 +29,11 @@
 
 package sc.fiji.updater.uploaders.ssh;
 
+import java.io.IOException;
+import java.io.InputStream;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+
 import com.jcraft.jsch.ChannelSftp;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
@@ -36,12 +41,7 @@ import com.jcraft.jsch.SftpATTRS;
 import com.jcraft.jsch.SftpException;
 import com.jcraft.jsch.SftpProgressMonitor;
 
-import java.io.IOException;
-import java.io.InputStream;
-import java.text.SimpleDateFormat;
-import java.util.Date;
-
-import sc.fiji.updater.util.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterUserInterface;
 
 /**
  * Wraps low level SFTP operations and isolates from implementation API.

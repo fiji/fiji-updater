@@ -46,8 +46,8 @@ import javax.swing.JProgressBar;
 import javax.swing.JScrollPane;
 import javax.swing.ScrollPaneConstants;
 
-import sc.fiji.updater.util.Progress;
-import sc.fiji.updater.util.UpdateCanceledException;
+import sc.fiji.updater.progress.Progress;
+import sc.fiji.updater.progress.UpdateCanceledException;
 
 /**
  * TODO

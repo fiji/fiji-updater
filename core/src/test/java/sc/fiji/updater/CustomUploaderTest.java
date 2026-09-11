@@ -29,10 +29,10 @@
 
 package sc.fiji.updater;
 
-import static sc.fiji.updater.UpdaterTestUtils.writeJar;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 import static org.junit.Assume.assumeTrue;
+import static sc.fiji.updater.UpdaterTestUtils.writeJar;
 
 import java.io.File;
 import java.lang.reflect.Method;
@@ -41,11 +41,10 @@ import java.net.URLClassLoader;
 import java.util.HashSet;
 import java.util.Set;
 
-import sc.fiji.updater.FilesCollection;
-import sc.fiji.updater.FilesUploader;
-import sc.fiji.updater.calvin.HobbesUploader;
-
 import org.junit.Test;
+
+import sc.fiji.updater.calvin.HobbesUploader;
+import sc.fiji.updater.upload.FilesUploader;
 
 /**
  * Tests the auto-install feature of the updater.

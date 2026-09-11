@@ -41,7 +41,7 @@ import sc.fiji.updater.Conflicts.Conflict.Severity;
 import sc.fiji.updater.FileObject.Action;
 import sc.fiji.updater.FileObject.Status;
 import sc.fiji.updater.FilesCollection.DependencyMap;
-import sc.fiji.updater.util.UpdaterUtil;
+import sc.fiji.updater.internal.UpdaterUtil;
 
 /**
  * A class describing conflicts in what is selected for updating/uploading.

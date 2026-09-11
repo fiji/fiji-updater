@@ -29,11 +29,11 @@
 
 package sc.fiji.updater.action;
 
+import sc.fiji.updater.FileObject.Action;
+import sc.fiji.updater.FileObject.Status;
 import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.GroupAction;
-import sc.fiji.updater.FileObject.Action;
-import sc.fiji.updater.FileObject.Status;
 
 /**
  * The <i>update</i> action.

@@ -36,10 +36,9 @@ import static org.junit.Assert.assertNull;
 
 import java.io.IOException;
 
-import sc.fiji.updater.uploaders.webdav.NetrcParser;
-import sc.fiji.updater.uploaders.webdav.NetrcParser.Credentials;
-
 import org.junit.Test;
+
+import sc.fiji.updater.uploaders.webdav.NetrcParser.Credentials;
 
 /**
  * Tests the .netrc parser.

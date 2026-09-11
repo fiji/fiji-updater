@@ -29,21 +29,20 @@
 
 package sc.fiji.updater.uploaders.ssh;
 
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileReader;
+
 import com.jcraft.jsch.JSch;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.ProxyHTTP;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
-
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.FileReader;
-
-import sc.fiji.updater.FilesUploader;
-import sc.fiji.updater.util.UpdaterUserInterface;
-import sc.fiji.updater.util.UpdaterUtil;
-
 import org.scijava.log.LogService;
+
+import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.upload.FilesUploader;
 
 /**
  * Start an SSH connection.

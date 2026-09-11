@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import sc.fiji.updater.util.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterUserInterface;
 
 /**
  * Copies an {@link InputStream} into an {@link OutputStream}.

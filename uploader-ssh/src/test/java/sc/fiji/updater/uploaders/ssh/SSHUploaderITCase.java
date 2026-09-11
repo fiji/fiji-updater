@@ -29,9 +29,9 @@
 
 package sc.fiji.updater.uploaders.ssh;
 
-import sc.fiji.updater.AbstractUploaderTestBase;
-
 import org.junit.Test;
+
+import sc.fiji.updater.AbstractUploaderTestBase;
 
 /**
  * A conditional JUnit test for uploading via SSH/SFTP.

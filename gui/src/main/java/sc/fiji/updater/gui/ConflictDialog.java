@@ -49,9 +49,9 @@ import javax.swing.text.BadLocationException;
 import javax.swing.text.SimpleAttributeSet;
 import javax.swing.text.StyleConstants;
 
-import sc.fiji.updater.Conflicts;
 import sc.fiji.updater.Conflicts.Conflict;
 import sc.fiji.updater.Conflicts.Resolution;
+import sc.fiji.updater.Conflicts;
 
 /**
  * This dialog lists conflicts and let's the user choose how to resolve (or ignore) them.

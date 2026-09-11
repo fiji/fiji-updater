@@ -31,11 +31,11 @@ package sc.fiji.updater.calvin;
 
 import java.util.List;
 
-import sc.fiji.updater.AbstractUploader;
-import sc.fiji.updater.Uploadable;
-import sc.fiji.updater.Uploader;
-
 import org.scijava.plugin.Plugin;
+
+import sc.fiji.updater.upload.AbstractUploader;
+import sc.fiji.updater.upload.Uploadable;
+import sc.fiji.updater.upload.Uploader;
 
 /**
  * Dummy uploader.

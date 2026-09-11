@@ -49,15 +49,15 @@ import javax.swing.JFrame;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 
-import sc.fiji.updater.Diff;
-import sc.fiji.updater.Diff.Mode;
-import sc.fiji.updater.FileObject;
-import sc.fiji.updater.FilesCollection;
-import sc.fiji.updater.util.ByteCodeAnalyzer;
-import sc.fiji.updater.util.UpdaterUtil;
-
 import org.scijava.log.LogService;
 import org.scijava.util.ProcessUtils;
+
+import sc.fiji.updater.FileObject;
+import sc.fiji.updater.FilesCollection;
+import sc.fiji.updater.diff.ByteCodeAnalyzer;
+import sc.fiji.updater.diff.Diff.Mode;
+import sc.fiji.updater.diff.Diff;
+import sc.fiji.updater.internal.UpdaterUtil;
 
 /**
  * A {@link JFrame} to show the differences between the remote and local

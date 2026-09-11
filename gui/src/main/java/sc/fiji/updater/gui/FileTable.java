@@ -58,12 +58,12 @@ import javax.swing.table.TableCellEditor;
 import javax.swing.table.TableColumn;
 import javax.swing.table.TableRowSorter;
 
-import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FileObject.Status;
+import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.GroupAction;
 import sc.fiji.updater.UpdateSite;
-import sc.fiji.updater.util.ChannelState;
+import sc.fiji.updater.channel.ChannelState;
 
 /**
  * This class's role is to be in charge of how the Table should be displayed.

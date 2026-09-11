@@ -54,17 +54,17 @@ import sc.fiji.updater.Conflicts.Conflict;
 import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.Installer;
-import sc.fiji.updater.URLChange;
 import sc.fiji.updater.UpdaterUI;
-import sc.fiji.updater.UploaderService;
+import sc.fiji.updater.app.AppLayout;
+import sc.fiji.updater.channel.URLChange;
 import sc.fiji.updater.gui.ViewOptions.Option;
-import sc.fiji.updater.util.AppLayout;
-import sc.fiji.updater.util.AvailableSites;
-import sc.fiji.updater.util.HTTPSUtil;
-import sc.fiji.updater.util.Progress;
-import sc.fiji.updater.util.UpdateCanceledException;
-import sc.fiji.updater.util.UpdaterUserInterface;
-import sc.fiji.updater.util.UpdaterUtil;
+import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.progress.Progress;
+import sc.fiji.updater.progress.UpdateCanceledException;
+import sc.fiji.updater.site.AvailableSites;
+import sc.fiji.updater.site.HTTPSUtil;
+import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.upload.UploaderService;
 
 /**
  * The Updater. As a command.

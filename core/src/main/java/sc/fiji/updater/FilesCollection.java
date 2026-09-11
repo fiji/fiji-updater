@@ -55,6 +55,10 @@ import java.util.zip.GZIPOutputStream;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 
+import org.scijava.log.LogService;
+import org.scijava.log.StderrLogService;
+import org.xml.sax.SAXException;
+
 import sc.fiji.updater.Conflicts.Conflict;
 import sc.fiji.updater.FileObject.Action;
 import sc.fiji.updater.FileObject.Status;
@@ -63,19 +67,20 @@ import sc.fiji.updater.action.KeepAsIs;
 import sc.fiji.updater.action.Remove;
 import sc.fiji.updater.action.Uninstall;
 import sc.fiji.updater.action.Upload;
-import sc.fiji.updater.util.DependencyAnalyzer;
-import sc.fiji.updater.util.HTTPSUtil;
-import sc.fiji.updater.util.Platforms;
-import sc.fiji.updater.util.Progress;
-import sc.fiji.updater.util.UpdateCanceledException;
-import sc.fiji.updater.util.ChannelManifest;
-import sc.fiji.updater.util.ChannelState;
-import sc.fiji.updater.util.Channels;
-import sc.fiji.updater.util.UpdateSiteNetwork;
-import sc.fiji.updater.util.UpdaterUtil;
-import org.scijava.log.LogService;
-import org.scijava.log.StderrLogService;
-import org.xml.sax.SAXException;
+import sc.fiji.updater.app.Platforms;
+import sc.fiji.updater.channel.ChannelManifest;
+import sc.fiji.updater.channel.ChannelState;
+import sc.fiji.updater.channel.Channels;
+import sc.fiji.updater.internal.DependencyAnalyzer;
+import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.progress.Progress;
+import sc.fiji.updater.progress.UpdateCanceledException;
+import sc.fiji.updater.site.HTTPSUtil;
+import sc.fiji.updater.site.UpdateSiteNetwork;
+import sc.fiji.updater.upload.UploaderService;
+import sc.fiji.updater.xml.XMLFileDownloader;
+import sc.fiji.updater.xml.XMLFileReader;
+import sc.fiji.updater.xml.XMLFileWriter;
 
 /**
  * This class represents the database of available {@link FileObject}s.
@@ -131,7 +136,7 @@ public class FilesCollection implements Iterable<FileObject> {
 	private List<String> channels;
 	private ChannelState pinnedChannelState;
 	public final LogService log;
-	protected Set<FileObject> ignoredConflicts = new HashSet<>();
+	final Set<FileObject> ignoredConflicts = new HashSet<>();
 	protected List<Conflict> conflicts = new ArrayList<>();
 
 	private Map<String, UpdateSite> updateSites;
@@ -1058,6 +1063,14 @@ public class FilesCollection implements Iterable<FileObject> {
 	@Override
 	public String toString() {
 		return UpdaterUtil.join(", ", this);
+	}
+
+	/**
+	 * Records that a conflict involving the given file has been accepted, and
+	 * must not be reported again for this collection.
+	 */
+	public void ignoreConflict(final FileObject file) {
+		ignoredConflicts.add(file);
 	}
 
 	// -- Collection of files --

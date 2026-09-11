@@ -31,7 +31,6 @@ package sc.fiji.updater.uploaders.ssh;
 
 import java.io.IOException;
 
-import sc.fiji.updater.uploaders.ssh.SSHFileUploader;
 import sc.fiji.updater.AbstractUploaderTestBase.Deleter;
 
 /**

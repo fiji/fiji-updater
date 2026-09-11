@@ -31,8 +31,8 @@ package sc.fiji.updater.gui;
 
 import java.util.ArrayList;
 
-import sc.fiji.updater.Conflicts;
 import sc.fiji.updater.Conflicts.Conflict;
+import sc.fiji.updater.Conflicts;
 import sc.fiji.updater.FilesCollection;
 
 /**

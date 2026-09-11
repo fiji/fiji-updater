@@ -38,18 +38,18 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
 
+import org.scijava.command.CommandInfo;
+import org.scijava.command.CommandService;
+
 import sc.fiji.updater.Conflicts.Conflict;
 import sc.fiji.updater.FileObject.Action;
 import sc.fiji.updater.FileObject.Status;
-import sc.fiji.updater.util.Downloadable;
-import sc.fiji.updater.util.Downloader;
-import sc.fiji.updater.util.Platforms;
-import sc.fiji.updater.util.Progress;
-import sc.fiji.updater.util.AppLayout;
-import sc.fiji.updater.util.UpdaterUtil;
-
-import org.scijava.command.CommandInfo;
-import org.scijava.command.CommandService;
+import sc.fiji.updater.app.AppLayout;
+import sc.fiji.updater.app.Platforms;
+import sc.fiji.updater.internal.Downloadable;
+import sc.fiji.updater.internal.Downloader;
+import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.progress.Progress;
 
 /**
  * A class that updates local files from all available update sites.

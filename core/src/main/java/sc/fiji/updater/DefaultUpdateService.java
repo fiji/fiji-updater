@@ -47,9 +47,10 @@ import org.scijava.ui.event.UIShownEvent;
 import org.scijava.ui.headless.HeadlessUI;
 import org.xml.sax.SAXException;
 
-import sc.fiji.updater.util.AppLayout;
-import sc.fiji.updater.util.AvailableSites;
-import sc.fiji.updater.util.HTTPSUtil;
+import sc.fiji.updater.app.AppLayout;
+import sc.fiji.updater.cli.CheckForUpdates;
+import sc.fiji.updater.site.AvailableSites;
+import sc.fiji.updater.site.HTTPSUtil;
 
 /**
  * Default service for managing ImageJ updates.

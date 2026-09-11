@@ -29,13 +29,13 @@
 
 package sc.fiji.updater;
 
-import static sc.fiji.updater.FilesCollection.DEFAULT_UPDATE_SITE;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotNull;
 import static org.junit.Assert.assertNull;
 import static org.junit.Assert.assertTrue;
 import static org.scijava.test.TestUtils.createTemporaryDirectory;
+import static sc.fiji.updater.FilesCollection.DEFAULT_UPDATE_SITE;
 
 import java.io.ByteArrayOutputStream;
 import java.io.File;
@@ -53,8 +53,8 @@ import java.util.ArrayList;
 import java.util.GregorianCalendar;
 import java.util.LinkedHashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Map;
 import java.util.jar.JarEntry;
 import java.util.jar.JarOutputStream;
 import java.util.zip.GZIPInputStream;
@@ -62,16 +62,20 @@ import java.util.zip.GZIPOutputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import sc.fiji.updater.FileObject.Action;
-import sc.fiji.updater.FileObject.Status;
-import sc.fiji.updater.util.Progress;
-import sc.fiji.updater.util.StderrProgress;
-import sc.fiji.updater.util.UpdaterUtil;
-
 import org.scijava.log.LogService;
 import org.scijava.util.ClassUtils;
 import org.scijava.util.FileUtils;
 import org.xml.sax.SAXException;
+
+import sc.fiji.updater.FileObject.Action;
+import sc.fiji.updater.FileObject.Status;
+import sc.fiji.updater.cli.CommandLine;
+import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.progress.Progress;
+import sc.fiji.updater.progress.StderrProgress;
+import sc.fiji.updater.upload.FilesUploader;
+import sc.fiji.updater.upload.UploaderService;
+import sc.fiji.updater.xml.XMLFileReader;
 
 /**
  * A container of functions useful for testing the updater/uploader.

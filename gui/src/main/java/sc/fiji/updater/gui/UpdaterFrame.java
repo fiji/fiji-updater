@@ -73,26 +73,26 @@ import javax.swing.event.ListSelectionListener;
 import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
-import sc.fiji.updater.Diff.Mode;
-import sc.fiji.updater.FileObject;
+import org.scijava.Context;
+import org.scijava.log.LogService;
+
 import sc.fiji.updater.FileObject.Action;
 import sc.fiji.updater.FileObject.Status;
-import sc.fiji.updater.FilesCollection;
+import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection.DependencyMap;
-import sc.fiji.updater.FilesUploader;
+import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.GroupAction;
 import sc.fiji.updater.Installer;
-import sc.fiji.updater.UploaderService;
 import sc.fiji.updater.action.InstallOrUpdate;
 import sc.fiji.updater.action.KeepAsIs;
 import sc.fiji.updater.action.Uninstall;
-import sc.fiji.updater.util.Progress;
-import sc.fiji.updater.util.UpdateCanceledException;
-import sc.fiji.updater.util.UpdaterUserInterface;
-import sc.fiji.updater.util.UpdaterUtil;
-
-import org.scijava.Context;
-import org.scijava.log.LogService;
+import sc.fiji.updater.diff.Diff.Mode;
+import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.progress.Progress;
+import sc.fiji.updater.progress.UpdateCanceledException;
+import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.upload.FilesUploader;
+import sc.fiji.updater.upload.UploaderService;
 
 /**
  * TODO

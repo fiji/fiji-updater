@@ -33,6 +33,8 @@ import java.io.File;
 
 import org.scijava.service.Service;
 
+import sc.fiji.updater.upload.UploaderService;
+
 /**
  * Interface for services that manage Fiji updates.
  * <p>

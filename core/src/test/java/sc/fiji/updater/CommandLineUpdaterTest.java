@@ -29,6 +29,13 @@
 
 package sc.fiji.updater;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static org.scijava.test.TestUtils.createTemporaryDirectory;
+import static org.scijava.util.FileUtils.deleteRecursively;
 import static sc.fiji.updater.FilesCollection.DEFAULT_UPDATE_SITE;
 import static sc.fiji.updater.UpdaterTestUtils.addUpdateSite;
 import static sc.fiji.updater.UpdaterTestUtils.assertStatus;
@@ -40,13 +47,6 @@ import static sc.fiji.updater.UpdaterTestUtils.readFile;
 import static sc.fiji.updater.UpdaterTestUtils.upload;
 import static sc.fiji.updater.UpdaterTestUtils.writeFile;
 import static sc.fiji.updater.UpdaterTestUtils.writeGZippedFile;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assert.assertNull;
-import static org.junit.Assert.assertTrue;
-import static org.scijava.test.TestUtils.createTemporaryDirectory;
-import static org.scijava.util.FileUtils.deleteRecursively;
 
 import java.io.File;
 import java.net.URL;
@@ -54,12 +54,13 @@ import java.util.Collections;
 import java.util.HashSet;
 import java.util.Set;
 
-import sc.fiji.updater.FileObject.Status;
-import sc.fiji.updater.action.Upload;
-import sc.fiji.updater.util.StderrProgress;
-
 import org.junit.After;
 import org.junit.Test;
+
+import sc.fiji.updater.FileObject.Status;
+import sc.fiji.updater.action.Upload;
+import sc.fiji.updater.cli.CommandLine;
+import sc.fiji.updater.progress.StderrProgress;
 
 /**
  * Tests the command-line updater.

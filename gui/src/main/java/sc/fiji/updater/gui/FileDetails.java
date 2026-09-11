@@ -64,7 +64,7 @@ import org.scijava.platform.PlatformService;
 import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.UpdateSite;
-import sc.fiji.updater.util.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterUserInterface;
 
 /**
  * TODO

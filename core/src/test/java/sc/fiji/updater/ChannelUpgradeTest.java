@@ -46,12 +46,14 @@ import java.util.Arrays;
 import org.junit.After;
 import org.junit.Test;
 
-import sc.fiji.updater.util.AppLayout;
-import sc.fiji.updater.util.ChannelManifest;
-import sc.fiji.updater.util.ChannelState;
-import sc.fiji.updater.util.JavaRequirement;
-import sc.fiji.updater.util.Channels;
-import sc.fiji.updater.util.StderrProgress;
+import sc.fiji.updater.app.AppLayout;
+import sc.fiji.updater.app.JavaRequirement;
+import sc.fiji.updater.channel.ChannelManifest;
+import sc.fiji.updater.channel.ChannelState;
+import sc.fiji.updater.channel.ChannelUpgrade;
+import sc.fiji.updater.cli.CommandLine;
+import sc.fiji.updater.progress.StderrProgress;
+import sc.fiji.updater.xml.XMLFileWriter;
 
 /**
  * Verifies moving an installation between update channels.

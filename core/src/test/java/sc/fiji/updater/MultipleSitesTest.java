@@ -28,6 +28,9 @@
  */
 package sc.fiji.updater;
 
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
 import static sc.fiji.updater.UpdaterTestUtils.addUpdateSite;
 import static sc.fiji.updater.UpdaterTestUtils.assertAction;
 import static sc.fiji.updater.UpdaterTestUtils.assertCount;
@@ -35,24 +38,21 @@ import static sc.fiji.updater.UpdaterTestUtils.assertNoAction;
 import static sc.fiji.updater.UpdaterTestUtils.assertStatus;
 import static sc.fiji.updater.UpdaterTestUtils.cleanup;
 import static sc.fiji.updater.UpdaterTestUtils.initialize;
-import static sc.fiji.updater.UpdaterTestUtils.readFile;
 import static sc.fiji.updater.UpdaterTestUtils.main;
+import static sc.fiji.updater.UpdaterTestUtils.readFile;
 import static sc.fiji.updater.UpdaterTestUtils.update;
 import static sc.fiji.updater.UpdaterTestUtils.writeFile;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
 
 import java.io.File;
 import java.util.Iterator;
 
+import org.junit.After;
+import org.junit.Test;
+
 import sc.fiji.updater.FileObject.Action;
 import sc.fiji.updater.FileObject.Status;
 import sc.fiji.updater.FileObject.Version;
-import sc.fiji.updater.util.StderrProgress;
-
-import org.junit.After;
-import org.junit.Test;
+import sc.fiji.updater.progress.StderrProgress;
 
 /**
  * Verifies that multiple update sites are handled correctly.

@@ -32,8 +32,8 @@ import java.io.File;
 import java.io.PrintStream;
 import java.net.URL;
 
-import sc.fiji.updater.Diff;
-import sc.fiji.updater.Diff.Mode;
+import sc.fiji.updater.diff.Diff.Mode;
+import sc.fiji.updater.diff.Diff;
 
 public class InteractiveDiffTestDrive {
 

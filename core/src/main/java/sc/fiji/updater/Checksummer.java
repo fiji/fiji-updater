@@ -51,15 +51,16 @@ import java.util.Set;
 import java.util.TreeMap;
 import java.util.zip.ZipException;
 
+import sc.fiji.updater.Conflicts.Conflict.Severity;
 import sc.fiji.updater.Conflicts.Conflict;
 import sc.fiji.updater.Conflicts.Resolution;
-import sc.fiji.updater.Conflicts.Conflict.Severity;
 import sc.fiji.updater.FileObject.Status;
-import sc.fiji.updater.util.AbstractProgressable;
-import sc.fiji.updater.util.Platforms;
-import sc.fiji.updater.util.Progress;
-import sc.fiji.updater.util.AppLayout;
-import sc.fiji.updater.util.UpdaterUtil;
+import sc.fiji.updater.app.AppLayout;
+import sc.fiji.updater.app.Platforms;
+import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.progress.AbstractProgressable;
+import sc.fiji.updater.progress.Progress;
+import sc.fiji.updater.xml.POMParser;
 
 /**
  * A class to checksum and timestamp all the files shown in the Updater's UI.

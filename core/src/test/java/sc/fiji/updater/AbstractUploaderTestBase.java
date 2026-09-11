@@ -29,13 +29,11 @@
 
 package sc.fiji.updater;
 
-import sc.fiji.updater.util.AppLayout;
-import sc.fiji.updater.util.ChannelManifest;
-import sc.fiji.updater.util.ChannelState;
-import sc.fiji.updater.util.StderrProgress;
-import sc.fiji.updater.util.UpdaterUtil;
-import org.apache.commons.lang.NotImplementedException;
-import org.junit.After;
+import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+import static org.junit.Assume.assumeNotNull;
+import static sc.fiji.updater.UpdaterTestUtils.*;
 
 import java.io.File;
 import java.io.IOException;
@@ -43,11 +41,16 @@ import java.net.HttpURLConnection;
 import java.net.MalformedURLException;
 import java.net.URL;
 
-import static sc.fiji.updater.UpdaterTestUtils.*;
-import static org.junit.Assert.assertEquals;
-import static org.junit.Assert.assertFalse;
-import static org.junit.Assert.assertTrue;
-import static org.junit.Assume.assumeNotNull;
+import org.apache.commons.lang.NotImplementedException;
+import org.junit.After;
+
+import sc.fiji.updater.app.AppLayout;
+import sc.fiji.updater.channel.ChannelManifest;
+import sc.fiji.updater.channel.ChannelState;
+import sc.fiji.updater.cli.CommandLine;
+import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.progress.StderrProgress;
+import sc.fiji.updater.upload.FilesUploader;
 
 /**
  * An abstract base class for testing uploader backends.

@@ -34,19 +34,18 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.util.List;
 
+import com.jcraft.jsch.JSchException;
+import com.jcraft.jsch.Session;
 import org.scijava.Priority;
 import org.scijava.log.LogService;
 import org.scijava.plugin.Plugin;
 
-import com.jcraft.jsch.JSchException;
-import com.jcraft.jsch.Session;
-
-import sc.fiji.updater.AbstractUploader;
-import sc.fiji.updater.FilesUploader;
-import sc.fiji.updater.Uploadable;
-import sc.fiji.updater.Uploader;
-import sc.fiji.updater.util.UpdateCanceledException;
-import sc.fiji.updater.util.UpdaterUserInterface;
+import sc.fiji.updater.progress.UpdateCanceledException;
+import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.upload.AbstractUploader;
+import sc.fiji.updater.upload.FilesUploader;
+import sc.fiji.updater.upload.Uploadable;
+import sc.fiji.updater.upload.Uploader;
 
 /**
  * Uploads files to an update server using only SFTP protocol. In contrast to

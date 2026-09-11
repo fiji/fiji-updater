@@ -45,12 +45,13 @@ import java.util.Arrays;
 import org.junit.After;
 import org.junit.Test;
 
-import sc.fiji.updater.util.AppLayout;
-import sc.fiji.updater.util.ChannelState;
-import sc.fiji.updater.util.Channels;
-import sc.fiji.updater.util.StderrProgress;
-import sc.fiji.updater.util.UpdateCanceledException;
-import sc.fiji.updater.util.UpdaterUserInterface;
+import sc.fiji.updater.app.AppLayout;
+import sc.fiji.updater.channel.ChannelState;
+import sc.fiji.updater.channel.Channels;
+import sc.fiji.updater.progress.StderrProgress;
+import sc.fiji.updater.progress.UpdateCanceledException;
+import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.upload.FilesUploader;
 
 /**
  * Verifies which channel an upload publishes to.
