@@ -29,7 +29,7 @@
 
 package sc.fiji.updater.cli;
 
-import static sc.fiji.updater.internal.UpdaterUtil.prettyPrintTimestamp;
+import static sc.fiji.updater.Timestamps.prettyPrintTimestamp;
 
 import java.awt.Frame;
 import java.io.Console;
@@ -95,6 +95,7 @@ import sc.fiji.updater.internal.UpdaterUtil;
 import sc.fiji.updater.progress.Progress;
 import sc.fiji.updater.progress.StderrProgress;
 import sc.fiji.updater.site.AvailableSites;
+import sc.fiji.updater.site.Connections;
 import sc.fiji.updater.site.HTTPSUtil;
 import sc.fiji.updater.ui.UpdaterUserInterface;
 import sc.fiji.updater.upload.FilesUploader;
@@ -113,7 +114,7 @@ import sc.fiji.updater.upload.FilesUploader;
  */
 public class CommandLine {
 
-	protected static LogService log = UpdaterUtil.getLogService();
+	protected static LogService log = UpdaterUserInterface.getLogService();
 	protected FilesCollection files;
 	protected Progress progress;
 	private FilesCollection.DependencyMap dependencyMap;
@@ -1611,7 +1612,7 @@ public class CommandLine {
 			System.setProperty("http.proxyHost", http_proxy);
 			System.setProperty("http.proxyPort", "" + port);
 		} else {
-			UpdaterUtil.useSystemProxies();
+			Connections.useSystemProxies();
 		}
 		Authenticator.setDefault(new ConsoleAuthenticator());
 		setUserInterface();

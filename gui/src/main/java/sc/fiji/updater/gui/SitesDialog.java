@@ -82,8 +82,8 @@ import org.scijava.log.Logger;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.channel.URLChange;
-import sc.fiji.updater.internal.UpdaterUtil;
 import sc.fiji.updater.site.AvailableSites;
+import sc.fiji.updater.site.Connections;
 import sc.fiji.updater.site.HTTPSUtil;
 import sc.fiji.updater.upload.UploaderService;
 
@@ -643,7 +643,7 @@ public class SitesDialog extends JDialog implements ActionListener {
 		final UpdateSite site = new UpdateSite(null, url, null, null, null, null, 0);
 		site.setChannel(files.getChannel());
 		try {
-			return UpdaterUtil.getLastModified(new URL(site.getIndexURL())) != -1;
+			return Connections.getLastModified(new URL(site.getIndexURL())) != -1;
 		} catch (MalformedURLException e) {
 			updaterFrame.log.error(e);
 			return false;

@@ -58,10 +58,10 @@ import sc.fiji.updater.UpdaterUI;
 import sc.fiji.updater.app.AppLayout;
 import sc.fiji.updater.channel.URLChange;
 import sc.fiji.updater.gui.ViewOptions.Option;
-import sc.fiji.updater.internal.UpdaterUtil;
 import sc.fiji.updater.progress.Progress;
 import sc.fiji.updater.progress.UpdateCanceledException;
 import sc.fiji.updater.site.AvailableSites;
+import sc.fiji.updater.site.Connections;
 import sc.fiji.updater.site.HTTPSUtil;
 import sc.fiji.updater.ui.UpdaterUserInterface;
 import sc.fiji.updater.upload.UploaderService;
@@ -95,7 +95,7 @@ public class FijiUpdater implements UpdaterUI {
 		if (errorIfDebian()) return;
 
 		if (log == null) {
-			log = UpdaterUtil.getLogService();
+			log = UpdaterUserInterface.getLogService();
 		}
 
 		if (errorIfNetworkInaccessible(log)) return;
@@ -120,7 +120,7 @@ public class FijiUpdater implements UpdaterUI {
 				return;
 			}
 		}
-		UpdaterUtil.useSystemProxies();
+		Connections.useSystemProxies();
 		Authenticator.setDefault(new SwingAuthenticator());
 
 		SwingTools.invokeOnEDT(() -> main = new UpdaterFrame(log, uploaderService, files));
@@ -326,7 +326,7 @@ public class FijiUpdater implements UpdaterUI {
 	 */
 	private static void testNetworkConnection() throws IOException {
 		final URL url = new URL(HTTPSUtil.getProtocol() + "imagej.net/");
-		final URLConnection urlConn = UpdaterUtil.openConnection(url);
+		final URLConnection urlConn = Connections.openConnection(url);
 		urlConn.setConnectTimeout(NETWORK_TIMEOUT_MS);
 		urlConn.setReadTimeout(NETWORK_TIMEOUT_MS);
 		if (urlConn instanceof HttpURLConnection) {

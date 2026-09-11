@@ -84,7 +84,7 @@ public class UpdaterTest {
 	@Test
 	public void testUtilityMethods() {
 		final long newTimestamp = 20200101000000l;
-		assertEquals(newTimestamp, Long.parseLong(UpdaterUtil.timestamp(UpdaterUtil
+		assertEquals(newTimestamp, Long.parseLong(Timestamps.timestamp(Timestamps
 			.timestamp2millis(newTimestamp))));
 	}
 
@@ -371,7 +371,7 @@ public class UpdaterTest {
 		FileObject dependency = list[1];
 		FileObject locallyModified = list[2];
 		FileObject dependencee = list[3];
-		dependencee.addDependency(obsoleted.getFilename(), UpdaterUtil.getTimestamp(files
+		dependencee.addDependency(obsoleted.getFilename(), Timestamps.getTimestamp(files
 			.prefix(obsoleted)), true);
 		dependencee.addDependency(files, dependency);
 		dependencee.addDependency(files, locallyModified);
@@ -486,7 +486,7 @@ public class UpdaterTest {
 		FileObject with = list[2];
 		FileObject tooOld = list[3];
 		FileObject plugin = list[4];
-		plugin.addDependency(obsoleted.getFilename(), UpdaterUtil.getTimestamp(files
+		plugin.addDependency(obsoleted.getFilename(), Timestamps.getTimestamp(files
 			.prefix(obsoleted)), true);
 		plugin.addDependency(files, without);
 		plugin.addDependency(files, with);
@@ -907,7 +907,7 @@ public class UpdaterTest {
 				{ checksumNew, "something else", checksumNew } };
 		for (final String[] triplet : data) {
 			final FileObject file =
-				new FileObject(null, "jars/new.jar", jar.length(), triplet[1], UpdaterUtil
+				new FileObject(null, "jars/new.jar", jar.length(), triplet[1], Timestamps
 					.getTimestamp(jar), Status.NOT_INSTALLED);
 			file.addPreviousVersion(triplet[0], 1, null, 0);
 			files.add(file);
@@ -921,7 +921,7 @@ public class UpdaterTest {
 		}
 
 		final FileObject file =
-			new FileObject(FilesCollection.DEFAULT_UPDATE_SITE, "jars/new.jar", jar.length(), checksumOld, UpdaterUtil
+			new FileObject(FilesCollection.DEFAULT_UPDATE_SITE, "jars/new.jar", jar.length(), checksumOld, Timestamps
 				.getTimestamp(jar), Status.INSTALLED);
 		files.add(file);
 
@@ -1225,9 +1225,9 @@ public class UpdaterTest {
 		files = new FilesCollection(files.prefix(""));
 		files.read();
 		final FileObject file =
-			new FileObject(FilesCollection.DEFAULT_UPDATE_SITE, "jars/new.jar", jar.length(), checksumOld, UpdaterUtil
+			new FileObject(FilesCollection.DEFAULT_UPDATE_SITE, "jars/new.jar", jar.length(), checksumOld, Timestamps
 				.getTimestamp(jar), Status.INSTALLED);
-		file.addPreviousVersion(checksumNew, UpdaterUtil.getTimestamp(jar) - 1l, null, 0);
+		file.addPreviousVersion(checksumNew, Timestamps.getTimestamp(jar) - 1l, null, 0);
 		files.add(file);
 
 		final File webRoot = getWebRoot(files);

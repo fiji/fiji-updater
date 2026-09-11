@@ -40,7 +40,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Set;
 
-import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.site.Connections;
 
 /**
  * The channels an update site carries.
@@ -109,7 +109,7 @@ public final class ChannelManifest {
 	 */
 	public static ChannelManifest read(final String siteURL) {
 		try (final InputStream in =
-			UpdaterUtil.openConnection(new URL(siteURL + FILENAME)).getInputStream();
+			Connections.openConnection(new URL(siteURL + FILENAME)).getInputStream();
 				final BufferedReader reader = new BufferedReader(
 					new InputStreamReader(in, StandardCharsets.UTF_8)))
 		{

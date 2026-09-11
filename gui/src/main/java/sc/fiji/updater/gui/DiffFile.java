@@ -54,10 +54,11 @@ import org.scijava.util.ProcessUtils;
 
 import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
+import sc.fiji.updater.Timestamps;
 import sc.fiji.updater.diff.ByteCodeAnalyzer;
 import sc.fiji.updater.diff.Diff.Mode;
 import sc.fiji.updater.diff.Diff;
-import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.site.Connections;
 
 /**
  * A {@link JFrame} to show the differences between the remote and local
@@ -252,7 +253,7 @@ public class DiffFile extends JFrame {
 		}
 		else {
 			commitRange = commitLocal;
-			long millis = UpdaterUtil.timestamp2millis(fileObject.current.timestamp);
+			long millis = Timestamps.timestamp2millis(fileObject.current.timestamp);
 			since = "--since=" + (millis / 1000l - 5 * 60);
 			warning = "No precise commit information in the remote .jar;\n"
 					+ "\tUsing timestamp from Updater instead: " + new Date(millis) + " - 5 minutes";
@@ -277,7 +278,7 @@ public class DiffFile extends JFrame {
 	 */
 	private String getCommit(final URL jarURL) {
 		try {
-			final JarInputStream in = new JarInputStream(UpdaterUtil.openStream(jarURL));
+			final JarInputStream in = new JarInputStream(Connections.openStream(jarURL));
 			in.close();
 			Manifest manifest = in.getManifest();
 			if (manifest == null)
@@ -305,7 +306,7 @@ public class DiffFile extends JFrame {
 	private String findSourceDirectory(final File gitWorkingDirectory, final URL jarURL) {
 		try {
 			int maxCount = 3;
-			final JarInputStream in = new JarInputStream(UpdaterUtil.openStream(jarURL));
+			final JarInputStream in = new JarInputStream(Connections.openStream(jarURL));
 			for (;;) {
 				final JarEntry entry = in.getNextJarEntry();
 				if (entry == null) break;

@@ -86,8 +86,8 @@ import sc.fiji.updater.Installer;
 import sc.fiji.updater.action.InstallOrUpdate;
 import sc.fiji.updater.action.KeepAsIs;
 import sc.fiji.updater.action.Uninstall;
+import sc.fiji.updater.app.AppLayout;
 import sc.fiji.updater.diff.Diff.Mode;
-import sc.fiji.updater.internal.UpdaterUtil;
 import sc.fiji.updater.progress.Progress;
 import sc.fiji.updater.progress.UpdateCanceledException;
 import sc.fiji.updater.ui.UpdaterUserInterface;
@@ -707,7 +707,7 @@ public class UpdaterFrame extends JFrame implements TableModelListener,
 
 	// checkWritable() is guaranteed to be called after Checksummer ran
 	public void checkWritable() {
-		if (UpdaterUtil.isProtectedLocation(files.prefix(""))) {
+		if (AppLayout.isProtectedLocation(files.prefix(""))) {
 			error("<html><p width=400>Windows' security model for the directory '" + files.prefix("") + "' is incompatible with the ImageJ updater.</p>" +
 				"<p>Please install ImageJ into a user-writable directory, e.g. onto the Desktop.</p></html>");
 			return;

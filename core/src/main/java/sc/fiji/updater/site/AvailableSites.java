@@ -121,7 +121,7 @@ public final class AvailableSites {
 			"&export=true&exportnowrap=true&titles=" +
 			URLEncoder.encode(title, "UTF-8");
 		try (final InputStream in =
-			UpdaterUtil.openConnection(new URL(url)).getInputStream())
+			Connections.openConnection(new URL(url)).getInputStream())
 		{
 			final XML xml = new XML(in);
 			final String source = xml.cdata("/mediawiki/page/revision/text");

@@ -55,9 +55,10 @@ import sc.fiji.updater.FileObject.Status;
 import sc.fiji.updater.FileObject.Version;
 import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
+import sc.fiji.updater.Timestamps;
 import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.channel.Channels;
-import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.site.Connections;
 import sc.fiji.updater.site.UpdateSiteNetwork;
 
 /**
@@ -120,13 +121,13 @@ public class XMLFileReader extends DefaultHandler {
 			site.setChannel(channel);
 			try {
 				final URLConnection connection =
-					UpdaterUtil.openConnection(new URL(site.getIndexURL()));
+					Connections.openConnection(new URL(site.getIndexURL()));
 				final long lastModified = connection.getLastModified();
 				read(updateSite, new GZIPInputStream(connection.getInputStream()),
 					site.getTimestamp());
 
 				// lastModified is a Unix epoch, we need a timestamp
-				site.setTimestamp(Long.parseLong(UpdaterUtil.timestamp(lastModified)));
+				site.setTimestamp(Long.parseLong(Timestamps.timestamp(lastModified)));
 				return;
 			}
 			catch (final IOException e) {

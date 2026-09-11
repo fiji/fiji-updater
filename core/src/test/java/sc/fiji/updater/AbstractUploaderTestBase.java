@@ -50,6 +50,7 @@ import sc.fiji.updater.channel.ChannelState;
 import sc.fiji.updater.cli.CommandLine;
 import sc.fiji.updater.internal.UpdaterUtil;
 import sc.fiji.updater.progress.StderrProgress;
+import sc.fiji.updater.site.Connections;
 import sc.fiji.updater.upload.FilesUploader;
 
 /**
@@ -188,7 +189,7 @@ public abstract class AbstractUploaderTestBase {
 	/** Whether the given site-relative path is readable. */
 	protected boolean exists(final String path) {
 		try {
-			return UpdaterUtil.getLastModified(new URL(url + path)) != -1;
+			return Connections.getLastModified(new URL(url + path)) != -1;
 		}
 		catch (final MalformedURLException e) {
 			throw new RuntimeException(e);

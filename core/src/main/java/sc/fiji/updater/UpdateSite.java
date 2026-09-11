@@ -240,11 +240,11 @@ public class UpdateSite implements Cloneable, Comparable<UpdateSite> {
 	}
 
 	public boolean isLastModified(final long lastModified) {
-		return timestamp == Long.parseLong(UpdaterUtil.timestamp(lastModified));
+		return timestamp == Long.parseLong(Timestamps.timestamp(lastModified));
 	}
 
 	public void setLastModified(final long lastModified) {
-		timestamp = Long.parseLong(UpdaterUtil.timestamp(lastModified));
+		timestamp = Long.parseLong(Timestamps.timestamp(lastModified));
 	}
 
 	public boolean isUploadable() {

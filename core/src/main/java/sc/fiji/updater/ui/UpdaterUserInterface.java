@@ -34,8 +34,7 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 import org.scijava.log.LogService;
-
-import sc.fiji.updater.internal.UpdaterUtil;
+import org.scijava.log.StderrLogService;
 
 /**
  * A user interface abstraction.
@@ -43,6 +42,21 @@ import sc.fiji.updater.internal.UpdaterUtil;
  * @author Johannes Schindelin
  */
 public abstract class UpdaterUserInterface {
+
+	/** Prefix for the keys under which login details are remembered. */
+	public static final String PREFS_USER = "imagej.updater.login";
+
+	/**
+	 * A log service to fall back on when no other one is available.
+	 * <p>
+	 * The updater runs before and during the replacement of the very JARs a
+	 * fuller logging implementation would come from, so it cannot assume one is
+	 * present.
+	 * </p>
+	 */
+	public static LogService getLogService() {
+		return new StderrLogService();
+	}
 
 	// The methods
 	public abstract void error(String message);
@@ -106,7 +120,7 @@ public abstract class UpdaterUserInterface {
 		protected LogService log;
 
 		public StderrInterface() {
-			log = UpdaterUtil.getLogService();
+			log = getLogService();
 		}
 
 		@Override

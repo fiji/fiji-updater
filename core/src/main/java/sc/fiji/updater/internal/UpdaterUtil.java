@@ -63,7 +63,6 @@ import java.util.regex.Pattern;
 import org.scijava.log.LogService;
 import org.scijava.log.StderrLogService;
 
-import sc.fiji.updater.app.Platforms;
 import sc.fiji.updater.site.HTTPSUtil;
 import sc.fiji.updater.site.UpdateSiteNetwork;
 
@@ -90,9 +89,6 @@ public final class UpdaterUtil {
 	static String SSH_HOST = UpdateSiteNetwork.MAIN_SITE_SSH_HOST;
 
 	public static final String XML_COMPRESSED = "db.xml.gz";
-
-	// Prefix for the preference key names
-	public static final String PREFS_USER = "imagej.updater.login";
 
 	private UpdaterUtil() {
 		// Prevent instantiation of utility class.
@@ -216,135 +212,12 @@ public final class UpdaterUtil {
 
 	}
 
-	public static long currentTimestamp() {
-		return Long.parseLong(UpdaterUtil.timestamp(Calendar.getInstance()));
-	}
-
-	public static long getTimestamp(final File file) {
-		final long modified = file.lastModified();
-		return Long.parseLong(timestamp(modified));
-	}
-
-	public static String timestamp(final long millis) {
-		final Calendar date = Calendar.getInstance();
-		date.setTimeInMillis(millis);
-		return timestamp(date);
-	}
-
-	public static String timestamp(final Calendar date) {
-		final DecimalFormat format = new DecimalFormat("00");
-		final int month = date.get(Calendar.MONTH) + 1;
-		final int day = date.get(Calendar.DAY_OF_MONTH);
-		final int hour = date.get(Calendar.HOUR_OF_DAY);
-		final int minute = date.get(Calendar.MINUTE);
-		final int second = date.get(Calendar.SECOND);
-		return "" + date.get(Calendar.YEAR) + format.format(month) +
-			format.format(day) + format.format(hour) + format.format(minute) +
-			format.format(second);
-	}
-
-	public static long timestamp2millis(final long timestamp) {
-		return timestamp2millis("" + timestamp);
-	}
-
-	public static long timestamp2millis(final String timestamp) {
-		final Calendar calendar = Calendar.getInstance();
-		calendar.set(Integer.parseInt(timestamp.substring(0, 4)), Integer
-			.parseInt(timestamp.substring(4, 6)) - 1, Integer.parseInt(timestamp
-			.substring(6, 8)), Integer.parseInt(timestamp.substring(8, 10)), Integer
-			.parseInt(timestamp.substring(10, 12)), Integer.parseInt(timestamp
-			.substring(12, 14)));
-		return calendar.getTimeInMillis();
-	}
-
-	private static final String[] months = { "Zero", "Jan", "Feb", "Mar", "Apr",
-		"May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec" };
-
-	public static String prettyPrintTimestamp(final long timestamp) {
-		final String t = "" + timestamp + "00000000000000";
-		return t.substring(6, 8) + " " +
-			months[Integer.parseInt(t.substring(4, 6))] + " " + t.substring(0, 4) + " " +
-			t.substring(8, 10) + ":" + t.substring(10, 12) + ":" + t.substring(12,14);
-	}
-
 	public static <T> String join(final String delimiter, final Iterable<T> list)
 	{
 		final StringBuilder builder = new StringBuilder();
 		for (final T object : list)
 			builder.append((builder.length() > 0 ? delimiter : "") + object.toString());
 		return builder.toString();
-	}
-
-	public static void useSystemProxies() {
-		/*
-		 * Avoid those pesky
-		 * "GConf-WARNING **: Client failed to connect to the D-BUS daemon"
-		 * messages in headless mode (e.g. Jenkins).
-		 */
-		final String osName = System.getProperty("os.name", "<unknown>");
-		if (osName.equals("Linux") && GraphicsEnvironment.isHeadless()) return;
-
-		System.setProperty("java.net.useSystemProxies", "true");
-	}
-
-	public static long getLastModified(final URL url) {
-		try {
-			final URLConnection connection = openConnection(url);
-			if (connection instanceof HttpURLConnection) ((HttpURLConnection) connection)
-				.setRequestMethod("HEAD");
-			connection.setUseCaches(false);
-			final long lastModified = connection.getLastModified();
-			connection.getInputStream().close();
-			return lastModified;
-		}
-		catch (final IOException e) {
-			if (e.getMessage().startsWith("Server returned HTTP response code: 407")) return -111381;
-			if (e.getMessage().startsWith("Server returned HTTP response code: 405")) try {
-				final URLConnection connection = openConnection(url);
-				connection.setUseCaches(false);
-				final long lastModified = connection.getLastModified();
-				connection.getInputStream().close();
-				return lastModified;
-			} catch (IOException e2) {
-				e.printStackTrace();
-				e2.printStackTrace();
-			}
-			// assume no network; so let's pretend everything's ok.
-			return -1;
-		}
-	}
-
-	/**
-	 * Open a stream to a {@link URL}.
-	 *
-	 * @param url the URL to open
-	 */
-	public static InputStream openStream(final URL url) throws IOException {
-		return openConnection(url).getInputStream();
-	}
-
-	/**
-	 * Open a connection to a {@link URL}.
-	 *
-	 * @param url the URL to open
-	 */
-	public static URLConnection openConnection(final URL url) throws IOException {
-		final URLConnection connection = url.openConnection();
-		if (connection instanceof HttpURLConnection) {
-			HttpURLConnection http = (HttpURLConnection)connection;
-			http.setInstanceFollowRedirects(true); // Follow HTTP 3xx redirects.
-			final String javaVmVersion = System.getProperty("java.runtime.version");
-			final String javaVersion = javaVmVersion != null ?
-					javaVmVersion : System.getProperty("java.version");
-			final String osVersion = System.getProperty("os.version");
-			final String os = "" + System.getProperty("os.name") + "-"
-					+ (osVersion != null ? osVersion + "-" : "")
-					+ System.getProperty("os.arch");
-			http.setRequestProperty("User-Agent",
-					"curl/7.22.0 compatible ImageJ updater/2.0.0-SNAPSHOT (Java "
-					+ javaVersion + "/" + os + ")");
-		}
-		return connection;
 	}
 
 	// Get entire byte data
@@ -405,69 +278,6 @@ public final class UpdaterUtil {
 		}
 	}
 
-	/**
-	 * Determines whether the ImageJ root directory has been moved to an area
-	 * dictated by macOS's Gatekeeper Path Randomization feature. This happens
-	 * when the application is downloaded, unpacked, and launched without first
-	 * moving the application to a different folder such as Applications.
-	 * 
-	 * @param ijRoot the root directory to test
-	 * @return whether the directory is protected by GPR
-	 */
-	public static boolean isGPRActivated(final File ijRoot) {
-		final String path = ijRoot.getAbsolutePath();
-		return path.matches("^/private/var/folders/.*/AppTranslocation/.*");
-	}
-
-	private static Set<File> protectedFiles;
-	private final static Pattern majorVersionPattern = Pattern.compile("([0-9]+).*");
-
-	/**
-	 * Determines whether the ImageJ root directory is in an area protected by the OS.
-	 * 
-	 * <p>On Windows Vista and later, C:\Program Files is a protected location.
-	 * 
-	 * @param ijRoot the root directory to test
-	 * @return whether the directory is protected by the OS
-	 */
-	public static boolean isProtectedLocation(final File ijRoot) {
-		if (Platforms.isWindows(Platforms.current())) {
-			final String osVersion = System.getProperty("os.version");
-			if (osVersion == null) return false;
-			final Matcher matcher = majorVersionPattern.matcher(osVersion);
-			/*
-			 * Vista is 6.0, Server 2008, too, to keep it confusing, Server 2008
-			 * R2 is 6.1, to keep it more confusing, Windows 7 is 6.1 (just to
-			 * keep it even more confusing). See:
-			 * http://msdn.microsoft.com/en-us/library/windows/desktop/ms724832%28v=vs.85%29.aspx
-			 */
-			if (!matcher.matches() || Integer.parseInt(matcher.group(1)) < 6) return false;
-			try {
-				if (protectedFiles == null) {
-					protectedFiles = new HashSet<>();
-					for (final String key : new String[] {
-									"PROGRAMFILES", "PROGRAMFILES(X86)", "SystemRoot", "ALLUSERSPROFILE"
-					}) {
-						final String path = System.getenv(key);
-						if (path != null) {
-							File f = new File(path).getCanonicalFile();
-							if (!f.canWrite()) protectedFiles.add(f);
-						}
-					}
-				}
-				for (File dir = ijRoot.getCanonicalFile(); dir != null; dir = dir.getParentFile()) {
-					if (protectedFiles.contains(dir)) {
-						protectedFiles.add(ijRoot);
-						return true;
-					}
-				}
-			} catch (final IOException e) {
-				e.printStackTrace(); // but ignore otherwise
-			}
-		}
-		return false;
-	}
-
 	public static<T> Iterable<T> iterate(final Enumeration<T> en) {
         final Iterator<T> iterator = new Iterator<T>() {
             @Override
@@ -492,18 +302,6 @@ public final class UpdaterUtil {
                     return iterator;
             }
 	    };
-	}
-
-	/**
-	 * Get a log service.
-	 * 
-	 * This works around version skews (where the
-	 * {@link org.scijava.log.StderrLogService} cannot be found).
-	 * 
-	 * @return the log service
-	 */
-	public static LogService getLogService() {
-		return new StderrLogService();
 	}
 
 	/**

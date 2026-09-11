@@ -48,8 +48,8 @@ import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.channel.ChannelManifest;
 import sc.fiji.updater.channel.ChannelState;
 import sc.fiji.updater.channel.Channels;
-import sc.fiji.updater.internal.UpdaterUtil;
 import sc.fiji.updater.progress.AbstractProgressable;
+import sc.fiji.updater.site.Connections;
 
 /**
  * Directly in charge of downloading and saving start-up files (i.e.: XML file
@@ -151,7 +151,7 @@ public class XMLFileDownloader extends AbstractProgressable {
 			updateSite.setChannel(channel);
 			try {
 				final URLConnection connection =
-					UpdaterUtil.openConnection(new URL(updateSite.getIndexURL()));
+					Connections.openConnection(new URL(updateSite.getIndexURL()));
 				final long lastModified = connection.getLastModified();
 				final int fileSize = connection.getContentLength();
 				final InputStream in =

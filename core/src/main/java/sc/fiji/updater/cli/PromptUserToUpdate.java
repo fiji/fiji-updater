@@ -40,7 +40,7 @@ import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.updater.UpdaterUI;
-import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.ui.UpdaterUserInterface;
 
 /**
  * This plugin prompts the user to launch the updater due to available updates.
@@ -80,7 +80,7 @@ public class PromptUserToUpdate implements Command {
 			}
 			else {
 				if (log == null) {
-					log = UpdaterUtil.getLogService();
+					log = UpdaterUserInterface.getLogService();
 				}
 				log.error("No updater plugins found!");
 			}

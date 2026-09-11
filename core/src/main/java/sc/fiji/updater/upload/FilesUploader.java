@@ -51,6 +51,7 @@ import sc.fiji.updater.FileObject.Action;
 import sc.fiji.updater.FileObject.Status;
 import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
+import sc.fiji.updater.Timestamps;
 import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.channel.ChannelManifest;
 import sc.fiji.updater.channel.ChannelState;
@@ -59,6 +60,7 @@ import sc.fiji.updater.internal.UpdaterUtil;
 import sc.fiji.updater.progress.Progress;
 import sc.fiji.updater.progress.StderrProgress;
 import sc.fiji.updater.progress.UpdateCanceledException;
+import sc.fiji.updater.site.Connections;
 import sc.fiji.updater.ui.UpdaterUserInterface;
 import sc.fiji.updater.xml.XMLFileWriter;
 
@@ -226,7 +228,7 @@ public class FilesUploader {
 	 */
 	private long indexLastModified(final String channel) {
 		try {
-			return UpdaterUtil.getLastModified(
+			return Connections.getLastModified(
 				new URL(site.getURL() + UpdateSite.getIndexPath(channel)));
 		}
 		catch (final MalformedURLException e) {
@@ -280,7 +282,7 @@ public class FilesUploader {
 		if (host.startsWith("sftp:")) host = host.substring(5);
 		final int at = host.indexOf('@');
 		if (at > 0) return host.substring(0, at);
-		final String name = UpdaterUserInterface.get().getPref(UpdaterUtil.PREFS_USER);
+		final String name = UpdaterUserInterface.get().getPref(UpdaterUserInterface.PREFS_USER);
 		if (name == null) return "";
 		return name;
 	}
@@ -440,7 +442,7 @@ public class FilesUploader {
 		for (final Uploadable uploadable : uploadables) {
 			if (uploadable instanceof UploadableFile) {
 				final UploadableFile file = (UploadableFile) uploadable;
-				timestamps[counter] = UpdaterUtil.getTimestamp(file.source);
+				timestamps[counter] = Timestamps.getTimestamp(file.source);
 			}
 			verifyUnchanged(uploadable, true);
 			counter++;
@@ -453,10 +455,10 @@ public class FilesUploader {
 		for (final Uploadable uploadable : uploadables) {
 			if (uploadable instanceof UploadableFile) {
 				final UploadableFile file = (UploadableFile) uploadable;
-				if (timestamps[counter] != UpdaterUtil.getTimestamp(file.source)) throw new RuntimeException(
+				if (timestamps[counter] != Timestamps.getTimestamp(file.source)) throw new RuntimeException(
 					"Timestamp of " + file.getFilename() +
 						"changed since being checksummed (was " + timestamps[counter] +
-						" but is " + UpdaterUtil.getTimestamp(file.source) + "!)");
+						" but is " + Timestamps.getTimestamp(file.source) + "!)");
 			}
 			counter++;
 		}
@@ -478,10 +480,10 @@ public class FilesUploader {
 			final long stored =
 				uploadable.file.getStatus() == FileObject.Status.LOCAL_ONLY
 					? uploadable.file.current.timestamp : uploadable.file.localTimestamp;
-			if (stored != UpdaterUtil.getTimestamp(uploadable.source)) throw new RuntimeException(
+			if (stored != Timestamps.getTimestamp(uploadable.source)) throw new RuntimeException(
 				"Timestamp of " + uploadable.file.filename +
 					" changed since being checksummed (was " + stored + " but is " +
-					UpdaterUtil.getTimestamp(uploadable.source) + ")!");
+					Timestamps.getTimestamp(uploadable.source) + ")!");
 		}
 	}
 
@@ -559,19 +561,19 @@ public class FilesUploader {
 		try {
 			URLConnection connection;
 			try {
-				connection = UpdaterUtil.openConnection(new URL(site.getIndexURL()));
+				connection = Connections.openConnection(new URL(site.getIndexURL()));
 			}
 			catch (final FileNotFoundException e) {
 				files.log.error(e);
 				Thread.sleep(500);
-				connection = UpdaterUtil.openConnection(new URL(site.getIndexURL()));
+				connection = Connections.openConnection(new URL(site.getIndexURL()));
 			}
 			connection.setUseCaches(false);
 			final long lastModified = connection.getLastModified();
 			connection.getInputStream().close();
 			UpdaterUserInterface.get().debug(
 				"got last modified " + lastModified + " = timestamp " +
-					UpdaterUtil.timestamp(lastModified));
+					Timestamps.timestamp(lastModified));
 			return lastModified;
 		}
 		catch (final Exception e) {
@@ -591,7 +593,7 @@ public class FilesUploader {
 		final long lastModified = getCurrentLastModified();
 		if (!site.isLastModified(lastModified)) throw new RuntimeException(
 			"db.xml.gz was " + "changed in the meantime (was " + site.getTimestamp() +
-				" but now is " + UpdaterUtil.timestamp(lastModified) + ")");
+				" but now is " + Timestamps.timestamp(lastModified) + ")");
 	}
 
 	public boolean login() {
@@ -612,7 +614,7 @@ public class FilesUploader {
 		final String updateSiteName = "Dummy";
 		final FilesCollection files = new FilesCollection(null);
 		files.addUpdateSite(updateSiteName, url, sshHost, uploadDirectory, Long
-			.parseLong(UpdaterUtil.timestamp(-1)));
+			.parseLong(Timestamps.timestamp(-1)));
 		final FilesUploader uploader =
 			new FilesUploader(uploaderService, files, updateSiteName, progress);
 		uploader.initialUpload = true;

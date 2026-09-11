@@ -47,7 +47,6 @@ import java.util.Stack;
 import org.scijava.util.FileUtils;
 
 import sc.fiji.updater.app.Platforms;
-import sc.fiji.updater.internal.UpdaterUtil;
 
 /**
  * This class represents a file handled by the updater.
@@ -375,7 +374,7 @@ public class FileObject {
 	}
 
 	public void addDependency(final String filename, final File file) {
-		addDependency(filename, UpdaterUtil.getTimestamp(file), false);
+		addDependency(filename, Timestamps.getTimestamp(file), false);
 	}
 
 	public void addDependency(final String filename, final long timestamp,
@@ -442,7 +441,7 @@ public class FileObject {
 
 	public void replaceList(final String tag, final String... list) {
 		if (tag.equals("Dependency")) {
-			final long now = Long.parseLong(UpdaterUtil.timestamp(new Date().getTime()));
+			final long now = Long.parseLong(Timestamps.timestamp(new Date().getTime()));
 			final Dependency[] newList = new Dependency[list.length];
 			for (int i = 0; i < list.length; i++) {
 				boolean obsoleted = false;
@@ -577,7 +576,7 @@ public class FileObject {
 				overridingRank = site.getRank();
 			}
 		}
-		current.timestampObsolete = UpdaterUtil.currentTimestamp();
+		current.timestampObsolete = Timestamps.currentTimestamp();
 		addPreviousVersion(current);
 		setStatus(Status.OBSOLETE_UNINSTALLED);
 		current = null;

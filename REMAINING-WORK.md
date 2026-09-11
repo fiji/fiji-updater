@@ -221,7 +221,7 @@ change, and it is the direct cause of the `Fiji` collision below.
   that the launcher always starts and only the *recommended* version moves.
 
 - **One-line launcher change:** `'--update|net.imagej.updater.CommandLine'`
-  becomes `'--update|sc.fiji.updater.CommandLine'`.
+  becomes `'--update|sc.fiji.updater.cli.CommandLine'`.
 
 - **Publish a final `net.imagej:imagej-updater`** whose only job is to be
   obsoleted cleanly, so installations remove it rather than keeping it

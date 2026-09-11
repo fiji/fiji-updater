@@ -40,6 +40,7 @@ import java.util.Collections;
 
 import sc.fiji.updater.progress.AbstractProgressable;
 import sc.fiji.updater.progress.Progress;
+import sc.fiji.updater.site.Connections;
 
 /**
  * Direct responsibility: Download a list of files given their respective URLs
@@ -70,7 +71,7 @@ public class Downloader extends AbstractProgressable {
 	}
 
 	public void start(final Iterable<Downloadable> files) throws IOException {
-		UpdaterUtil.useSystemProxies();
+		Connections.useSystemProxies();
 		cancelled = false;
 
 		count = total = itemCount = itemTotal = 0;
@@ -91,7 +92,7 @@ public class Downloader extends AbstractProgressable {
 	protected synchronized void download(final Downloadable current)
 		throws IOException
 	{
-		final URLConnection connection = UpdaterUtil.openConnection(new URL(current.getURL()));
+		final URLConnection connection = Connections.openConnection(new URL(current.getURL()));
 		connection.setUseCaches(false);
 		lastModified = connection.getLastModified();
 		int currentTotal = connection.getContentLength();

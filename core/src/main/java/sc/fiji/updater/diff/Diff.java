@@ -55,6 +55,7 @@ import org.scijava.util.IteratorPlus;
 import org.scijava.util.ProcessUtils;
 
 import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.site.Connections;
 
 /**
  * Show differences between remote and local versions of files.
@@ -431,7 +432,7 @@ public class Diff {
 		if (extension.startsWith("jar-")) extension = "jar";
 		final File result = File.createTempFile("diff-", "".equals(extension) ? "" : "." + extension);
 		result.deleteOnExit();
-		copy(UpdaterUtil.openStream(url), new FileOutputStream(result), true, true);
+		copy(Connections.openStream(url), new FileOutputStream(result), true, true);
 		return result;
 	}
 

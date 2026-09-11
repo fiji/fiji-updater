@@ -193,7 +193,7 @@ public class Checksummer extends AbstractProgressable {
 			addItem(pair.path);
 
 			if (pair.file.exists()) try {
-				pair.timestamp = UpdaterUtil.getTimestamp(pair.file);
+				pair.timestamp = Timestamps.getTimestamp(pair.file);
 				pair.checksum = getDigest(pair.path, pair.file, pair.timestamp);
 			}
 			catch (final ZipException e) {

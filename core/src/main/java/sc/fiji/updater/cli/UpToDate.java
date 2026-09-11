@@ -50,8 +50,8 @@ import org.xml.sax.SAXException;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.app.AppLayout;
-import sc.fiji.updater.internal.UpdaterUtil;
 import sc.fiji.updater.site.AvailableSites;
+import sc.fiji.updater.site.Connections;
 import sc.fiji.updater.site.HTTPSUtil;
 
 /**
@@ -109,8 +109,8 @@ public class UpToDate {
 	{
 		if (neverRemind()) return Result.CHECK_TURNED_OFF;
 		if (shouldRemindLater()) return Result.REMIND_LATER;
-		if (UpdaterUtil.isGPRActivated(ijRoot)) return Result.GPR_ACTIVATED;
-		if (UpdaterUtil.isProtectedLocation(ijRoot)) return Result.PROTECTED_LOCATION;
+		if (AppLayout.isGPRActivated(ijRoot)) return Result.GPR_ACTIVATED;
+		if (AppLayout.isProtectedLocation(ijRoot)) return Result.PROTECTED_LOCATION;
 		if (!canWrite(ijRoot)) return Result.READ_ONLY;
 		if (isDeveloper()) return Result.DEVELOPER;
 		if (!haveNetworkConnection()) return Result.OFFLINE;
@@ -212,7 +212,7 @@ public class UpToDate {
 	 */
 	public static long getLastModified(final String url) {
 		try {
-			final URLConnection connection = UpdaterUtil.openConnection(new URL(url));
+			final URLConnection connection = Connections.openConnection(new URL(url));
 			if (connection instanceof HttpURLConnection) ((HttpURLConnection) connection)
 				.setRequestMethod("HEAD");
 			connection.setUseCaches(false);

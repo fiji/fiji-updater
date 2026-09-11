@@ -79,8 +79,8 @@ import org.scijava.log.LogService;
 import org.scijava.log.StderrLogService;
 import org.scijava.plugin.Plugin;
 
+import sc.fiji.updater.Timestamps;
 import sc.fiji.updater.UpdateSite;
-import sc.fiji.updater.internal.UpdaterUtil;
 import sc.fiji.updater.ui.UpdaterUserInterface;
 import sc.fiji.updater.upload.AbstractUploader;
 import sc.fiji.updater.upload.FilesUploader;
@@ -343,7 +343,7 @@ public class WebDAVUploader extends AbstractUploader {
 			Date date = DateUtils.parseDate(response.getFirstHeader("Date").getValue());
 			Calendar cal = Calendar.getInstance();
 			cal.setTime(date);
-			timestamp = Long.parseLong(UpdaterUtil.timestamp(cal));
+			timestamp = Long.parseLong(Timestamps.timestamp(cal));
 			if (timestamp < 0) {
 				throw new IOException("Could not obtain date from the server");
 			}

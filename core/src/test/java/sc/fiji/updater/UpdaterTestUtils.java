@@ -70,9 +70,9 @@ import org.xml.sax.SAXException;
 import sc.fiji.updater.FileObject.Action;
 import sc.fiji.updater.FileObject.Status;
 import sc.fiji.updater.cli.CommandLine;
-import sc.fiji.updater.internal.UpdaterUtil;
 import sc.fiji.updater.progress.Progress;
 import sc.fiji.updater.progress.StderrProgress;
+import sc.fiji.updater.ui.UpdaterUserInterface;
 import sc.fiji.updater.upload.FilesUploader;
 import sc.fiji.updater.upload.UploaderService;
 import sc.fiji.updater.xml.XMLFileReader;
@@ -107,7 +107,7 @@ public class UpdaterTestUtils {
 				loader.loadClass("sc.fiji.updater.gui.UpdaterFrame");
 			final java.lang.reflect.Constructor<?> ctor =
 				clazz.getConstructor(LogService.class, UploaderService.class, FilesCollection.class);
-			final Object updaterFrame = ctor.newInstance(UpdaterUtil.getLogService(), null, files);
+			final Object updaterFrame = ctor.newInstance(UpdaterUserInterface.getLogService(), null, files);
 			final java.lang.reflect.Method setVisible =
 				clazz.getMethod("setVisible", boolean.class);
 			setVisible.invoke(updaterFrame, true);
@@ -464,7 +464,7 @@ public class UpdaterTestUtils {
 	 * @param timestamp the mtime as pseudo-long (YYYYMMDDhhmmss)
 	 */
 	protected static void touch(final File file, final long timestamp) {
-		final long millis = UpdaterUtil.timestamp2millis(timestamp);
+		final long millis = Timestamps.timestamp2millis(timestamp);
 		file.setLastModified(millis);
 	}
 

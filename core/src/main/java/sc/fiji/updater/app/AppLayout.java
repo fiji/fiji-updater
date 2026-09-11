@@ -29,6 +29,11 @@
 package sc.fiji.updater.app;
 
 import java.io.File;
+import java.io.IOException;
+import java.util.HashSet;
+import java.util.Set;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import org.scijava.util.AppUtils;
 
@@ -174,6 +179,69 @@ public final class AppLayout {
 	 */
 	public static boolean isDebianPackage() {
 		return "true".equals(System.getProperty(DEBIAN_PACKAGE_PROPERTY));
+	}
+
+	/**
+	 * Determines whether the ImageJ root directory has been moved to an area
+	 * dictated by macOS's Gatekeeper Path Randomization feature. This happens
+	 * when the application is downloaded, unpacked, and launched without first
+	 * moving the application to a different folder such as Applications.
+	 * 
+	 * @param ijRoot the root directory to test
+	 * @return whether the directory is protected by GPR
+	 */
+	public static boolean isGPRActivated(final File ijRoot) {
+		final String path = ijRoot.getAbsolutePath();
+		return path.matches("^/private/var/folders/.*/AppTranslocation/.*");
+	}
+
+	private static Set<File> protectedFiles;
+	private final static Pattern majorVersionPattern = Pattern.compile("([0-9]+).*");
+
+	/**
+	 * Determines whether the ImageJ root directory is in an area protected by the OS.
+	 * 
+	 * <p>On Windows Vista and later, C:\Program Files is a protected location.
+	 * 
+	 * @param ijRoot the root directory to test
+	 * @return whether the directory is protected by the OS
+	 */
+	public static boolean isProtectedLocation(final File ijRoot) {
+		if (Platforms.isWindows(Platforms.current())) {
+			final String osVersion = System.getProperty("os.version");
+			if (osVersion == null) return false;
+			final Matcher matcher = majorVersionPattern.matcher(osVersion);
+			/*
+			 * Vista is 6.0, Server 2008, too, to keep it confusing, Server 2008
+			 * R2 is 6.1, to keep it more confusing, Windows 7 is 6.1 (just to
+			 * keep it even more confusing). See:
+			 * http://msdn.microsoft.com/en-us/library/windows/desktop/ms724832%28v=vs.85%29.aspx
+			 */
+			if (!matcher.matches() || Integer.parseInt(matcher.group(1)) < 6) return false;
+			try {
+				if (protectedFiles == null) {
+					protectedFiles = new HashSet<>();
+					for (final String key : new String[] {
+									"PROGRAMFILES", "PROGRAMFILES(X86)", "SystemRoot", "ALLUSERSPROFILE"
+					}) {
+						final String path = System.getenv(key);
+						if (path != null) {
+							File f = new File(path).getCanonicalFile();
+							if (!f.canWrite()) protectedFiles.add(f);
+						}
+					}
+				}
+				for (File dir = ijRoot.getCanonicalFile(); dir != null; dir = dir.getParentFile()) {
+					if (protectedFiles.contains(dir)) {
+						protectedFiles.add(ijRoot);
+						return true;
+					}
+				}
+			} catch (final IOException e) {
+				e.printStackTrace(); // but ignore otherwise
+			}
+		}
+		return false;
 	}
 
 	/**

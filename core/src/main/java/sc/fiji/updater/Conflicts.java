@@ -225,7 +225,7 @@ public class Conflicts {
 	protected void listUploadIssues() {
 		final DependencyMap needsUpload = new FilesCollection.DependencyMap();
 		for (final FileObject file : files.toUpload()) {
-			if (file.getTimestamp() != UpdaterUtil.getTimestamp(files.prefix(file))) {
+			if (file.getTimestamp() != Timestamps.getTimestamp(files.prefix(file))) {
 				conflicts.add(timestampChanged(file));
 			}
 			for (final Dependency dependency : file.getDependencies()) {

@@ -55,8 +55,8 @@ import org.xml.sax.helpers.AttributesImpl;
 import sc.fiji.updater.Dependency;
 import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
+import sc.fiji.updater.Timestamps;
 import sc.fiji.updater.UpdateSite;
-import sc.fiji.updater.internal.UpdaterUtil;
 
 /**
  * Writes a db.xml.gz file for local and remote use of the updater.
@@ -181,7 +181,7 @@ public class XMLFileWriter {
 		 * obsoleted when writing the XML. This avoids timestamp-obsolete skew
 		 * between files obsoleted with the same update.
 		 */
-		final long timestampObsolete = UpdaterUtil.currentTimestamp();
+		final long timestampObsolete = Timestamps.currentTimestamp();
 		for (final FileObject file : files.managedFiles()) {
 			writeSingle(local, attr, file, timestampObsolete);
 		}

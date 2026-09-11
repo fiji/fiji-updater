@@ -39,7 +39,7 @@ import java.util.List;
 import org.scijava.Priority;
 import org.scijava.plugin.Plugin;
 
-import sc.fiji.updater.internal.UpdaterUtil;
+import sc.fiji.updater.Timestamps;
 
 /**
  * This FileUploader is highly specialized to upload files and XML information
@@ -63,7 +63,7 @@ public class FileUploader extends AbstractUploader {
 	public synchronized void upload(final List<Uploadable> sources,
 		final List<String> locks) throws IOException
 	{
-		timestamp = Long.parseLong(UpdaterUtil.timestamp(System.currentTimeMillis()));
+		timestamp = Long.parseLong(Timestamps.timestamp(System.currentTimeMillis()));
 		setTitle("Uploading");
 
 		calculateTotalSize(sources);

@@ -77,6 +77,7 @@ import sc.fiji.updater.progress.Progress;
 import sc.fiji.updater.progress.UpdateCanceledException;
 import sc.fiji.updater.site.HTTPSUtil;
 import sc.fiji.updater.site.UpdateSiteNetwork;
+import sc.fiji.updater.ui.UpdaterUserInterface;
 import sc.fiji.updater.upload.UploaderService;
 import sc.fiji.updater.xml.XMLFileDownloader;
 import sc.fiji.updater.xml.XMLFileReader;
@@ -153,7 +154,7 @@ public class FilesCollection implements Iterable<FileObject> {
 	 * @param appRoot the application base directory
 	 */
 	public FilesCollection(final File appRoot) {
-		this(UpdaterUtil.getLogService(), appRoot);
+		this(UpdaterUserInterface.getLogService(), appRoot);
 	}
 
 	/**
@@ -1267,7 +1268,7 @@ public class FilesCollection implements Iterable<FileObject> {
 
 	private long timestamp() {
 		if (appRoot == null) return 0;
-		return UpdaterUtil.getTimestamp(prefix(UpdaterUtil.XML_COMPRESSED));
+		return Timestamps.getTimestamp(prefix(UpdaterUtil.XML_COMPRESSED));
 	}
 
 }

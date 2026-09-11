@@ -40,7 +40,6 @@ import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
 import org.scijava.log.LogService;
 
-import sc.fiji.updater.internal.UpdaterUtil;
 import sc.fiji.updater.ui.UpdaterUserInterface;
 import sc.fiji.updater.upload.FilesUploader;
 
@@ -247,7 +246,7 @@ final class SSHSessionCreator {
 			try {
 				final Session session = connect(configInfo, userInfo);
 				if (session != null) {
-					UpdaterUserInterface.get().setPref(UpdaterUtil.PREFS_USER, configInfo.username);
+					UpdaterUserInterface.get().setPref(UpdaterUserInterface.PREFS_USER, configInfo.username);
 					return session;
 				}
 			}

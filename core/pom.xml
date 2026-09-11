@@ -152,7 +152,7 @@
 
 	<properties>
 		<package-name>sc.fiji.updater</package-name>
-		<main-class>sc.fiji.updater.CommandLine</main-class>
+		<main-class>sc.fiji.updater.cli.CommandLine</main-class>
 
 		<license.licenseName>bsd_2</license.licenseName>
 		<license.copyrightOwners>Fiji developers.</license.copyrightOwners>
