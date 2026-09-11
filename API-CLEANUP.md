@@ -43,7 +43,7 @@ What the cross-module reference table actually says:
   `ChannelUpgrade`, `AvailableSites`, `HTTPSUtil`, `JavaRequirement`,
   `ChannelManifest`, `ChannelState`, `AppLayout`.
 - **Referenced by the uploaders.** `Uploadable`, `Uploader`,
-  `AbstractUploader`, `FilesUploader`, `UpdateSite`, `UpdaterUserInterface`,
+  `AbstractUploader`, `FilesUploader`, `UpdateSite`, `UpdaterConsole`,
   `UpdaterUtil`.
 
 ### Core packages
@@ -55,14 +55,14 @@ an extension point, so a third-party uploader must be able to reach it.
 ```
 sc.fiji.updater          FilesCollection, FileObject, Dependency, UpdateSite,
                          Conflicts, Installer, Checksummer, GroupAction,
-                         UpdateService, UpdaterUI
+                         UpdateService, UpdaterCommand
 sc.fiji.updater.action   the five GroupActions                    (gui)
 sc.fiji.updater.upload   Uploadable, Uploader, AbstractUploader,
                          UploadableFile, FilesUploader, UploaderService,
                          FileUploader                             (ssh, webdav)
 sc.fiji.updater.progress Progress, Progressable, AbstractProgressable,
                          StderrProgress
-sc.fiji.updater.ui       UpdaterUserInterface            (gui, ssh, webdav)
+sc.fiji.updater.ui       UpdaterConsole, StderrConsole   (gui, ssh, webdav)
 sc.fiji.updater.channel  Channels, ChannelState, ChannelManifest,
                          ChannelUpgrade, URLChange
 sc.fiji.updater.app      AppLayout, Platforms, JavaRequirement
@@ -90,8 +90,8 @@ package boundary itself.
   Those 8 went to small exported homes: `sc.fiji.updater.Timestamps` for the
   `db.xml.gz` timestamp format, `sc.fiji.updater.site.Connections` for the
   HTTP plumbing, `AppLayout` for `isProtectedLocation` and `isGPRActivated`,
-  and `UpdaterUserInterface` for `PREFS_USER` and `getLogService` -- whose own
-  default implementation was already the main caller of the latter. The other
+  and `UpdaterConsole` for `PREFS_USER` and `getLogger` -- whose own default
+  implementation was already the main caller of the latter. The other
   27 -- `getJarDigest` three times over, `join`, `iterate`, `toCamelCase`,
   `realloc`, `readFile`, `writeFile`, the `hex` char array -- stayed with
   `UpdaterUtil` in `sc.fiji.updater.internal`.
@@ -103,11 +103,12 @@ package boundary itself.
   the API.
 
 `requires` for the core module is `org.scijava` and `org.scijava.launcher`
-(both automatic, and note the names the manifests actually declare),
-`java.xml`, and `java.desktop`. The last is dragged in solely by
-`UpdaterUserInterface.addWindow(Frame)` and the `GraphicsEnvironment` call in
-`Connections.useSystemProxies` -- still worth removing, since it puts AWT in
-the requires list of a core that is otherwise headless-capable.
+(both automatic, and note the names the manifests actually declare), plus
+`java.xml`. `java.desktop` is gone: `addWindow(Frame)` and
+`removeWindow(Frame)` are deleted, and the headless check in
+`Connections.useSystemProxies` asks the `java.awt.headless` property and
+`DISPLAY` rather than `GraphicsEnvironment`. Checked by running the CLI with
+`--limit-modules` excluding `java.desktop`.
 
 Three things the descriptors turned up, all recorded in the poms:
 dependencies move to the module path, where javac does not look for
@@ -307,12 +308,6 @@ it after this pass is meaningfully cheaper.
 
 What steps 1 through 4 and the `FilesCollection` composition did not cover,
 and what each is waiting on.
-
-- **AWT in the core's `requires`.** The package split left `java.desktop`
-  there, dragged in by `UpdaterUserInterface.addWindow(Frame)` and by the
-  headless check in `Connections.useSystemProxies`. Removing it is an API
-  change to `UpdaterUserInterface`, not a package move, so it did not belong
-  in step 3.
 
 - **Filename-derived automatic modules.** `miglayout-swing`, `jsch` and
   `jackrabbit-webdav` declare no `Automatic-Module-Name`, so the names the
