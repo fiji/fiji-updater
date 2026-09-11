@@ -14,10 +14,10 @@ referenced against every call site in all four modules plus tests.
 
 ## What has landed
 
-Steps 1, 2, 4 and the `FilesCollection` half of step 5 are done; the suite
-is green throughout. Not done: the package split and `module-info` (step 3),
-`FileObject` encapsulation, and the bootstrap consolidation. See
-"Still outstanding" at the end for what that leaves and why.
+Steps 1, 2, 3, 4 and the `FilesCollection` half of step 5 are done; the
+suite is green throughout. Not done: `FileObject` encapsulation and the
+bootstrap consolidation. See "Still outstanding" at the end for what that
+leaves and why.
 
 Two claims below turned out to be wrong when checked against the code, and
 are corrected in place: `Diff(PrintStream)` and `UpdaterUtil.getJarDigest`'s
@@ -25,10 +25,10 @@ are corrected in place: `Diff(PrintStream)` and `UpdaterUtil.getJarDigest`'s
 
 ## Package layout for JPMS
 
-The core's problem is not the root package, it is `sc.fiji.updater.util` --
-a junk drawer of 25 classes spanning six unrelated concerns. It has to be
-exported wholesale today because `UpdaterUtil` lives in it, and `UpdaterUtil`
-is the most-referenced class in the build.
+The core's problem was not the root package, it was `sc.fiji.updater.util` --
+a junk drawer of 25 classes spanning six unrelated concerns. It had to be
+exported wholesale because `UpdaterUtil` lived in it, and `UpdaterUtil` is the
+most-referenced class in the build.
 
 What the cross-module reference table actually says:
 
@@ -46,10 +46,11 @@ What the cross-module reference table actually says:
   `AbstractUploader`, `FilesUploader`, `UpdateSite`, `UpdaterUserInterface`,
   `UpdaterUtil`.
 
-### Proposed core packages
+### Core packages
 
 Exported unless marked otherwise; the parenthetical names which module
-outside core needs it.
+outside core needs it. The exports are unqualified: `upload` in particular is
+an extension point, so a third-party uploader must be able to reach it.
 
 ```
 sc.fiji.updater          FilesCollection, FileObject, Dependency, UpdateSite,
@@ -78,31 +79,46 @@ sc.fiji.updater.internal UpdaterUtil, SkipHashedLines, FilterManifest,
                          Class2JarFilesMap, DllFile
 ```
 
-Two things block the `internal` package as drawn, and both are worth fixing
-on their own merits.
+Two things blocked the `internal` package as drawn. Both are now done; what
+they were, and what was chosen, is recorded here because the outcome is the
+package boundary itself.
 
-- **`UpdaterUtil` cannot be internal as it stands**, but its external surface
+- **`UpdaterUtil` could not be internal as it stood**, but its external surface
   is tiny: the GUI and the two uploaders together use exactly 8 of its ~35
   members -- `timestamp`, `openStream`, `openConnection`, `getLastModified`,
   `useSystemProxies`, `isProtectedLocation`, `getLogService`, `PREFS_USER`.
-  Split those into small exported homes (a `Timestamps` class, and the
-  network helpers onto `sc.fiji.updater.site`); the other 27 -- `getJarDigest`
-  three times over, `join`, `iterate`, `toCamelCase`, `realloc`, `readFile`,
-  `writeFile`, the `hex` char array -- go internal or go away.
-  `getPlatform()` is already deprecated in favour of `Platforms.current()`
-  and is called by nobody.
+  Those 8 went to small exported homes: `sc.fiji.updater.Timestamps` for the
+  `db.xml.gz` timestamp format, `sc.fiji.updater.site.Connections` for the
+  HTTP plumbing, `AppLayout` for `isProtectedLocation` and `isGPRActivated`,
+  and `UpdaterUserInterface` for `PREFS_USER` and `getLogService` -- whose own
+  default implementation was already the main caller of the latter. The other
+  27 -- `getJarDigest` three times over, `join`, `iterate`, `toCamelCase`,
+  `realloc`, `readFile`, `writeFile`, the `hex` char array -- stayed with
+  `UpdaterUtil` in `sc.fiji.updater.internal`.
 
-- **`Installer extends Downloader`** forces `Downloader` and `Downloadable`
+- **`Installer extends Downloader`** forced `Downloader` and `Downloadable`
   to be exported. A public class inheriting from a non-exported one is legal,
-  but it leaks `start(Iterable<Downloadable>)` into the signature. Make
-  `Installer` *own* a `Downloader` instead: a one-field change that removes
-  two types from the API.
+  but it leaks `start(Iterable<Downloadable>)` into the signature. `Installer`
+  now *owns* a `Downloader`: a one-field change that removed two types from
+  the API.
 
-`requires` for the core module is then `org.scijava.common` (automatic),
-`app.launcher`, `java.xml`, and `java.desktop`. The last is dragged in solely
-by `UpdaterUserInterface.addWindow(Frame)` and the `GraphicsEnvironment` call
-in `UpdaterUtil.isGPRActivated` -- worth removing, since it puts AWT in the
-requires list of a core that is otherwise headless-capable.
+`requires` for the core module is `org.scijava` and `org.scijava.launcher`
+(both automatic, and note the names the manifests actually declare),
+`java.xml`, and `java.desktop`. The last is dragged in solely by
+`UpdaterUserInterface.addWindow(Frame)` and the `GraphicsEnvironment` call in
+`Connections.useSystemProxies` -- still worth removing, since it puts AWT in
+the requires list of a core that is otherwise headless-capable.
+
+Three things the descriptors turned up, all recorded in the poms:
+dependencies move to the module path, where javac does not look for
+annotation processors, so the SciJava one must be named explicitly or the
+plugin index silently stops being generated; tests compile and run against
+the class path, because the core's test JAR is a split package on the module
+path and because a patched module's test plugin index shadows the main one
+rather than adding to it; and SciJava instantiates plugins and injects
+`@Parameter` fields reflectively, so each package holding one is `opens`ed to
+it. Resolving all four modules on a real module path was checked by hand: the
+CLI runs, and the `UploaderService` finds both uploaders.
 
 ## Legacy API to delete
 
@@ -289,16 +305,21 @@ it after this pass is meaningfully cheaper.
 
 ## Still outstanding
 
-What steps 1, 2, 4 and the `FilesCollection` composition did not cover, and
-what each is waiting on.
+What steps 1 through 4 and the `FilesCollection` composition did not cover,
+and what each is waiting on.
 
-- **The package split and `module-info.java`** (step 3). The largest churn
-  in the document and the one with a decision in it: the package names above
-  are a proposal, and every import in 118 files follows whatever is chosen.
-  Two of its prerequisites are now in place -- `Installer` no longer extends
-  `Downloader`, so `Downloader` and `Downloadable` are free to be internal --
-  but `UpdaterUtil` still needs its 8 externally-used members split out
-  before `sc.fiji.updater.internal` can hold it.
+- **AWT in the core's `requires`.** The package split left `java.desktop`
+  there, dragged in by `UpdaterUserInterface.addWindow(Frame)` and by the
+  headless check in `Connections.useSystemProxies`. Removing it is an API
+  change to `UpdaterUserInterface`, not a package move, so it did not belong
+  in step 3.
+
+- **Filename-derived automatic modules.** `miglayout-swing`, `jsch` and
+  `jackrabbit-webdav` declare no `Automatic-Module-Name`, so the names the
+  GUI and the uploaders `requires` are derived from JAR filenames and are not
+  stable. The build warns about it. The fix is upstream, or a shaded
+  dependency, or dropping the descriptor from those three modules -- the core,
+  where the encapsulation argument actually bites, is unaffected.
 
 - **`FileObject`'s public mutable fields.** Mechanical but very wide:
   `filename`, `updateSite`, `current`, `previous` and the rest are read
