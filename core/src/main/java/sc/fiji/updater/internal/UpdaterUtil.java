@@ -29,7 +29,6 @@
 
 package sc.fiji.updater.internal;
 
-import java.awt.GraphicsEnvironment;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
@@ -39,44 +38,32 @@ import java.io.FileReader;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLConnection;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 import java.security.NoSuchAlgorithmException;
-import java.text.DecimalFormat;
 import java.util.ArrayList;
-import java.util.Calendar;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.Enumeration;
-import java.util.HashSet;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
-
-import org.scijava.log.LogService;
-import org.scijava.log.StderrLogService;
 
 import sc.fiji.updater.site.HTTPSUtil;
 import sc.fiji.updater.site.UpdateSiteNetwork;
 
 /**
- * Utility methods for use with the {@link sc.fiji.updater} package and
- * subpackages.
+ * What is left of the updater's original utility class: file and JAR
+ * checksums, and a handful of string and stream helpers.
  * <p>
- * Class functionality:
- * <ul>
- * <li>Calculate timestamps of files</li>
- * <li>Calculate the checksums of files</li>
- * <li>Get the absolute path (prefix()) of the ImageJ directory</li>
- * <li>Copy a file over to a particular location</li>
- * </ul>
+ * Nothing here is referenced outside the core, which is why this package is
+ * not exported. The members that were -- the timestamp format, the HTTP
+ * plumbing, the two questions about the installation directory, the login
+ * prefs key and the fallback log service -- moved to {@code Timestamps},
+ * {@code Connections}, {@code AppLayout} and {@code UpdaterUserInterface}
+ * respectively.
+ * </p>
  * 
  * @author Johannes Schindelin
  */
