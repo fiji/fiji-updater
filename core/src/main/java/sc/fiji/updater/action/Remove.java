@@ -61,7 +61,7 @@ public class Remove implements GroupAction {
 	 * Determines whether we can remove (or unshadow) files from a particular
 	 * update site.
 	 * 
-	 * <table summary="Break down of logic for file removal or unshadowing">
+	 * <table><caption>Break down of logic for file removal or unshadowing</caption>
 	 * <tr>
 	 * <th>&nbsp;</th>
 	 * <th>remove</th>
