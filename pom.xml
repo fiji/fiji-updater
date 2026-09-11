@@ -91,10 +91,10 @@
 	</mailingLists>
 
 	<modules>
-		<module>fiji-updater</module>
-		<module>fiji-updater-gui</module>
-		<module>fiji-updater-uploader-ssh</module>
-		<module>fiji-updater-uploader-webdav</module>
+		<module>core</module>
+		<module>gui</module>
+		<module>uploader-ssh</module>
+		<module>uploader-webdav</module>
 	</modules>
 
 	<scm>
