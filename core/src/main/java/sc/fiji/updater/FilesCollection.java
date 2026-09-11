@@ -55,7 +55,7 @@ import java.util.zip.GZIPOutputStream;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 
-import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 import org.scijava.log.StderrLogService;
 import org.xml.sax.SAXException;
 
@@ -77,7 +77,7 @@ import sc.fiji.updater.progress.Progress;
 import sc.fiji.updater.progress.UpdateCanceledException;
 import sc.fiji.updater.site.HTTPSUtil;
 import sc.fiji.updater.site.UpdateSiteNetwork;
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 import sc.fiji.updater.upload.UploaderService;
 import sc.fiji.updater.xml.XMLFileDownloader;
 import sc.fiji.updater.xml.XMLFileReader;
@@ -136,7 +136,7 @@ public class FilesCollection implements Iterable<FileObject> {
 	private ChannelState declaredChannelState;
 	private List<String> channels;
 	private ChannelState pinnedChannelState;
-	public final LogService log;
+	public final Logger log;
 	final Set<FileObject> ignoredConflicts = new HashSet<>();
 	protected List<Conflict> conflicts = new ArrayList<>();
 
@@ -154,7 +154,7 @@ public class FilesCollection implements Iterable<FileObject> {
 	 * @param appRoot the application base directory
 	 */
 	public FilesCollection(final File appRoot) {
-		this(UpdaterUserInterface.getLogService(), appRoot);
+		this(UpdaterConsole.getLogger(), appRoot);
 	}
 
 	/**
@@ -163,7 +163,7 @@ public class FilesCollection implements Iterable<FileObject> {
 	 * @param log the log service
 	 * @param appRoot the application base directory
 	 */
-	public FilesCollection(final LogService log, final File appRoot) {
+	public FilesCollection(final Logger log, final File appRoot) {
 		this.log = log == null ? new StderrLogService() : log;
 		this.appRoot = appRoot;
 

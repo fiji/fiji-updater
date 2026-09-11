@@ -33,7 +33,7 @@ import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
 
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 
 /**
  * Copies an {@link InputStream} into an {@link OutputStream}.
@@ -64,7 +64,7 @@ class InputStream2OutputStream extends Thread {
 			in.close();
 		}
 		catch (final IOException e) {
-			UpdaterUserInterface.get().handleException(e);
+			UpdaterConsole.get().handleException(e);
 		}
 	}
 }

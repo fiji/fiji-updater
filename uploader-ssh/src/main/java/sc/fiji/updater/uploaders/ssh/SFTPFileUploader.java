@@ -37,11 +37,11 @@ import java.util.List;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import org.scijava.Priority;
-import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.updater.progress.UpdateCanceledException;
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 import sc.fiji.updater.upload.AbstractUploader;
 import sc.fiji.updater.upload.FilesUploader;
 import sc.fiji.updater.upload.Uploadable;
@@ -60,7 +60,7 @@ import sc.fiji.updater.upload.Uploader;
 public final class SFTPFileUploader extends AbstractUploader {
 
 	private SFTPOperations sftp;
-	protected LogService log;
+	protected Logger log;
 
 	@Override
 	public boolean login(final FilesUploader uploader) {
@@ -148,7 +148,7 @@ public final class SFTPFileUploader extends AbstractUploader {
 			final int currentFileSize = (int) uploadable.getFilesize();
 			final String dest = this.uploadDir + target;
 			try {
-				UpdaterUserInterface.get().log(
+				UpdaterConsole.get().log(
 					"Upload '" + uploadable.getFilename() + "', size " +
 						uploadable.getFilesize());
 

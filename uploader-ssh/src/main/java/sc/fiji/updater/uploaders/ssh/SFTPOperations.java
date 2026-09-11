@@ -41,7 +41,7 @@ import com.jcraft.jsch.SftpATTRS;
 import com.jcraft.jsch.SftpException;
 import com.jcraft.jsch.SftpProgressMonitor;
 
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 
 /**
  * Wraps low level SFTP operations and isolates from implementation API.
@@ -106,7 +106,7 @@ final class SFTPOperations {
 	public void put(final InputStream in, final String dest,
 		final ProgressListener listener) throws IOException
 	{
-		UpdaterUserInterface.get().debug("SFTPOperations.put(...,...," + dest + ")");
+		UpdaterConsole.get().debug("SFTPOperations.put(...,...," + dest + ")");
 		mkParentDirs(dest);
 
 		final ProgressMonitor monitor = new ProgressMonitor(listener);
@@ -166,7 +166,7 @@ final class SFTPOperations {
 	 * @return {@code true} if the path exists
 	 */
 	public boolean fileExists(final String path) {
-		UpdaterUserInterface.get().debug("SFTPOperations.fileExists2(" + path + ")");
+		UpdaterConsole.get().debug("SFTPOperations.fileExists2(" + path + ")");
 
 		// Traversing the path may hit directories without read access.
 		// Rather than listing content to see if directory exists just test the path
@@ -188,7 +188,7 @@ final class SFTPOperations {
 	 * @throws IOException in case of sftp error.
 	 */
 	public void mkParentDirs(final String path) throws IOException {
-		UpdaterUserInterface.get().debug("SFTPOperations.mkParentDirs(" + path + ")");
+		UpdaterConsole.get().debug("SFTPOperations.mkParentDirs(" + path + ")");
 		mkParentDirs("", path);
 	}
 
@@ -240,7 +240,7 @@ final class SFTPOperations {
 	{
 		final String m =
 			message + " SFTP error id=" + ex.id + ": " + ex.getMessage();
-		UpdaterUserInterface.get().log(m);
+		UpdaterConsole.get().log(m);
 		return new IOException(m);
 	}
 

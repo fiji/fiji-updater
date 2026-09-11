@@ -47,7 +47,6 @@ import java.util.Set;
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.transform.TransformerConfigurationException;
 
-import org.scijava.log.LogService;
 import org.scijava.log.Logger;
 import org.scijava.util.XML;
 import org.xml.sax.SAXException;
@@ -187,10 +186,6 @@ public final class AvailableSites {
 	 */
 	public static List< URLChange > initializeAndAddSites(final FilesCollection files, final Logger log) {
 		return initializeAndAddSites(files, tryGetAvailableSites(log));
-	}
-
-	public static void initializeAndAddSites(final FilesCollection files, final LogService log) {
-		initializeAndAddSites(files, tryGetAvailableSites(log));
 	}
 
 	static List< URLChange > initializeAndAddSites(

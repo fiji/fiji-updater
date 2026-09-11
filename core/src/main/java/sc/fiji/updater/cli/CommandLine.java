@@ -31,7 +31,6 @@ package sc.fiji.updater.cli;
 
 import static sc.fiji.updater.Timestamps.prettyPrintTimestamp;
 
-import java.awt.Frame;
 import java.io.Console;
 import java.io.File;
 import java.io.IOException;
@@ -61,7 +60,7 @@ import java.util.jar.Manifest;
 import javax.xml.parsers.ParserConfigurationException;
 
 import org.scijava.launcher.Java;
-import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 import org.scijava.log.Logger;
 import org.scijava.util.FileUtils;
 import org.scijava.util.IteratorPlus;
@@ -97,7 +96,7 @@ import sc.fiji.updater.progress.StderrProgress;
 import sc.fiji.updater.site.AvailableSites;
 import sc.fiji.updater.site.Connections;
 import sc.fiji.updater.site.HTTPSUtil;
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 import sc.fiji.updater.upload.FilesUploader;
 
 /**
@@ -114,7 +113,7 @@ import sc.fiji.updater.upload.FilesUploader;
  */
 public class CommandLine {
 
-	protected static LogService log = UpdaterUserInterface.getLogService();
+	protected static Logger log = UpdaterConsole.getLogger();
 	protected FilesCollection files;
 	protected Progress progress;
 	private FilesCollection.DependencyMap dependencyMap;
@@ -276,7 +275,7 @@ public class CommandLine {
 			if (upgrade.needsNewerJava()) {
 				log.info("This channel expects Java " + java +
 					"; installing it before restarting.");
-				upgrade.upgradeJava(UpdaterUserInterface.get().isBatchMode());
+				upgrade.upgradeJava(UpdaterConsole.get().isBatchMode());
 			}
 
 			upgrade.commit();
@@ -1302,7 +1301,7 @@ public class CommandLine {
 			return null;
 		}
 		final String message = "Choose upload site for file '" + file + "'";
-		final int index = UpdaterUserInterface.get().optionDialog(message,
+		final int index = UpdaterConsole.get().optionDialog(message,
 				message, options.toArray(new String[options.size()]), 0);
 		return index < 0 ? null : names.get(index);
 	}
@@ -1369,7 +1368,7 @@ public class CommandLine {
 			// Update the db.xml.gz
 			files.write();
 		} catch (final Exception e) {
-			UpdaterUserInterface.get().handleException(e);
+			UpdaterConsole.get().handleException(e);
 			throw die("Could not write local file database");
 		}
 	}
@@ -1390,7 +1389,7 @@ public class CommandLine {
 		try {
 			files.write();
 		} catch (final Exception e) {
-			UpdaterUserInterface.get().handleException(e);
+			UpdaterConsole.get().handleException(e);
 			throw die("Could not write local file database");
 		}
 	}
@@ -1410,7 +1409,7 @@ public class CommandLine {
 		try {
 			files.write();
 		} catch (final Exception e) {
-			UpdaterUserInterface.get().handleException(e);
+			UpdaterConsole.get().handleException(e);
 			throw die("Could not write local file database");
 		}
 	}
@@ -1447,7 +1446,7 @@ public class CommandLine {
 			// NB: don't Installer#moveUpdatedIntoPlace(); as this will fail
 			files.write();
 		} catch (final Exception e) {
-			UpdaterUserInterface.get().handleException(e);
+			UpdaterConsole.get().handleException(e);
 			throw die("Could not write local file database");
 		}
 	}
@@ -1472,7 +1471,7 @@ public class CommandLine {
 			e.printStackTrace();
 		}
 		HTTPSUtil.checkHTTPSSupport(log);
-		final List< URLChange > urlChanges = AvailableSites.initializeAndAddSites(files, (Logger)log);
+		final List< URLChange > urlChanges = AvailableSites.initializeAndAddSites(files, log);
 		if(updateall) {
 			urlChanges.forEach( change -> change.setApproved(true));
 		}
@@ -1615,7 +1614,7 @@ public class CommandLine {
 			Connections.useSystemProxies();
 		}
 		Authenticator.setDefault(new ConsoleAuthenticator());
-		setUserInterface();
+		setUpdaterConsole();
 
 		final CommandLine instance = new CommandLine(ijDir, columnCount,
 				progress);
@@ -1723,11 +1722,11 @@ public class CommandLine {
 		}
 	}
 
-	protected static void setUserInterface() {
-		UpdaterUserInterface.set(new ConsoleUserInterface());
+	protected static void setUpdaterConsole() {
+		UpdaterConsole.set(new TerminalConsole());
 	}
 
-	protected static class ConsoleUserInterface extends UpdaterUserInterface {
+	protected static class TerminalConsole implements UpdaterConsole {
 
 		protected Console console = System.console();
 		protected int count;
@@ -1888,11 +1887,5 @@ public class CommandLine {
 			System.out.print(title + ": ");
 			return console.readLine();
 		}
-
-		@Override
-		public void addWindow(final Frame window) { }
-
-		@Override
-		public void removeWindow(final Frame window) { }
 	}
 }

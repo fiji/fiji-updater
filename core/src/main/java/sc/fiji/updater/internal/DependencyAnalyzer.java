@@ -48,7 +48,7 @@ import sc.fiji.updater.FileObject.Status;
 import sc.fiji.updater.FileObject;
 import sc.fiji.updater.diff.ByteCodeAnalyzer.Mode;
 import sc.fiji.updater.diff.ByteCodeAnalyzer;
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 
 /**
  * This class generates a list of dependencies for a given file. The
@@ -113,7 +113,7 @@ public class DependencyAnalyzer {
 
 			classNameLoop:
 			for (final String name : allClassNames) {
-				UpdaterUserInterface.get().debug(
+				UpdaterConsole.get().debug(
 					"Considering name from analyzer: " + name);
 				final List<String> jars = map.get(name);
 				if (jars == null) continue;
@@ -136,16 +136,16 @@ public class DependencyAnalyzer {
 					}
 				}
 				if (dependencies.size() > 1) {
-					UpdaterUserInterface.get().log(
+					UpdaterConsole.get().log(
 						"Warning: class " + name + ", referenced in " + path +
 							", is in more than one jar:");
 					for (final String j : dependencies)
-						UpdaterUserInterface.get().log("  " + j);
-					UpdaterUserInterface.get().log("... adding all as dependency.");
+						UpdaterConsole.get().log("  " + j);
+					UpdaterConsole.get().log("... adding all as dependency.");
 				}
 				for (final String j : dependencies) {
 					result.add(j);
-					UpdaterUserInterface.get().debug(
+					UpdaterConsole.get().debug(
 						"... adding dep " + j + " for " + path + " because of class " +
 							name);
 				}

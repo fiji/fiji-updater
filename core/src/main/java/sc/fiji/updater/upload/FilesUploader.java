@@ -42,7 +42,7 @@ import java.util.Iterator;
 import java.util.List;
 
 import org.scijava.Context;
-import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 
 import sc.fiji.updater.Conflicts.Conflict;
 import sc.fiji.updater.Conflicts;
@@ -61,7 +61,7 @@ import sc.fiji.updater.progress.Progress;
 import sc.fiji.updater.progress.StderrProgress;
 import sc.fiji.updater.progress.UpdateCanceledException;
 import sc.fiji.updater.site.Connections;
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 import sc.fiji.updater.xml.XMLFileWriter;
 
 /**
@@ -259,13 +259,13 @@ public class FilesUploader {
 			"installation, which follows " + channel + ".\n\n" +
 			"Upload to " + channel + "?";
 
-		if (UpdaterUserInterface.get().isBatchMode()) {
+		if (UpdaterConsole.get().isBatchMode()) {
 			// Nothing can be asked, and nothing is destroyed by proceeding, so say
 			// so clearly and carry on rather than breaking an automated release.
-			UpdaterUserInterface.get().log(message);
+			UpdaterConsole.get().log(message);
 			return true;
 		}
-		return UpdaterUserInterface.get().promptYesNo(message,
+		return UpdaterConsole.get().promptYesNo(message,
 			"First upload to " + channel);
 	}
 
@@ -282,7 +282,7 @@ public class FilesUploader {
 		if (host.startsWith("sftp:")) host = host.substring(5);
 		final int at = host.indexOf('@');
 		if (at > 0) return host.substring(0, at);
-		final String name = UpdaterUserInterface.get().getPref(UpdaterUserInterface.PREFS_USER);
+		final String name = UpdaterConsole.get().getPref(UpdaterConsole.PREFS_USER);
 		if (name == null) return "";
 		return name;
 	}
@@ -571,13 +571,13 @@ public class FilesUploader {
 			connection.setUseCaches(false);
 			final long lastModified = connection.getLastModified();
 			connection.getInputStream().close();
-			UpdaterUserInterface.get().debug(
+			UpdaterConsole.get().debug(
 				"got last modified " + lastModified + " = timestamp " +
 					Timestamps.timestamp(lastModified));
 			return lastModified;
 		}
 		catch (final Exception e) {
-			UpdaterUserInterface.get().debug(e.getMessage());
+			UpdaterConsole.get().debug(e.getMessage());
 			if (files.isEmpty()) return -1; // assume initial upload
 			if (e instanceof FileNotFoundException) {
 				files.log.debug(e);
@@ -621,7 +621,7 @@ public class FilesUploader {
 		return uploader;
 	}
 
-	public LogService getLog() {
+	public Logger getLog() {
 		return files.log;
 	}
 }

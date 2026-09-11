@@ -44,7 +44,7 @@ module sc.fiji.updater.gui {
 
 	exports sc.fiji.updater.gui;
 
-	// SciJava discovers the UpdaterUI plugin by reflection, and injects its
+	// SciJava discovers the UpdaterCommand plugin by reflection, and injects its
 	// @Parameter fields the same way.
 	opens sc.fiji.updater.gui to org.scijava;
 }

@@ -241,13 +241,13 @@ public class Installer {
 		final Set<FileObject> topLevel = new HashSet<>();
 		topLevel.add(updater);
 		if (commandService == null) {
-			// Without a CommandService we cannot ask which UpdaterUI
+			// Without a CommandService we cannot ask which UpdaterCommand
 			// implementations are installed, so fall back to the GUI we ship.
 			final FileObject file = files.get(UPDATER_GUI_JAR_NAME);
 			if (file != null) topLevel.add(file);
 		} else {
 			for (final CommandInfo info : commandService
-				.getCommandsOfType(UpdaterUI.class))
+				.getCommandsOfType(UpdaterCommand.class))
 			{
 				final FileObject file = getFileObject(files, info.getClassName());
 				if (file != null) {

@@ -38,9 +38,9 @@ import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.ProxyHTTP;
 import com.jcraft.jsch.Session;
 import com.jcraft.jsch.UserInfo;
-import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 import sc.fiji.updater.upload.FilesUploader;
 
 /**
@@ -97,7 +97,7 @@ final class SSHSessionCreator {
 	}
 
 	private static ConfigInfo getIdentity(final String username,
-		final String sshHost, final LogService log)
+		final String sshHost, final Logger log)
 	{
 		final ConfigInfo result = new ConfigInfo();
 		result.username = username;
@@ -123,7 +123,7 @@ final class SSHSessionCreator {
 		protected int port;
 
 		// Check for IdentityFile options in the user's ~/.ssh/config
-		private void readUserSSHConfig(final LogService log) {
+		private void readUserSSHConfig(final Logger log) {
 			final File config =
 				new File(new File(System.getProperty("user.home"), ".ssh"), "config");
 			if (!config.exists()) {
@@ -191,13 +191,13 @@ final class SSHSessionCreator {
 
 			@Override
 			public String getPassphrase() {
-				return UpdaterUserInterface.get().getPassword(prompt);
+				return UpdaterConsole.get().getPassword(prompt);
 			}
 
 			@Override
 			public String getPassword() {
 				if (count == 1 && password != null) return password;
-				return UpdaterUserInterface.get().getPassword(prompt);
+				return UpdaterConsole.get().getPassword(prompt);
 			}
 
 			@Override
@@ -214,12 +214,12 @@ final class SSHSessionCreator {
 
 			@Override
 			public boolean promptYesNo(final String message) {
-				return UpdaterUserInterface.get().promptYesNo(message, "Password");
+				return UpdaterConsole.get().promptYesNo(message, "Password");
 			}
 
 			@Override
 			public void showMessage(final String message) {
-				UpdaterUserInterface.get().info(message, "Password");
+				UpdaterConsole.get().info(message, "Password");
 			}
 		};
 	}
@@ -230,7 +230,7 @@ final class SSHSessionCreator {
 		for (;;) {
 			// Dialog to enter user name and password
 			if (configInfo.username == null) {
-				configInfo.username = UpdaterUserInterface.get().getString("Login for " + uploader.getUploadHost());
+				configInfo.username = UpdaterConsole.get().getString("Login for " + uploader.getUploadHost());
 				if (configInfo.username == null || configInfo.username.equals("")) {
 					return null;
 				}
@@ -238,7 +238,7 @@ final class SSHSessionCreator {
 			final String prompt = "Password for " + configInfo.username + "@" + uploader.getUploadHost();
 			String password = null;
 			if (configInfo.identity == null) {
-				password = UpdaterUserInterface.get().getPassword(prompt);
+				password = UpdaterConsole.get().getPassword(prompt);
 				if (password == null)
 					return null;
 			}
@@ -246,7 +246,7 @@ final class SSHSessionCreator {
 			try {
 				final Session session = connect(configInfo, userInfo);
 				if (session != null) {
-					UpdaterUserInterface.get().setPref(UpdaterUserInterface.PREFS_USER, configInfo.username);
+					UpdaterConsole.get().setPref(UpdaterConsole.PREFS_USER, configInfo.username);
 					return session;
 				}
 			}
@@ -276,7 +276,7 @@ final class SSHSessionCreator {
 	 * @return a valid SSH session
 	 * @throws JSchException
 	 */
-	protected static Session debugConnect(final String host, final LogService log) throws JSchException {
+	protected static Session debugConnect(final String host, final Logger log) throws JSchException {
 		final ConfigInfo info = getIdentity(null, host, log);
 		if (info.username == null || info.identity == null) {
 			throw new JSchException("Could not determine user name or identity for " + host);

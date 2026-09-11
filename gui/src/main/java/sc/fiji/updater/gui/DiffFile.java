@@ -49,7 +49,7 @@ import javax.swing.JFrame;
 import javax.swing.text.BadLocationException;
 import javax.swing.text.Document;
 
-import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 import org.scijava.util.ProcessUtils;
 
 import sc.fiji.updater.FileObject;
@@ -69,7 +69,7 @@ import sc.fiji.updater.site.Connections;
 public class DiffFile extends JFrame {
 	private static final long serialVersionUID = 1L;
 	protected String title;
-	protected LogService log;
+	protected Logger log;
 	protected String filename;
 	protected URL remote, local;
 	protected DiffView diffView;

@@ -37,7 +37,7 @@ import java.net.UnknownHostException;
 
 import javax.net.ssl.SSLHandshakeException;
 
-import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.UpdateSite;
@@ -56,7 +56,7 @@ public class HTTPSUtil {
 	/**
 	 * Calls {@link #secureURL} to check whether the HTTPS certificate can be handled by the JVM.
 	 */
-	public static void checkHTTPSSupport(LogService log) {
+	public static void checkHTTPSSupport(Logger log) {
 		offlineMode = false;
 		HttpURLConnection connection = null;
 		try {
@@ -94,7 +94,7 @@ public class HTTPSUtil {
 		}
 	}
 
-	private static void warn(final LogService log, final String msg, final Throwable t) {
+	private static void warn(final Logger log, final String msg, final Throwable t) {
 		if (log != null) {
 			if (log.isDebug()) log.debug(msg, t);
 			else log.warn(msg);

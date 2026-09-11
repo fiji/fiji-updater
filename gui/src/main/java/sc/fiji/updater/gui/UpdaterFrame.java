@@ -74,7 +74,7 @@ import javax.swing.event.TableModelEvent;
 import javax.swing.event.TableModelListener;
 
 import org.scijava.Context;
-import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 
 import sc.fiji.updater.FileObject.Action;
 import sc.fiji.updater.FileObject.Status;
@@ -90,7 +90,7 @@ import sc.fiji.updater.app.AppLayout;
 import sc.fiji.updater.diff.Diff.Mode;
 import sc.fiji.updater.progress.Progress;
 import sc.fiji.updater.progress.UpdateCanceledException;
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 import sc.fiji.updater.upload.FilesUploader;
 import sc.fiji.updater.upload.UploaderService;
 
@@ -104,7 +104,7 @@ public class UpdaterFrame extends JFrame implements TableModelListener,
 	ListSelectionListener
 {
 
-	protected LogService log;
+	protected Logger log;
 	private UploaderService uploaderService;
 	protected FilesCollection files;
 
@@ -126,7 +126,7 @@ public class UpdaterFrame extends JFrame implements TableModelListener,
 	protected boolean canUpload;
 	private CollapsibleLeftRightSplitPane splitPane;
 
-	public UpdaterFrame(final LogService log,
+	public UpdaterFrame(final Logger log,
 		final UploaderService uploaderService, final FilesCollection files)
 	{
 		super("ImageJ Updater");
@@ -339,7 +339,7 @@ public class UpdaterFrame extends JFrame implements TableModelListener,
 								diff.setVisible(true);
 							} catch (MalformedURLException e) {
 								files.log.error(e);
-								UpdaterUserInterface.get().error("There was a problem obtaining the remote version of " + file.getLocalFilename(true));
+								UpdaterConsole.get().error("There was a problem obtaining the remote version of " + file.getLocalFilename(true));
 							}
 						}
 					}.start(), bottomPanel);
@@ -402,15 +402,8 @@ public class UpdaterFrame extends JFrame implements TableModelListener,
 		showOrHide();
 		super.setVisible(visible);
 		if (visible) {
-			UpdaterUserInterface.get().addWindow(this);
 			applyOrUpload.requestFocusInWindow();
 		}
-	}
-
-	@Override
-	public void dispose() {
-		UpdaterUserInterface.get().removeWindow(this);
-		super.dispose();
 	}
 
 	public Progress getProgress(final String title) {
@@ -719,7 +712,7 @@ public class UpdaterFrame extends JFrame implements TableModelListener,
 			if (list == null) list = object.getFilename();
 			else list += ", " + object.getFilename();
 		}
-		if (list != null) UpdaterUserInterface.get().info(
+		if (list != null) UpdaterConsole.get().info(
 			"WARNING: The following files are set to read-only: '" + list + "'",
 			"Read-only files");
 	}
@@ -793,7 +786,7 @@ public class UpdaterFrame extends JFrame implements TableModelListener,
 			if (progress != null) progress.done();
 		}
 		catch (final Throwable e) {
-			UpdaterUserInterface.get().handleException(e);
+			UpdaterConsole.get().handleException(e);
 			error("Upload failed: " + e);
 			if (progress != null) progress.done();
 		}
@@ -821,7 +814,7 @@ public class UpdaterFrame extends JFrame implements TableModelListener,
 			if (progress != null) progress.done();
 		}
 		catch (final Throwable e) {
-			UpdaterUserInterface.get().handleException(e);
+			UpdaterConsole.get().handleException(e);
 			if (progress != null) progress.done();
 		}
 		return false;

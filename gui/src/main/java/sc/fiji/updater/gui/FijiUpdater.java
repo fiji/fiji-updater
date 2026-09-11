@@ -54,7 +54,7 @@ import sc.fiji.updater.Conflicts.Conflict;
 import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.Installer;
-import sc.fiji.updater.UpdaterUI;
+import sc.fiji.updater.UpdaterCommand;
 import sc.fiji.updater.app.AppLayout;
 import sc.fiji.updater.channel.URLChange;
 import sc.fiji.updater.gui.ViewOptions.Option;
@@ -63,7 +63,7 @@ import sc.fiji.updater.progress.UpdateCanceledException;
 import sc.fiji.updater.site.AvailableSites;
 import sc.fiji.updater.site.Connections;
 import sc.fiji.updater.site.HTTPSUtil;
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 import sc.fiji.updater.upload.UploaderService;
 
 /**
@@ -71,10 +71,10 @@ import sc.fiji.updater.upload.UploaderService;
  *
  * @author Johannes Schindelin
  */
-@Plugin(type = UpdaterUI.class,
+@Plugin(type = UpdaterCommand.class,
 	priority = Priority.HIGH, // NOTE: Higher priority than the ImageJ Updater.
 	menu = { @Menu(label = "Help"), @Menu(label = "Update...") })
-public class FijiUpdater implements UpdaterUI {
+public class FijiUpdater implements UpdaterCommand {
 
 	/** How long to wait on the network liveness probe. */
 	private static final int NETWORK_TIMEOUT_MS = 15000;
@@ -85,7 +85,9 @@ public class FijiUpdater implements UpdaterUI {
 	private StatusService statusService;
 
 	@Parameter(required = false)
-	private LogService log;
+	private LogService logService;
+
+	private Logger log;
 
 	@Parameter(required = false)
 	private UploaderService uploaderService;
@@ -94,19 +96,17 @@ public class FijiUpdater implements UpdaterUI {
 	public void run() {
 		if (errorIfDebian()) return;
 
-		if (log == null) {
-			log = UpdaterUserInterface.getLogService();
-		}
+		log = logService == null ? UpdaterConsole.getLogger() : logService;
 
 		if (errorIfNetworkInaccessible(log)) return;
 
 		final File appDir = getAppDirectory();
 		final FilesCollection files = new FilesCollection(log, appDir);
 
-		UpdaterUserInterface.set(new SwingUserInterface(log, statusService));
+		UpdaterConsole.set(new SwingConsole(log, statusService));
 
 		if (new File(appDir, "update").exists()) {
-			if (!UpdaterUserInterface.get().promptYesNo("It is suggested that you restart ImageJ, then continue the update.\n"
+			if (!UpdaterConsole.get().promptYesNo("It is suggested that you restart ImageJ, then continue the update.\n"
 					+ "Alternately, you can attempt to continue the upgrade without\n"
 					+ "restarting, but ImageJ might crash.\n\n"
 					+ "Do you want to try it?",
@@ -116,7 +116,7 @@ public class FijiUpdater implements UpdaterUI {
 				new Installer(files, null).moveUpdatedIntoPlace();
 			} catch (IOException e) {
 				log.debug(e);
-				UpdaterUserInterface.get().error("Could not move files into place: " + e);
+				UpdaterConsole.get().error("Could not move files into place: " + e);
 				return;
 			}
 		}
@@ -212,7 +212,7 @@ public class FijiUpdater implements UpdaterUI {
 			throws InterruptedException, InvocationTargetException
 	{
 		List<URLChange>
-				changes = AvailableSites.initializeAndAddSites(files, (Logger) log);
+				changes = AvailableSites.initializeAndAddSites(files, log);
 		if(ReviewSiteURLsDialog.shouldBeDisplayed(changes)) {
 			ReviewSiteURLsDialog dialog = new ReviewSiteURLsDialog(main, changes);
 			EventQueue.invokeAndWait(() -> dialog.setVisible(true));
@@ -266,7 +266,7 @@ public class FijiUpdater implements UpdaterUI {
 			String message = "You are using the Debian packaged version of Fiji.\n";
 			message +=
 				"You should update Fiji with your system's usual package manager instead.";
-			UpdaterUserInterface.get().error(message);
+			UpdaterConsole.get().error(message);
 			return true;
 		}
 		return false;
@@ -276,7 +276,7 @@ public class FijiUpdater implements UpdaterUI {
 	 * If there is no network connection, then produce an error and return true.
 	 * Otherwise return false.
 	 */
-	public static boolean errorIfNetworkInaccessible(final LogService log) {
+	public static boolean errorIfNetworkInaccessible(final Logger log) {
 		try {
 			testNetworkConnection();
 		}
@@ -297,7 +297,7 @@ public class FijiUpdater implements UpdaterUI {
 			friendlyError += "" + //
 				"\nDo you have a network connection?" + //
 				"\nAre your proxy settings correct?";
-			UpdaterUserInterface.get().error(friendlyError);
+			UpdaterConsole.get().error(friendlyError);
 			if (log != null) log.error(exc);
 			return true;
 		}

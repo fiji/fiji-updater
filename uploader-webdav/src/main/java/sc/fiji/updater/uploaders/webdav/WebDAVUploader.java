@@ -75,13 +75,13 @@ import org.apache.jackrabbit.webdav.lock.Scope;
 import org.apache.jackrabbit.webdav.lock.Type;
 import org.scijava.Priority;
 import org.scijava.log.LogLevel;
-import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 import org.scijava.log.StderrLogService;
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.updater.Timestamps;
 import sc.fiji.updater.UpdateSite;
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 import sc.fiji.updater.upload.AbstractUploader;
 import sc.fiji.updater.upload.FilesUploader;
 import sc.fiji.updater.upload.Uploadable;
@@ -100,7 +100,7 @@ public class WebDAVUploader extends AbstractUploader {
 
 	private String baseURL,username, password;
 	private final Set<String> existingDirectories;
-	private LogService log;
+	private Logger log;
 	private boolean debug = false;
 	protected static HttpClient client;
 	private CredentialsProvider provider;
@@ -172,13 +172,13 @@ public class WebDAVUploader extends AbstractUploader {
 
 		if (username == null) {
 			uploader.getDefaultUsername();
-			if (username == null) username = UpdaterUserInterface.get().getString("Login for " + baseURL);
+			if (username == null) username = UpdaterConsole.get().getString("Login for " + baseURL);
 			if (username == null) return false;
 		}
 
 		if (password == null) {
 			final String prompt = "Password for " + username + "@" + baseURL;
-			password = UpdaterUserInterface.get().getPassword(prompt);
+			password = UpdaterConsole.get().getPassword(prompt);
 			if (password == null) return false;
 		}
 
@@ -186,16 +186,16 @@ public class WebDAVUploader extends AbstractUploader {
 
 		try {
 			if (!isAllowed()) {
-				UpdaterUserInterface.get().error("User " + username + " lacks upload permissions for " + baseURL + " or the password is incorrect.");
+				UpdaterConsole.get().error("User " + username + " lacks upload permissions for " + baseURL + " or the password is incorrect.");
 				return false;
 			}
 			if (!directoryExists("")) {
-				UpdaterUserInterface.get().error(baseURL + " does not exist yet!");
+				UpdaterConsole.get().error(baseURL + " does not exist yet!");
 				return false;
 			}
 		}
 		catch (UnauthenticatedException e) {
-			UpdaterUserInterface.get().error("User " + username + " lacks upload permissions for " + baseURL + " or the password is incorrect.");
+			UpdaterConsole.get().error("User " + username + " lacks upload permissions for " + baseURL + " or the password is incorrect.");
 			return false;
 		}
 		catch (IOException e) {
@@ -560,8 +560,9 @@ public class WebDAVUploader extends AbstractUploader {
 		this.username = username;
 		this.password = password;
 		if (log == null) {
-			log = new StderrLogService();
-			log.setLevel(LogLevel.DEBUG);
+			final StderrLogService stderr = new StderrLogService();
+			stderr.setLevel(LogLevel.DEBUG);
+			log = stderr;
 			debug = true;
 		}
 		provider.setCredentials(AuthScope.ANY, new UsernamePasswordCredentials(username, password));

@@ -61,7 +61,7 @@ import sc.fiji.updater.site.UpdateSiteNetwork;
  * not exported. The members that were -- the timestamp format, the HTTP
  * plumbing, the two questions about the installation directory, the login
  * prefs key and the fallback log service -- moved to {@code Timestamps},
- * {@code Connections}, {@code AppLayout} and {@code UpdaterUserInterface}
+ * {@code Connections}, {@code AppLayout} and {@code UpdaterConsole}
  * respectively.
  * </p>
  * 

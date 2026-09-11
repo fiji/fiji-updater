@@ -39,12 +39,13 @@ import com.jcraft.jsch.ChannelExec;
 import com.jcraft.jsch.JSchException;
 import com.jcraft.jsch.Session;
 import org.scijava.Priority;
-import org.scijava.log.LogService;
+import org.scijava.log.LogLevel;
+import org.scijava.log.Logger;
 import org.scijava.log.StderrLogService;
 import org.scijava.plugin.Plugin;
 
 import sc.fiji.updater.progress.UpdateCanceledException;
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 import sc.fiji.updater.upload.AbstractUploader;
 import sc.fiji.updater.upload.FilesUploader;
 import sc.fiji.updater.upload.Uploadable;
@@ -66,10 +67,10 @@ public class SSHFileUploader extends AbstractUploader {
 	private OutputStream out;
 	protected OutputStream err;
 	private InputStream in;
-	private LogService log;
+	private Logger log;
 
 	public SSHFileUploader() {
-		err = UpdaterUserInterface.get().getOutputStream();
+		err = UpdaterConsole.get().getOutputStream();
 	}
 
 	@Override
@@ -82,8 +83,9 @@ public class SSHFileUploader extends AbstractUploader {
 
 	protected boolean debugLogin(final String host) {
 		if (log == null) {
-			log = new StderrLogService();
-			log.setLevel(LogService.DEBUG);
+			final StderrLogService stderr = new StderrLogService();
+			stderr.setLevel(LogLevel.DEBUG);
+			log = stderr;
 		}
 
 		try {
@@ -229,7 +231,7 @@ public class SSHFileUploader extends AbstractUploader {
 			channel.disconnect();
 		}
 		try {
-			UpdaterUserInterface.get().debug("launching command " + command);
+			UpdaterConsole.get().debug("launching command " + command);
 			channel = session.openChannel("exec");
 			((ChannelExec) channel).setCommand(command);
 			channel.setInputStream(null);
@@ -252,7 +254,7 @@ public class SSHFileUploader extends AbstractUploader {
 
 	public void disconnectSession() throws IOException {
 		if (in != null)
-			new InputStream2OutputStream(in, UpdaterUserInterface.get().getOutputStream());
+			new InputStream2OutputStream(in, UpdaterConsole.get().getOutputStream());
 		try {
 			Thread.sleep(100);
 		}
@@ -270,7 +272,7 @@ public class SSHFileUploader extends AbstractUploader {
 		int exitStatus = 0;
 		if (channel != null) {
 			exitStatus = channel.getExitStatus();
-			UpdaterUserInterface.get().debug(
+			UpdaterConsole.get().debug(
 				"disconnect session; exit status is " + exitStatus);
 			channel.disconnect();
 		}
@@ -298,7 +300,7 @@ public class SSHFileUploader extends AbstractUploader {
 		// 2 for fatal error,
 		// -1
 		if (b == 0) return b;
-		UpdaterUserInterface.get().handleException(new Exception("checkAck returns " + b));
+		UpdaterConsole.get().handleException(new Exception("checkAck returns " + b));
 		if (b == -1) return b;
 
 		if (b == 1 || b == 2) {
@@ -309,8 +311,8 @@ public class SSHFileUploader extends AbstractUploader {
 				sb.append((char) c);
 			}
 			while (c != '\n');
-			UpdaterUserInterface.get().log("checkAck returned '" + sb.toString() + "'");
-			UpdaterUserInterface.get().error(sb.toString());
+			UpdaterConsole.get().log("checkAck returned '" + sb.toString() + "'");
+			UpdaterConsole.get().error(sb.toString());
 		}
 		return b;
 	}

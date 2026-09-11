@@ -64,7 +64,7 @@ import org.scijava.platform.PlatformService;
 import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.UpdateSite;
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 
 /**
  * TODO
@@ -101,12 +101,12 @@ public class FileDetails extends JTextPane implements UndoableEditListener {
 				final String url = getLinkAt(e.getPoint());
 				try {
 					if (url != null) {
-						// UpdaterUserInterface#openURL() has no implementation!?
+						// UpdaterConsole#openURL() has no implementation!?
 						getOrInitPlatformService().open(new URL(url));
 					}
 				} catch (final Exception exception) {
 					updaterFrame.log.error(exception);
-					UpdaterUserInterface.get().error("Could not open " + url + ": " + exception.getMessage());
+					UpdaterConsole.get().error("Could not open " + url + ": " + exception.getMessage());
 				}
 			}
 		});

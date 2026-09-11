@@ -32,10 +32,20 @@ package sc.fiji.updater;
 import org.scijava.command.Command;
 
 /**
- * A placeholder interface for graphical user interfaces for the updater.
+ * The command that launches the updater's user interface.
+ * <p>
+ * A marker: it adds nothing to {@link Command}, and exists so that
+ * {@code CommandService.getCommandsOfType} can find whichever front end is
+ * installed without the core depending on it.
+ * </p>
+ * <p>
+ * Not to be confused with {@link sc.fiji.updater.ui.UpdaterConsole}, which is
+ * how the updater asks the user questions and reports progress, whatever the
+ * front end.
+ * </p>
  * 
  * @author Johannes Schindelin
  */
-public interface UpdaterUI extends Command {
+public interface UpdaterCommand extends Command {
 	// marker interface
 }

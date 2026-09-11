@@ -39,7 +39,7 @@ import sc.fiji.updater.app.JavaRequirement;
 import sc.fiji.updater.channel.ChannelManifest;
 import sc.fiji.updater.channel.ChannelUpgrade;
 import sc.fiji.updater.progress.Progress;
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 
 /**
  * Offers to move this installation to a newer update channel.
@@ -76,8 +76,8 @@ public class ChannelUpgradePrompt {
 	 *         must restart and the caller should not continue.
 	 */
 	public boolean offer() {
-		if (UpdaterUserInterface.get().isBatchMode()) return false;
-		if ("true".equals(UpdaterUserInterface.get().getPref(SKIP_PREF))) {
+		if (UpdaterConsole.get().isBatchMode()) return false;
+		if ("true".equals(UpdaterConsole.get().getPref(SKIP_PREF))) {
 			return false;
 		}
 
@@ -120,8 +120,8 @@ public class ChannelUpgradePrompt {
 			case 0:
 				return apply(upgrade, target);
 			case 2:
-				UpdaterUserInterface.get().setPref(SKIP_PREF, "true");
-				UpdaterUserInterface.get().savePreferences();
+				UpdaterConsole.get().setPref(SKIP_PREF, "true");
+				UpdaterConsole.get().savePreferences();
 				return false;
 			default:
 				return false;
@@ -177,7 +177,7 @@ public class ChannelUpgradePrompt {
 		sb.append("<p>Fiji will need to restart afterwards.</p>");
 		sb.append("</body></html>");
 
-		return UpdaterUserInterface.get().optionDialog(sb.toString(),
+		return UpdaterConsole.get().optionDialog(sb.toString(),
 			"Upgrade to " + target + "?",
 			new Object[] { "Upgrade to " + target, "Not now", "Never ask again" },
 			0);

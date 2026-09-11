@@ -50,7 +50,8 @@ import sc.fiji.updater.channel.ChannelState;
 import sc.fiji.updater.channel.Channels;
 import sc.fiji.updater.progress.StderrProgress;
 import sc.fiji.updater.progress.UpdateCanceledException;
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.StderrConsole;
+import sc.fiji.updater.ui.UpdaterConsole;
 import sc.fiji.updater.upload.FilesUploader;
 
 /**
@@ -170,7 +171,7 @@ public class UploadChannelTest {
 	}
 
 	/** Records what was asked, and answers however the test wants. */
-	private static class RecordingUI extends UpdaterUserInterface.StderrInterface {
+	private static class RecordingUI extends StderrConsole {
 
 		String prompt;
 		boolean answer;
@@ -203,8 +204,8 @@ public class UploadChannelTest {
 		declareChannel(ijRoot, "A.punctulata");
 
 		final RecordingUI ui = new RecordingUI(false);
-		final UpdaterUserInterface previous = UpdaterUserInterface.get();
-		UpdaterUserInterface.set(ui);
+		final UpdaterConsole previous = UpdaterConsole.get();
+		UpdaterConsole.set(ui);
 		try {
 			final FilesCollection collection = collection(ijRoot);
 			collection.read();
@@ -235,7 +236,7 @@ public class UploadChannelTest {
 				ui.prompt.contains(ChannelState.BASE_CHANNEL_NAME));
 		}
 		finally {
-			UpdaterUserInterface.set(previous);
+			UpdaterConsole.set(previous);
 		}
 	}
 

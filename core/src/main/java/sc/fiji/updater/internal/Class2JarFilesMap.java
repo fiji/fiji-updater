@@ -39,7 +39,7 @@ import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.zip.ZipException;
 
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 
 /**
  * Maps class names to the .jar files containing them.
@@ -69,7 +69,7 @@ public class Class2JarFilesMap extends HashMap<String, ArrayList<String>> {
 				addJar(path);
 			}
 			catch (final IOException e) {
-				UpdaterUserInterface.get().log("Warning: could not open " + path);
+				UpdaterConsole.get().log("Warning: could not open " + path);
 			}
 			else addDirectory(path);
 		}
@@ -87,7 +87,7 @@ public class Class2JarFilesMap extends HashMap<String, ArrayList<String>> {
 			file.close();
 		}
 		catch (final ZipException e) {
-			UpdaterUserInterface.get().log("Warning: could not open " + jar);
+			UpdaterConsole.get().log("Warning: could not open " + jar);
 		}
 	}
 

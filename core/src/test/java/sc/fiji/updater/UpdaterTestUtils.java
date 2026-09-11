@@ -62,7 +62,7 @@ import java.util.zip.GZIPOutputStream;
 
 import javax.xml.parsers.ParserConfigurationException;
 
-import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 import org.scijava.util.ClassUtils;
 import org.scijava.util.FileUtils;
 import org.xml.sax.SAXException;
@@ -72,7 +72,7 @@ import sc.fiji.updater.FileObject.Status;
 import sc.fiji.updater.cli.CommandLine;
 import sc.fiji.updater.progress.Progress;
 import sc.fiji.updater.progress.StderrProgress;
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 import sc.fiji.updater.upload.FilesUploader;
 import sc.fiji.updater.upload.UploaderService;
 import sc.fiji.updater.xml.XMLFileReader;
@@ -106,8 +106,8 @@ public class UpdaterTestUtils {
 			final Class<?> clazz =
 				loader.loadClass("sc.fiji.updater.gui.UpdaterFrame");
 			final java.lang.reflect.Constructor<?> ctor =
-				clazz.getConstructor(LogService.class, UploaderService.class, FilesCollection.class);
-			final Object updaterFrame = ctor.newInstance(UpdaterUserInterface.getLogService(), null, files);
+				clazz.getConstructor(Logger.class, UploaderService.class, FilesCollection.class);
+			final Object updaterFrame = ctor.newInstance(UpdaterConsole.getLogger(), null, files);
 			final java.lang.reflect.Method setVisible =
 				clazz.getMethod("setVisible", boolean.class);
 			setVisible.invoke(updaterFrame, true);

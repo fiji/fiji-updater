@@ -30,7 +30,6 @@
 
 package sc.fiji.updater.site;
 
-import java.awt.GraphicsEnvironment;
 import java.io.IOException;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
@@ -64,9 +63,24 @@ public final class Connections {
 		 * messages in headless mode (e.g. Jenkins).
 		 */
 		final String osName = System.getProperty("os.name", "<unknown>");
-		if (osName.equals("Linux") && GraphicsEnvironment.isHeadless()) return;
+		if (osName.equals("Linux") && isHeadless()) return;
 
 		System.setProperty("java.net.useSystemProxies", "true");
+	}
+
+	/**
+	 * Whether this JVM has no display, the way {@code GraphicsEnvironment}
+	 * decides it on Linux -- the only platform the caller asks about.
+	 * <p>
+	 * Asking AWT directly would be the obvious way, and is what this used to
+	 * do, but it puts {@code java.desktop} in the requires list of a core that
+	 * is otherwise headless-capable.
+	 * </p>
+	 */
+	private static boolean isHeadless() {
+		final String headless = System.getProperty("java.awt.headless");
+		if (headless != null) return Boolean.parseBoolean(headless);
+		return System.getenv("DISPLAY") == null;
 	}
 
 	/**

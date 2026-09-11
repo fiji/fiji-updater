@@ -36,11 +36,12 @@ import org.scijava.command.Command;
 import org.scijava.command.CommandInfo;
 import org.scijava.command.CommandService;
 import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
-import sc.fiji.updater.UpdaterUI;
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.UpdaterCommand;
+import sc.fiji.updater.ui.UpdaterConsole;
 
 /**
  * This plugin prompts the user to launch the updater due to available updates.
@@ -60,7 +61,7 @@ public class PromptUserToUpdate implements Command {
 	private CommandService commandService;
 
 	@Parameter
-	private LogService log;
+	private LogService logService;
 
 	@Parameter(label = "Do you want to start the Updater now?", choices = { YES,
 		NEVER, LATER })
@@ -74,14 +75,13 @@ public class PromptUserToUpdate implements Command {
 		}
 		if (updateAction.equals(YES)) {
 			final List<CommandInfo> updaters =
-				commandService.getCommandsOfType(UpdaterUI.class);
+				commandService.getCommandsOfType(UpdaterCommand.class);
 			if (updaters.size() > 0) {
 				commandService.run(updaters.get(0), true);
 			}
 			else {
-				if (log == null) {
-					log = UpdaterUserInterface.getLogService();
-				}
+				final Logger log = logService == null ? //
+					UpdaterConsole.getLogger() : logService;
 				log.error("No updater plugins found!");
 			}
 		}

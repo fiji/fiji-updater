@@ -40,9 +40,6 @@
  */
 module sc.fiji.updater {
 
-	// AWT, for UpdaterUserInterface's window registration and the headless check
-	// in Connections. The core is otherwise headless-capable; see API-CLEANUP.md.
-	requires java.desktop;
 	requires java.xml;
 	requires org.scijava;
 	requires org.scijava.launcher;

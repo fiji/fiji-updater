@@ -29,7 +29,6 @@
 
 package sc.fiji.updater.gui;
 
-import java.awt.Frame;
 import java.awt.Graphics;
 import java.io.IOException;
 import java.io.OutputStream;
@@ -42,22 +41,23 @@ import javax.swing.JTextField;
 
 import net.miginfocom.swing.MigLayout;
 import org.scijava.app.StatusService;
-import org.scijava.log.LogService;
+import org.scijava.log.Logger;
 import org.scijava.util.Prefs;
 
-import sc.fiji.updater.ui.UpdaterUserInterface;
+import sc.fiji.updater.ui.UpdaterConsole;
 
 /**
- * TODO
+ * The {@link UpdaterConsole} backed by Swing: messages become dialogs,
+ * prompts become modal questions, and status goes to the SciJava status bar.
  * 
  * @author Johannes Schindelin
  */
-public class SwingUserInterface extends UpdaterUserInterface {
+public class SwingConsole implements UpdaterConsole {
 
-	protected final LogService log;
+	protected final Logger log;
 	protected final StatusService statusService;
 
-	public SwingUserInterface(final LogService log, final StatusService statusService) {
+	public SwingConsole(final Logger log, final StatusService statusService) {
 		this.log = log;
 		this.statusService = statusService;
 	}
@@ -218,20 +218,6 @@ public class SwingUserInterface extends UpdaterUserInterface {
 				JOptionPane.OK_CANCEL_OPTION);
 		if (option == JOptionPane.CANCEL_OPTION || option < 0) return null;
 		return new String(password.getPassword());
-
-	}
-
-	@Override
-	public void addWindow(final Frame window) {
-
-		// TODO How to do this?
-
-	}
-
-	@Override
-	public void removeWindow(final Frame window) {
-
-		// TODO How to do this?
 
 	}
 
