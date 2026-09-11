@@ -568,7 +568,9 @@ public class SitesDialog extends JDialog implements ActionListener {
 		protected int tableWidth;
 		protected String[] headers = { "Active", "Name", "URL", "Host", "Directory on Host", "Description" };
 		private String[] canonicalRows = { "Active", "Fuzzy logic and artificial neural",
-				"sites.imagej.net/Fiji-Legacy/", "webdav:User", "/path", " Large description with maintainer name" };
+			"https://longish.domain.name/longish/prefix/",
+			"webdav:longish_username", "/path",
+			"Longish description with maintainer name" };
 
 		public void setColumnWidths() {
 			table.setAutoResizeMode(JTable.AUTO_RESIZE_OFF); // otherwise horizontal scrollbar is not displayed
@@ -583,7 +585,7 @@ public class SitesDialog extends JDialog implements ActionListener {
 
 		@Override
 		public int getColumnCount() {
-			return 6;
+			return headers.length;
 		}
 
 		@Override
