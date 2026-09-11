@@ -61,9 +61,9 @@ import java.io.IOException;
 import java.io.OutputStream;
 
 /**
- * HttpEntityWrapper with a progress callback
+ * HttpEntityWrapper with a progress callback.
  *
- * @see <a href="http://stackoverflow.com/a/7319110/268795">http://stackoverflow.com/a/7319110/268795</a>
+ * @see <a href="https://stackoverflow.com/a/7319110/268795">SO answer 7319110</a>
  */
 
 class ProgressHttpEntityWrapper extends HttpEntityWrapper {
@@ -71,7 +71,6 @@ class ProgressHttpEntityWrapper extends HttpEntityWrapper {
     private final ProgressCallback progressCallback;
 
     private long contentLength;
-
 
     public interface ProgressCallback {
         void progress(float progress);
