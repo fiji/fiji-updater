@@ -35,6 +35,7 @@
 			<name>Curtis Rueden</name>
 			<url>https://imagej.net/people/ctrueden</url>
 			<roles>
+				<role>founder</role>
 				<role>debugger</role>
 				<role>reviewer</role>
 				<role>support</role>
@@ -42,45 +43,25 @@
 			</roles>
 		</developer>
 	</developers>
-
 	<contributors>
 		<contributor>
 			<name>Johannes Schindelin</name>
-			<url>https://imagej.net/dscho</url>
+			<url>https://imagej.net/people/dscho</url>
 			<roles><role>founder</role></roles>
 			<properties><id>dscho</id></properties>
 		</contributor>
 		<contributor>
-			<name>Yap Chin Kiet (Google Summer of Code 2009)</name>
-		</contributor>
-		<contributor>
-			<name>Albert Cardona</name>
-			<url>https://imagej.net/acardona</url>
-			<properties><id>acardona</id></properties>
-		</contributor>
-		<contributor>
-			<name>Mark Longair</name>
-			<url>https://imagej.net/mhl</url>
-			<properties><id>mhl</id></properties>
-		</contributor>
-		<contributor>
-			<name>Jarek Sacha</name>
-			<url>https://imagej.net/hinerm</url>
-		</contributor>
-		<contributor>
-			<name>Mark Hiner</name>
-			<url>https://imagej.net/hinerm</url>
-			<properties><id>hinerm</id></properties>
-		</contributor>
-		<contributor>
-			<name>Matthias Arzt</name>
-			<url>https://imagej.net/maarzt</url>
-			<properties><id>maarzt</id></properties>
-		</contributor>
-		<contributor>
 			<name>Deborah Schmidt</name>
-			<url>https://imagej.net/frauzufall</url>
+			<url>https://imagej.net/people/frauzufall</url>
 			<properties><id>frauzufall</id></properties>
+			<roles>
+				<role>lead</role>
+				<role>developer</role>
+				<role>debugger</role>
+				<role>reviewer</role>
+				<role>support</role>
+				<role>maintainer</role>
+			</roles>
 		</contributor>
 	</contributors>
 

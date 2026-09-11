@@ -42,44 +42,46 @@
 			</roles>
 		</developer>
 	</developers>
-
 	<contributors>
 		<contributor>
 			<name>Johannes Schindelin</name>
-			<url>https://imagej.net/dscho</url>
+			<url>https://imagej.net/people/dscho</url>
 			<roles><role>founder</role></roles>
 			<properties><id>dscho</id></properties>
 		</contributor>
 		<contributor>
-			<name>Yap Chin Kiet (Google Summer of Code 2009)</name>
-		</contributor>
-		<contributor>
-			<name>Albert Cardona</name>
-			<url>https://imagej.net/acardona</url>
-			<properties><id>acardona</id></properties>
-		</contributor>
-		<contributor>
-			<name>Mark Longair</name>
-			<url>https://imagej.net/mhl</url>
-			<properties><id>mhl</id></properties>
-		</contributor>
-		<contributor>
-			<name>Jarek Sacha</name>
-			<url>https://imagej.net/hinerm</url>
-		</contributor>
-		<contributor>
 			<name>Mark Hiner</name>
-			<url>https://imagej.net/hinerm</url>
+			<url>https://imagej.net/people/hinerm</url>
 			<properties><id>hinerm</id></properties>
 		</contributor>
 		<contributor>
-			<name>Matthias Arzt</name>
-			<url>https://imagej.net/maarzt</url>
-			<properties><id>maarzt</id></properties>
+			<name>Jan Eglinger</name>
+			<url>https://imagej.net/people/imagejan</url>
+			<properties><id>imagejan</id></properties>
+		</contributor>
+		<contributor>
+			<name>Tiago Ferreira</name>
+			<url>https://imagej.net/people/tferr</url>
+			<properties><id>tferr</id></properties>
+		</contributor>
+		<contributor>
+			<name>Robert Haase</name>
+			<url>https://imagej.net/people/haesleinhuepf</url>
+			<properties><id>haesleinhuepf</id></properties>
+		</contributor>
+		<contributor>
+			<name>Stefan Helfrich</name>
+			<url>https://imagej.net/people/stelfrich</url>
+			<properties><id>stelfrich</id></properties>
+		</contributor>
+		<contributor>
+			<name>David Pinto</name>
+			<url>https://imagej.net/people/carandraug</url>
+			<properties><id>carandraug</id></properties>
 		</contributor>
 		<contributor>
 			<name>Deborah Schmidt</name>
-			<url>https://imagej.net/frauzufall</url>
+			<url>https://imagej.net/people/frauzufall</url>
 			<properties><id>frauzufall</id></properties>
 		</contributor>
 	</contributors>
