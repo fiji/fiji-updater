@@ -1,8 +1,8 @@
 /*
  * #%L
- * Fiji distribution of ImageJ for the life sciences.
+ * Fiji software for multidimensional image processing and analysis.
  * %%
- * Copyright (C) 2009 - 2026 ImageJ developers.
+ * Copyright (C) 2009 - 2026 Fiji developers.
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:

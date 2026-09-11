@@ -1,10 +1,8 @@
 /*
  * #%L
- * Fiji distribution of ImageJ for the life sciences.
+ * Fiji software for multidimensional image processing and analysis.
  * %%
- * Copyright (C) 2009 - 2026 Board of Regents of the University of
- * Wisconsin-Madison, Broad Institute of MIT and Harvard, and Max Planck
- * Institute of Molecular Cell Biology and Genetics.
+ * Copyright (C) 2009 - 2026 Fiji developers.
  * %%
  * Redistribution and use in source and binary forms, with or without
  * modification, are permitted provided that the following conditions are met:
