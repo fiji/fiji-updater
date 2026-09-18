@@ -112,39 +112,47 @@ anything else.
   `mirrors.pasteur.fr/fiji/sites/` carries all of `sites.imagej.net/`, and was
   verified to do so for arbitrary sites.
 
-  *Outstanding:* a mirror is still recorded as a site's URL. It should be a
-  **fetch-time transform over a canonical URL**: store the canonical URL and
-  one installation-wide mirror preference, and derive the source from the two.
-  That way switching mirrors is one setting rather than a rewrite of every
-  site's URL, a new mirror serves every site the moment its pair is known, and
-  `URLChange`'s "do not correct a mirror user back to canonical" case stops
-  being needed, because the stored URL is always canonical.
+  *Also landed:* an installation records where each site canonically lives,
+  plus one choice of where to read from, and `FilesCollection.sourceURL`
+  derives the source. The choice lives on the root `<pluginRecords>` element of
+  the local `db.xml.gz`, since it is a property of the installation rather than
+  of any site. Everything that reads a site goes through `FilesCollection`;
+  nothing that writes one does, because a mirror lags and publishing against a
+  stale index loses files. Installations already carrying a mirror in a site's
+  URL are migrated on the next refresh.
 
-  Three things it needs. The preference has to reach the fetch paths —
-  `getIndexURL`, the per-file URL in `FilesCollection`, and
-  `ChannelManifest.read` — while *not* reaching the upload path, which must
-  always address the canonical host. Existing installations hold mirrored URLs,
-  so the merge rewrites those to canonical and sets the preference once, which
-  the URL-identity machinery already does the hard half of. And it needs a home
-  in `db.xml.gz`: the root `<pluginRecords>` element, alongside the site id
-  below, since it is a property of the installation rather than of any site.
+  Per-site mirror overrides are deliberately not offered. The data structure
+  would be straightforward; the user interface — a blanket selector plus
+  per-site exceptions — would not, and in practice essentially everything is
+  served from `sites.fiji.sc`, which one selector covers.
+
+  *Outstanding:* the UI for choosing one. There is no way to pick a mirror yet
+  except by editing a site URL and letting the migration record it, which is
+  how an existing user arrives but not how a new one should. Wanted: a
+  selector in the sites dialog and a command-line equivalent, listing
+  `UpdateSiteNetwork.MIRRORS`.
 
   Once sites carry ids the pair table can come from `sites.yml` instead of
   being compiled in, and `Fiji-Latest (Europe mirror)` can leave the published
   list — it is only there because mirrors had no other representation.
+  `URLChange`'s "do not correct a mirror user back to canonical" case is now
+  moot, since the stored URL is always canonical, and can go with it.
 
-- **Canonical host: `sites.imagej.net` to `sites.fiji.sc`.** This is the Fiji
-  Updater again, and Fiji resources are moving to `fiji.sc` where feasible.
-  Worth noting the mechanism is already in place: a host move is a prefix pair
-  like any mirror, so switching the canonical prefix is a table change rather
-  than a migration, and every installation's stored URL follows by the same
-  path a rename does.
+- **Canonical host: `sites.imagej.net` to `sites.fiji.sc` — landed here.**
+  `MAIN_SITE_PATH` and the mirror table name `sites.fiji.sc`, and
+  `MOVED_URL_PREFIXES` maps the old host onto the new one so that an
+  installation naming either is on the same site. Verified byte-identical
+  content on both hosts, for the main site and others.
 
-  `sites.fiji.sc` does not resolve yet, so nothing is encoded for it. The
-  server side is that `sites.imagej.net` keeps serving the same content
-  directly — 200 rather than a 301 to the new host when the User-Agent is the
-  ImageJ Updater — so old updaters, which will not follow a cross-host
-  redirect any more than a cross-protocol one, keep working.
+  The rewrite applies to how a URL is compared, not to what an installation
+  stores: which host an installation names is the published list's to change,
+  through the review every other URL change goes through.
+
+  *Outstanding, server side:* `sites.imagej.net` must keep serving the same
+  content directly — 200 rather than a 301 to the new host when the User-Agent
+  is the ImageJ Updater — since old updaters will not follow a cross-host
+  redirect any more than a cross-protocol one. And the published list should
+  start naming `sites.fiji.sc`, which is what migrates installations.
 
 ## Update site identity
 
