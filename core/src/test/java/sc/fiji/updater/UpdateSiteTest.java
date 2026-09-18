@@ -134,7 +134,7 @@ public class UpdateSiteTest {
 	 */
 	@Test
 	public void testSingleSiteMirrorResolvesToItsSite() {
-		assertEquals("https://sites.imagej.net/Fiji/", UpdateSite.canonicalURL(
+		assertEquals("https://sites.fiji.sc/Fiji/", UpdateSite.canonicalURL(
 			"https://downloads.micron.ox.ac.uk/fiji_update/mirrors/sites-fiji/"));
 	}
 
@@ -143,7 +143,7 @@ public class UpdateSiteTest {
 	public void testNormalizedURLDoesNotResolveMirrors() {
 		final String mirror = "https://mirrors.pasteur.fr/fiji/sites/MoBIE/";
 		assertEquals(mirror, UpdateSite.normalizedURL(mirror));
-		assertEquals("https://sites.imagej.net/MoBIE/", UpdateSite.canonicalURL(mirror));
+		assertEquals("https://sites.fiji.sc/MoBIE/", UpdateSite.canonicalURL(mirror));
 	}
 
 	/**
@@ -154,6 +154,32 @@ public class UpdateSiteTest {
 	public void testSameURLRejectsUnrelatedSitesOnAMirrorHost() {
 		assertFalse(UpdateSite.sameURL("https://sites.imagej.net/Fiji/",
 			"https://downloads.micron.ox.ac.uk/fiji_update/SIMcheck/"));
+	}
+
+	/**
+	 * The canonical host moved from imagej.net to fiji.sc, and both serve the
+	 * same content from the same storage. An installation naming either one is
+	 * on the same site.
+	 */
+	@Test
+	public void testTheCanonicalHostMoved() {
+		assertTrue(UpdateSite.sameURL("https://sites.imagej.net/Fiji/",
+			"https://sites.fiji.sc/Fiji/"));
+		assertTrue(UpdateSite.sameURL("http://sites.imagej.net/MoBIE",
+			"https://sites.fiji.sc/MoBIE/"));
+		assertEquals("https://sites.fiji.sc/MoBIE/",
+			UpdateSite.normalizedURL("https://sites.imagej.net/MoBIE/"));
+	}
+
+	/**
+	 * Note: what an installation <em>stores</em> is not rewritten. Which host
+	 * it names is the published list's to change, through the review every
+	 * other URL change goes through.
+	 */
+	@Test
+	public void testTheMovedHostIsNotRewrittenInPlace() {
+		final UpdateSite site = site("https://sites.imagej.net/MoBIE/");
+		assertEquals("https://sites.imagej.net/MoBIE/", site.getURL());
 	}
 
 	/** A URL that has moved is rewritten before being compared. */

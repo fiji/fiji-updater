@@ -85,7 +85,7 @@ public final class UpdateSiteNetwork {
 	public static final String MAIN_SITE_NAME = "Fiji-Latest";
 
 	/** Host and path serving the main update site, without a protocol. */
-	public static final String MAIN_SITE_PATH = "sites.imagej.net/Fiji/";
+	public static final String MAIN_SITE_PATH = "sites.fiji.sc/Fiji/";
 
 	/** Host maintainers upload the main update site's contents to. */
 	public static final String MAIN_SITE_SSH_HOST = "update.imagej.net";
@@ -138,8 +138,8 @@ public final class UpdateSiteNetwork {
 	 */
 	public static final String[][] MIRRORS = {
 		{ "https://downloads.micron.ox.ac.uk/fiji_update/mirrors/sites-fiji/",
-			"https://sites.imagej.net/Fiji/" },
-		{ "https://mirrors.pasteur.fr/fiji/sites/", "https://sites.imagej.net/" },
+			"https://sites.fiji.sc/Fiji/" },
+		{ "https://mirrors.pasteur.fr/fiji/sites/", "https://sites.fiji.sc/" },
 	};
 
 	/**
@@ -227,6 +227,45 @@ public final class UpdateSiteNetwork {
 	 * installation find its update site again.
 	 * </p>
 	 */
+	/**
+	 * URL prefixes that have moved wholesale, paired with where they moved to.
+	 * <p>
+	 * The same shape as {@link #MIRRORS} and the opposite meaning: a mirror is
+	 * somewhere else the same content can be read from, while this is the
+	 * content having moved. So this rewrite is part of what a URL <em>is</em>,
+	 * and applies before a mirror is resolved.
+	 * </p>
+	 * <p>
+	 * Note this is deliberately not applied to the URL an installation stores.
+	 * Which host an installation names is the published list's to change, and
+	 * it does so through the review every other URL change goes through; what
+	 * this does is stop the old host and the new one looking like two sites in
+	 * the meantime.
+	 * </p>
+	 */
+	public static final String[][] MOVED_URL_PREFIXES = {
+		// This is the Fiji Updater again, and Fiji's resources are moving to
+		// fiji.sc. sites.imagej.net serves the same content from the same
+		// storage, so neither host is wrong -- but only one can be identity.
+		{ "https://sites.imagej.net/", "https://sites.fiji.sc/" },
+	};
+
+	/**
+	 * Where the given URL's content moved to, or the URL unchanged if it has
+	 * not moved.
+	 *
+	 * @param url a URL with a trailing slash, over HTTPS.
+	 */
+	public static String rewriteMovedURLs(final String url) {
+		if (url == null) return null;
+		for (final String[] moved : MOVED_URL_PREFIXES) {
+			if (url.startsWith(moved[0])) {
+				return moved[1] + url.substring(moved[0].length());
+			}
+		}
+		return url;
+	}
+
 	public static final String[][] OBSOLETE_URLS = {
 		{ "http://pacific.mpi-cbg.de/update/", "update.fiji.sc/" },
 		{ "http://fiji.sc/update/", "update.fiji.sc/" },

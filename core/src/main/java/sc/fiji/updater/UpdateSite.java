@@ -346,8 +346,8 @@ public class UpdateSite implements Cloneable, Comparable<UpdateSite> {
 	}
 
 	/**
-	 * The URL as written, tidied: a trailing slash, a URL that has moved
-	 * rewritten to where it moved to, and {@code https}.
+	 * The URL as written, tidied: a trailing slash, {@code https}, and a URL
+	 * whose content has moved rewritten to where it moved to.
 	 * <p>
 	 * Note: the scheme is normalized because an installation left alone since
 	 * before HTTPS holds {@code http://} for a site now served over
@@ -356,8 +356,9 @@ public class UpdateSite implements Cloneable, Comparable<UpdateSite> {
 	 */
 	public static String normalizedURL(final String url) {
 		final String formatted = format(url);
-		return formatted.startsWith("http://") ? //
+		final String https = formatted.startsWith("http://") ? //
 			"https://" + formatted.substring("http://".length()) : formatted;
+		return UpdateSiteNetwork.rewriteMovedURLs(https);
 	}
 
 	/**
