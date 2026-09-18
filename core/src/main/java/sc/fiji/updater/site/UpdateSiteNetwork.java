@@ -28,6 +28,8 @@
  */
 package sc.fiji.updater.site;
 
+import sc.fiji.updater.UpdateSite;
+
 import sc.fiji.updater.app.AppLayout;
 
 /**
@@ -117,16 +119,44 @@ public final class UpdateSiteNetwork {
 	};
 
 	/**
-	 * Mirrors of the main update site, in no particular order.
+	 * Mirror URL prefixes paired with the canonical prefixes they serve.
 	 * <p>
-	 * Used to recognize that an installation is already following the main site,
-	 * whichever source it reads it from.
+	 * A mirror maps a stretch of URL space onto another: everything under
+	 * {@code mirrors.pasteur.fr/fiji/sites/} is what is under
+	 * {@code sites.imagej.net/}, for every site, and a mirror serving one site
+	 * only is the same arrangement with nothing left over. So the pair is the
+	 * whole of what a mirror is, and one entry covers however many sites it
+	 * carries.
 	 * </p>
+	 * <p>
+	 * Note this is what lets a mirror be recognized for <em>any</em> site rather
+	 * than for the main site alone, which is as far as a hand-listed set of
+	 * mirrored URLs could reach.
+	 * </p>
+	 *
+	 * @see #unmirror(String)
 	 */
-	public static final String[] MAIN_SITE_MIRRORS = {
-		"https://downloads.micron.ox.ac.uk/fiji_update/mirrors/sites-fiji/",
-		"https://mirrors.pasteur.fr/fiji/sites/Fiji/",
+	public static final String[][] MIRRORS = {
+		{ "https://downloads.micron.ox.ac.uk/fiji_update/mirrors/sites-fiji/",
+			"https://sites.imagej.net/Fiji/" },
+		{ "https://mirrors.pasteur.fr/fiji/sites/", "https://sites.imagej.net/" },
 	};
+
+	/**
+	 * The canonical URL a mirror URL stands for, or the URL unchanged when it is
+	 * not one a mirror serves.
+	 *
+	 * @param url a URL with a trailing slash, over HTTPS.
+	 */
+	public static String unmirror(final String url) {
+		if (url == null) return null;
+		for (final String[] mirror : MIRRORS) {
+			if (url.startsWith(mirror[0])) {
+				return mirror[1] + url.substring(mirror[0].length());
+			}
+		}
+		return url;
+	}
 
 	/** Whether the given URL is served by a known mirror. */
 	public static boolean isMirror(final String url) {
@@ -144,12 +174,7 @@ public final class UpdateSiteNetwork {
 	 */
 	public static boolean isMainSite(final String url) {
 		if (url == null) return false;
-		final String normalized = url.endsWith("/") ? url : url + "/";
-		if (normalized.endsWith(MAIN_SITE_PATH)) return true;
-		for (final String mirror : MAIN_SITE_MIRRORS) {
-			if (normalized.equals(mirror)) return true;
-		}
-		return false;
+		return UpdateSite.canonicalURL(url).endsWith(MAIN_SITE_PATH);
 	}
 
 	/**

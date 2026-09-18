@@ -342,16 +342,34 @@ public class UpdateSite implements Cloneable, Comparable<UpdateSite> {
 	 */
 	public static boolean sameURL(final String a, final String b) {
 		if (a == null || b == null) return false;
-		if (canonicalURL(a).equals(canonicalURL(b))) return true;
-		// The main site is the one site with more than one legitimate source.
-		return UpdateSiteNetwork.isMainSite(a) && UpdateSiteNetwork.isMainSite(b);
+		return canonicalURL(a).equals(canonicalURL(b));
 	}
 
-	/** The form of a URL used to compare it with another. See {@link #sameURL}. */
-	public static String canonicalURL(final String url) {
+	/**
+	 * The URL as written, tidied: a trailing slash, a URL that has moved
+	 * rewritten to where it moved to, and {@code https}.
+	 * <p>
+	 * Note: the scheme is normalized because an installation left alone since
+	 * before HTTPS holds {@code http://} for a site now served over
+	 * {@code https://}, and that is the same URL rather than a different one.
+	 * </p>
+	 */
+	public static String normalizedURL(final String url) {
 		final String formatted = format(url);
 		return formatted.startsWith("http://") ? //
 			"https://" + formatted.substring("http://".length()) : formatted;
+	}
+
+	/**
+	 * The canonical URL of the site the given URL serves: {@link #normalizedURL}
+	 * with a mirror resolved to what it mirrors.
+	 * <p>
+	 * This is site identity. Two URLs naming the same site compare equal here
+	 * however the installation reaches it, which is what a mirror is for.
+	 * </p>
+	 */
+	public static String canonicalURL(final String url) {
+		return UpdateSiteNetwork.unmirror(normalizedURL(url));
 	}
 
 	public static String format(String url) {

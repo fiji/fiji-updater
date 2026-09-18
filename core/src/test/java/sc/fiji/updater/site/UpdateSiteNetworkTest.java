@@ -31,6 +31,9 @@ package sc.fiji.updater.site;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertTrue;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import org.junit.Test;
 
 /**
@@ -80,7 +83,7 @@ public class UpdateSiteNetworkTest {
 	public void testMainSiteByAnySource() {
 		assertTrue(UpdateSiteNetwork.isMainSite("https://sites.imagej.net/Fiji/"));
 		assertTrue(UpdateSiteNetwork.isMainSite("https://sites.imagej.net/Fiji"));
-		for (final String mirror : UpdateSiteNetwork.MAIN_SITE_MIRRORS) {
+		for (final String mirror : mainSiteMirrors()) {
 			assertTrue(mirror, UpdateSiteNetwork.isMainSite(mirror));
 		}
 	}
@@ -95,10 +98,29 @@ public class UpdateSiteNetworkTest {
 		assertFalse(UpdateSiteNetwork.isMainSite(null));
 	}
 
+	/**
+	 * Every mirror that carries the main site, as its URL under that mirror.
+	 * <p>
+	 * Derived from the prefix pairs rather than listed, so that a mirror added
+	 * to the table is covered by these tests without being named twice.
+	 * </p>
+	 */
+	private static List<String> mainSiteMirrors() {
+		final String main = "https://" + UpdateSiteNetwork.MAIN_SITE_PATH;
+		final List<String> mirrors = new ArrayList<>();
+		for (final String[] mirror : UpdateSiteNetwork.MIRRORS) {
+			if (main.startsWith(mirror[1])) {
+				mirrors.add(mirror[0] + main.substring(mirror[1].length()));
+			}
+		}
+		assertFalse("no mirror carries the main site", mirrors.isEmpty());
+		return mirrors;
+	}
+
 	/** Every declared main-site mirror must also register as a mirror. */
 	@Test
 	public void testMainSiteMirrorsAreMirrors() {
-		for (final String mirror : UpdateSiteNetwork.MAIN_SITE_MIRRORS) {
+		for (final String mirror : mainSiteMirrors()) {
 			assertTrue(mirror, UpdateSiteNetwork.isMirror(mirror));
 		}
 	}
@@ -125,7 +147,7 @@ public class UpdateSiteNetworkTest {
 	/** A mirror is a different source for the same content, not another site. */
 	@Test
 	public void testMirrorsOfTheCoreSiteAreCore() {
-		for (final String mirror : UpdateSiteNetwork.MAIN_SITE_MIRRORS) {
+		for (final String mirror : mainSiteMirrors()) {
 			assertTrue(mirror, UpdateSiteNetwork.isCoreSite("Some-Name", mirror));
 		}
 	}

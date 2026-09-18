@@ -346,11 +346,11 @@ public final class AvailableSites {
 	private static Integer findIndexByIdentity(List<UpdateSite> sites,
 		UpdateSite site, Set<Integer> claimed)
 	{
-		// Most specific first. The same URL is the same site.
+		// Most specific first: the same URL as written.
 		for (int i = 0; i < sites.size(); i++) {
 			if (claimed.contains(i)) continue;
-			if (UpdateSite.canonicalURL(sites.get(i).getURL())
-					.equals(UpdateSite.canonicalURL(site.getURL()))) return i;
+			if (UpdateSite.normalizedURL(sites.get(i).getURL())
+					.equals(UpdateSite.normalizedURL(site.getURL()))) return i;
 		}
 		// Then a different source for the same site: a user reading the main
 		// site from a mirror is following the main site. Note this pass comes
@@ -408,8 +408,8 @@ public final class AvailableSites {
 	 */
 	private static Integer findPublishedIndex(List<UpdateSite> sites, UpdateSite site) {
 		for (int i = 0; i < sites.size(); i++) {
-			if (UpdateSite.canonicalURL(sites.get(i).getURL())
-					.equals(UpdateSite.canonicalURL(site.getURL()))) return i;
+			if (UpdateSite.normalizedURL(sites.get(i).getURL())
+					.equals(UpdateSite.normalizedURL(site.getURL()))) return i;
 		}
 		for (int i = 0; i < sites.size(); i++) {
 			if( sites.get(i).getName().equals(site.getName()) )

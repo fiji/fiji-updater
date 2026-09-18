@@ -109,6 +109,44 @@ public class UpdateSiteTest {
 	}
 
 	/**
+	 * A mirror carries whatever is under it, so a mirror of a site that is not
+	 * the main one is recognized too. A hand-listed set of mirrored URLs could
+	 * only ever reach the main site.
+	 */
+	@Test
+	public void testSameURLAcceptsAMirrorOfAnyMirroredSite() {
+		assertTrue(UpdateSite.sameURL("https://sites.imagej.net/MoBIE/",
+			"https://mirrors.pasteur.fr/fiji/sites/MoBIE/"));
+		assertTrue(UpdateSite.sameURL("https://sites.imagej.net/Fiji-Legacy/",
+			"https://mirrors.pasteur.fr/fiji/sites/Fiji-Legacy/"));
+	}
+
+	/** Two sites read through the same mirror are still two sites. */
+	@Test
+	public void testSameURLRejectsTwoSitesBehindOneMirror() {
+		assertFalse(UpdateSite.sameURL("https://mirrors.pasteur.fr/fiji/sites/MoBIE/",
+			"https://mirrors.pasteur.fr/fiji/sites/Fiji-Legacy/"));
+	}
+
+	/**
+	 * A mirror serving one site only is the same arrangement with nothing left
+	 * over, so it resolves to that site and to nothing else.
+	 */
+	@Test
+	public void testSingleSiteMirrorResolvesToItsSite() {
+		assertEquals("https://sites.imagej.net/Fiji/", UpdateSite.canonicalURL(
+			"https://downloads.micron.ox.ac.uk/fiji_update/mirrors/sites-fiji/"));
+	}
+
+	/** The URL as written is kept apart from the site it resolves to. */
+	@Test
+	public void testNormalizedURLDoesNotResolveMirrors() {
+		final String mirror = "https://mirrors.pasteur.fr/fiji/sites/MoBIE/";
+		assertEquals(mirror, UpdateSite.normalizedURL(mirror));
+		assertEquals("https://sites.imagej.net/MoBIE/", UpdateSite.canonicalURL(mirror));
+	}
+
+	/**
 	 * A mirror operator's own sites live alongside the mirrored tree, not
 	 * inside it, so hosting a mirror does not make everything on that host one.
 	 */
