@@ -270,6 +270,54 @@ change, and it is the direct cause of the `Fiji` collision below.
   loads. And a blanket rewrite remains worse than doing nothing, since no client
   could then detect non-adoption at all.
 
+## Maven coordinates and clashing artifactIds
+
+Landed: files record their `groupId:artifactId` (read from the `META-INF/maven/`
+path), an upload whose coordinate differs from the update site's is refused with
+an offer to rename, the checksummer tells clashing artifacts apart instead of
+offering to delete one of them, and the installer copies content it already has
+on disk rather than downloading it again. That is
+[imagej/imagej-updater#120](https://github.com/imagej/imagej-updater/issues/120)
+handled for filename-keyed entries, which `doc/maven-native-update-sites.md`
+keeps indefinitely (design principle 4, and layer 3 of its Phase 2).
+
+- **Backfill the coordinates of what is already published.** Both guards
+  compare against the coordinate the site records, so they are silent on every
+  entry uploaded before this. The core site's entries acquire one as they are
+  re-uploaded, which for a clash means only after the damage. Cheapest fix that
+  does not wait on the flattener: a pass over the hosted `db.xml.gz` filling in
+  the coordinate of each current version from the hosted `.jar` itself, since
+  the blobs are already there and the answer is in them.
+
+- **Apply a site-side rename to the client's disk.** A file whose content
+  matches but whose name differs is `INSTALLED` today: the checksummer sets
+  `localFilename`, marks `metadataChanged`, and finds nothing to do. So renaming
+  a file on an update site never reaches anyone's `jars/` — the installation
+  keeps the old name forever, which is exactly the state the manual
+  `antlr.antlr-2.7.7.jar` renames leave behind. Wanted: the installer stages
+  such a file as a local move (copy to the site's name, delete the old one),
+  which the content reuse already makes free. Note this changes what an ordinary
+  update run does on every installation, so it wants its own decision.
+
+- **Uniform `groupId.artifactId-version.jar` naming: rejected.** It would be
+  affordable now that renames cost no bandwidth, but it buys nothing the Maven
+  design does not already give: there, identity is `G:A(:C:P)` and filenames are
+  derived, so names stop being identity rather than becoming a better one.
+  Against it: the version-stripped name is the cross-site override key, so
+  renaming core files silently stops a third-party site's copy from overriding
+  them (duplicate classes, and nothing reports it); third-party indexes declare
+  dependencies on core filenames; and the legacy recognition layer must keep
+  matching the names old installations actually have. Prefixing stays what it is
+  today — the answer to an actual clash, now applied by the updater.
+
+- **Refresh `doc/maven-native-update-sites.md` for its new home.** Three things
+  moved under it since it was written against `imagej-updater`: the repository
+  and package names (its §9 work breakdown still names `imagej-updater`, which
+  is now the `core`/`gui` split); the Phase 0 prerequisite of a standalone
+  updater reaching existing installations, which is what the channel work on
+  this branch is; and the `sc.fiji.updater.maven` package it introduces, which
+  the module declaration deliberately does not export.
+
 ## Other repositories
 
 - **`imagej-ui-swing`:** delete the copied `net.imagej.ui.swing.updater`
@@ -282,6 +330,16 @@ change, and it is the direct cause of the `Fiji` collision below.
   change set. Then ungate `UPGRADE_IMAGEJ` so Fiji-Stable installations get the
   Java-8 → Origin migration. This stays in the outgoing artifacts: fiji-updater
   targets Java 11 and so never runs on the installations that need it.
+
+- **`scijava-maven-plugin`:** `AbstractInstallMojo.getEncroachingVersions`
+  matches candidates by artifactId alone, so populating an app deletes one of
+  two artifacts that share one -- the build-side half of
+  [imagej/imagej-updater#120](https://github.com/imagej/imagej-updater/issues/120).
+  Wanted: read the candidate's own coordinate before deleting it, and install
+  under the groupId-prefixed name on a mismatch. That retires the
+  `fiji/fiji` `bin/populate-app.sh` HACK that hand-installs
+  `antlr.antlr-2.7.7.jar`, and it is where the names are actually chosen; the
+  updater's refusal is the backstop for when install order picks wrongly.
 
 - **Downstream breakage to communicate.** JIPipe, OpenSPIM, BAR and hIPNAT
   construct `net.imagej.ui.swing.updater.ImageJUpdater` by name. We decided
