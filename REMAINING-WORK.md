@@ -106,13 +106,45 @@ anything else.
   `AvailableSites.parseWikiPage` and the inlined `getPageSource` go away
   together when it lands.
 
-- **Move mirrors into the site list.** `UpdateSiteNetwork.MIRROR_URL_PREFIXES`
-  and `MAIN_SITE_MIRRORS` are a hardcoded stopgap, labelled as such. Mirrors
-  are a property of a site and belong next to the site they mirror, at which
-  point no URL needs to appear in Java at all. The end state is a mirror as a
-  property of `UpdateSite` rather than a separate named site, which would also
-  retire the odd bit of migration logic that infers "you are on the Europe
-  mirror of Java-8, so you want the Europe mirror of Fiji-Latest".
+- **Mirror selection.** *Landed:* a mirror is modelled as the stretch of URL
+  space it serves — a pair of prefixes, `UpdateSiteNetwork.MIRRORS` — so it is
+  recognized for every site it carries rather than for the main site alone.
+  `mirrors.pasteur.fr/fiji/sites/` carries all of `sites.imagej.net/`, and was
+  verified to do so for arbitrary sites.
+
+  *Outstanding:* a mirror is still recorded as a site's URL. It should be a
+  **fetch-time transform over a canonical URL**: store the canonical URL and
+  one installation-wide mirror preference, and derive the source from the two.
+  That way switching mirrors is one setting rather than a rewrite of every
+  site's URL, a new mirror serves every site the moment its pair is known, and
+  `URLChange`'s "do not correct a mirror user back to canonical" case stops
+  being needed, because the stored URL is always canonical.
+
+  Three things it needs. The preference has to reach the fetch paths —
+  `getIndexURL`, the per-file URL in `FilesCollection`, and
+  `ChannelManifest.read` — while *not* reaching the upload path, which must
+  always address the canonical host. Existing installations hold mirrored URLs,
+  so the merge rewrites those to canonical and sets the preference once, which
+  the URL-identity machinery already does the hard half of. And it needs a home
+  in `db.xml.gz`: the root `<pluginRecords>` element, alongside the site id
+  below, since it is a property of the installation rather than of any site.
+
+  Once sites carry ids the pair table can come from `sites.yml` instead of
+  being compiled in, and `Fiji-Latest (Europe mirror)` can leave the published
+  list — it is only there because mirrors had no other representation.
+
+- **Canonical host: `sites.imagej.net` to `sites.fiji.sc`.** This is the Fiji
+  Updater again, and Fiji resources are moving to `fiji.sc` where feasible.
+  Worth noting the mechanism is already in place: a host move is a prefix pair
+  like any mirror, so switching the canonical prefix is a table change rather
+  than a migration, and every installation's stored URL follows by the same
+  path a rename does.
+
+  `sites.fiji.sc` does not resolve yet, so nothing is encoded for it. The
+  server side is that `sites.imagej.net` keeps serving the same content
+  directly — 200 rather than a 301 to the new host when the User-Agent is the
+  ImageJ Updater — so old updaters, which will not follow a cross-host
+  redirect any more than a cross-protocol one, keep working.
 
 ## Update site identity
 
@@ -174,11 +206,27 @@ change, and it is the direct cause of the `Fiji` collision below.
   maintainer who rebuilds an index from scratch mints a fresh id, which the
   URL layer underneath is what catches.
 
-  The index format can carry it: `XMLFileReader` reads attributes by name and
-  ignores unknown ones, and validation is switched off, so every existing
-  client tolerates an `id` on `<update-site>`. One hazard — an old updater
-  writing the local index drops attributes it does not know, silently erasing
-  ids, which is another reason the stray `imagej-updater.jar` has to go.
+  **Where it goes.** A published `db.xml.gz` contains no `<update-site>`
+  element at all — `XMLFileWriter.write` emits those only for the local index —
+  so a site's own id belongs on the root `<pluginRecords>` element, which is
+  also the natural place for a property of the index as a whole. That makes a
+  server-side backfill across `sites.imagej.net` a matter of adding one
+  attribute to each hosted index, with no per-file rewriting.
+
+  The format tolerates it: `XMLFileReader` reads attributes by name and ignores
+  unknown ones, and validation is switched off, so every existing client
+  ignores an id it does not understand. The inlined DTD does need
+  `<!ATTLIST pluginRecords id CDATA #IMPLIED>`, because `XMLFileWriter.validate`
+  *does* validate and runs on the upload path.
+
+  **Sequencing.** The hosted index is regenerated wholesale by whoever uploads,
+  so an upload from an updater that does not know about ids erases the site's
+  id. The client therefore has to read the id from the remote index and write
+  it back before a backfill is worth doing. Since `sites.imagej.net` is ours, a
+  post-upload hook that re-injects the id would make it a server guarantee
+  rather than a client convention. Sites elsewhere stay id-free until their
+  maintainer uploads with a new enough updater, and some never will — which the
+  URL layer underneath is there for.
 
 - **A published blocklist of retired site URLs** — deferred, and deliberately
   not the mechanism for the `Fiji` rename. Anything fetched cannot be a
