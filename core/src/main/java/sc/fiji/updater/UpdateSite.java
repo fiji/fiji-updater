@@ -179,6 +179,15 @@ public class UpdateSite implements Cloneable, Comparable<UpdateSite> {
 	 * so behavior is unchanged for a site that has never heard of channels.
 	 * </p>
 	 */
+	/**
+	 * The index's URL at the site itself.
+	 * <p>
+	 * Note: this addresses the site, not whichever source an installation reads
+	 * it from, so it is what publishing and verifying a site use.
+	 * {@code FilesCollection.indexURL} is what reading one uses, and it is the
+	 * one that honours a chosen mirror.
+	 * </p>
+	 */
 	public String getIndexURL() {
 		return getURL() + getIndexPath();
 	}

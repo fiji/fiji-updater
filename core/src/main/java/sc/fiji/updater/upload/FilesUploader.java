@@ -400,6 +400,8 @@ public class FilesUploader {
 		final String channel = getUploadChannel();
 		if (channel != null) {
 			final ChannelManifest manifest =
+				// NB: the site itself, never a mirror. A mirror is a copy that
+				// lags, and publishing against a stale index loses files.
 				ChannelManifest.read(site.getURL()).with(channel);
 			uploadables.add(new ChannelManifestFile(manifest.toByteArray()));
 			locks.add(ChannelManifest.FILENAME);

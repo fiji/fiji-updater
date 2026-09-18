@@ -395,19 +395,24 @@ public class AvailableSitesTest {
 	/** A user reading the main site from a mirror is following the main site. */
 	@Test
 	public void testMirrorIsNotASecondSite() throws Exception {
+		final String micron =
+				"https://downloads.micron.ox.ac.uk/fiji_update/mirrors/sites-fiji/";
 		final FilesCollection files = initialize();
 		final UpdateSite main = files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true);
-		main.setURL("https://downloads.micron.ox.ac.uk/fiji_update/mirrors/sites-fiji/");
+		main.setURL(micron);
 		main.setActive(true);
 
-		applyOfficialUpdateSitesList(files, "Fiji", "https://sites.imagej.net/Fiji/");
+		applyOfficialUpdateSitesList(files, "Fiji", "https://sites.fiji.sc/Fiji/");
 
-		// One main site, not two, and the user was left on their mirror.
+		// One main site, not two, and it took the published name.
 		assertNull(files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true));
 		final UpdateSite renamed = files.getUpdateSite("Fiji", true);
 		assertNotNull(renamed);
-		assertEquals("https://downloads.micron.ox.ac.uk/fiji_update/mirrors/sites-fiji/",
-				renamed.getURL());
+		// The site is recorded where it canonically lives, and the user is still
+		// reading it from the mirror they chose.
+		assertEquals("https://sites.fiji.sc/Fiji/", renamed.getURL());
+		assertEquals(micron, files.getMirror());
+		assertEquals(micron, files.sourceURL(renamed));
 
 		cleanup(files);
 	}
@@ -439,6 +444,27 @@ public class AvailableSitesTest {
 
 		assertNotNull(files.getUpdateSite("Mine", true));
 		assertNotNull(files.getUpdateSite("Yours", true));
+
+		cleanup(files);
+	}
+
+	/**
+	 * An installation that predates the mirror preference has the mirror in each
+	 * site's URL. It ends up recorded as what it is -- the canonical site, read
+	 * from a chosen mirror -- and reads from the same server either way.
+	 */
+	@Test
+	public void testAnInstallationAlreadyOnAMirrorIsMigrated() throws Exception {
+		final String pasteur = "https://mirrors.pasteur.fr/fiji/sites/";
+		final FilesCollection files = initialize();
+		files.addUpdateSite("MoBIE", pasteur + "MoBIE/", null, null, 0);
+
+		applyOfficialUpdateSitesList(files, "MoBIE", "https://sites.fiji.sc/MoBIE/");
+
+		assertEquals(pasteur, files.getMirror());
+		final UpdateSite migrated = files.getUpdateSite("MoBIE", true);
+		assertEquals("https://sites.fiji.sc/MoBIE/", migrated.getURL());
+		assertEquals(pasteur + "MoBIE/", files.sourceURL(migrated));
 
 		cleanup(files);
 	}

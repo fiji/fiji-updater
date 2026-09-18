@@ -192,6 +192,8 @@ public final class AvailableSites {
 	static List< URLChange > initializeAndAddSites(
 			final FilesCollection files, final Collection< UpdateSite > availableSites)
 	{
+		adoptMirror(files);
+
 		// The names the installation's sites had before any of this, so that the
 		// files naming them can be pointed at wherever those sites end up.
 		final Map< UpdateSite, String > namesBefore = new IdentityHashMap<>();
@@ -302,6 +304,33 @@ public final class AvailableSites {
 			}
 		}
 		return urlChanges;
+	}
+
+	/**
+	 * Records an installation reading from a mirror as what it is: the canonical
+	 * sites, read from a chosen mirror.
+	 * <p>
+	 * Installations predating the choice have the mirror in each site's URL
+	 * instead, which made a mirror user look like a user of some other site. The
+	 * rewrite is not offered for review because it changes nothing: the same
+	 * content is read from the same server afterwards, and only the way that is
+	 * recorded differs.
+	 * </p>
+	 * <p>
+	 * Note the choice is one per installation, so an installation with sites on
+	 * two different mirrors keeps the first and reads the rest canonically. That
+	 * is the model rather than an accident of this method: a mirror is a stretch
+	 * of URL space, and picking one per site is a setting nobody has asked for.
+	 * </p>
+	 */
+	private static void adoptMirror(final FilesCollection files) {
+		for (final UpdateSite site : files.getUpdateSites(true)) {
+			final String prefix =
+					UpdateSiteNetwork.mirrorOf(UpdateSite.normalizedURL(site.getURL()));
+			if (prefix == null) continue;
+			if (files.getMirror() == null) files.setMirror(prefix);
+			site.setURL(UpdateSite.canonicalURL(site.getURL()));
+		}
 	}
 
 	/** Which sites ended up named something other than what they started as. */

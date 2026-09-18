@@ -121,7 +121,7 @@ public class XMLFileReader extends DefaultHandler {
 			site.setChannel(channel);
 			try {
 				final URLConnection connection =
-					Connections.openConnection(new URL(site.getIndexURL()));
+					Connections.openConnection(new URL(files.indexURL(site)));
 				final long lastModified = connection.getLastModified();
 				read(updateSite, new GZIPInputStream(connection.getInputStream()),
 					site.getTimestamp());
@@ -183,7 +183,14 @@ public class XMLFileReader extends DefaultHandler {
 		if ("".equals(uri)) currentTag = qName;
 		else currentTag = name;
 
-		if (currentTag.equals("plugin")) {
+		if (currentTag.equals("pluginRecords")) {
+			// Only the local index carries one, and only when one was chosen.
+			final String mirror = atts.getValue("mirror");
+			if (mirror != null && UpdateSiteNetwork.isKnownMirror(mirror)) {
+				files.setMirror(mirror);
+			}
+		}
+		else if (currentTag.equals("plugin")) {
 			String updateSite = this.updateSite;
 			if (updateSite == null) {
 				updateSite = atts.getValue("update-site");

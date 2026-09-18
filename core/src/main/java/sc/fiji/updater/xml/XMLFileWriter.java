@@ -78,6 +78,7 @@ public class XMLFileWriter {
 		+ "indent-amount";
 	private static final String DTD = "<!DOCTYPE pluginRecords [\n"
 		+ "<!ELEMENT pluginRecords ((update-site | disabled-update-site)*, plugin*)>\n"
+		+ "<!ATTLIST pluginRecords mirror CDATA #IMPLIED>\n"
 		+ "<!ELEMENT update-site EMPTY>\n"
 		+ "<!ELEMENT disabled-update-site EMPTY>\n"
 		+ "<!ELEMENT plugin (platform*, category*, version?, previous-version*)>\n"
@@ -156,6 +157,9 @@ public class XMLFileWriter {
 		handler.startDocument();
 		final AttributesImpl attr = new AttributesImpl();
 
+		if (local && files.getMirror() != null) {
+			setAttribute(attr, "mirror", files.getMirror());
+		}
 		handler.startElement("", "", "pluginRecords", attr);
 		if (local) {
 			for (final String name : files.getUpdateSiteNames(true)) {

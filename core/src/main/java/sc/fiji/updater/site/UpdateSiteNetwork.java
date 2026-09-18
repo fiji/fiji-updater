@@ -143,6 +143,52 @@ public final class UpdateSiteNetwork {
 	};
 
 	/**
+	 * The given mirror's URL for canonical content, or null when that mirror
+	 * does not carry it.
+	 * <p>
+	 * The inverse of {@link #unmirror(String)}, and the direction a fetch goes:
+	 * an installation records where content canonically lives and reads it from
+	 * whichever source it has chosen.
+	 * </p>
+	 *
+	 * @param canonicalURL a canonical URL, as {@link UpdateSite#canonicalURL}
+	 *          returns.
+	 * @param mirrorPrefix the chosen mirror, a first element of {@link #MIRRORS}.
+	 */
+	public static String mirrored(final String canonicalURL,
+		final String mirrorPrefix)
+	{
+		if (canonicalURL == null || mirrorPrefix == null) return null;
+		for (final String[] mirror : MIRRORS) {
+			if (!mirror[0].equals(mirrorPrefix)) continue;
+			if (!canonicalURL.startsWith(mirror[1])) return null;
+			return mirror[0] + canonicalURL.substring(mirror[1].length());
+		}
+		return null;
+	}
+
+	/**
+	 * The mirror serving the given URL, or null when it is not a mirror's.
+	 *
+	 * @param url a URL with a trailing slash, over HTTPS.
+	 */
+	public static String mirrorOf(final String url) {
+		if (url == null) return null;
+		for (final String[] mirror : MIRRORS) {
+			if (url.startsWith(mirror[0])) return mirror[0];
+		}
+		return null;
+	}
+
+	/** Whether the given prefix is one this updater knows as a mirror. */
+	public static boolean isKnownMirror(final String mirrorPrefix) {
+		for (final String[] mirror : MIRRORS) {
+			if (mirror[0].equals(mirrorPrefix)) return true;
+		}
+		return false;
+	}
+
+	/**
 	 * The canonical URL a mirror URL stands for, or the URL unchanged when it is
 	 * not one a mirror serves.
 	 *

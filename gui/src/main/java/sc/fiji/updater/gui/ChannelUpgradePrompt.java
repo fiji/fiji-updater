@@ -194,7 +194,7 @@ public class ChannelUpgradePrompt {
 			// in the first place -- or the upgrade fails outright and says so.
 			if (files.isCoreSite(site)) continue;
 			if (channel != null && channel.equals(site.getChannel())) continue;
-			if (sc.fiji.updater.channel.ChannelManifest.read(site.getURL())
+			if (sc.fiji.updater.channel.ChannelManifest.read(files.sourceURL(site))
 				.isPresent())
 			{
 				lagging.add(name);

@@ -151,7 +151,7 @@ public class XMLFileDownloader extends AbstractProgressable {
 			updateSite.setChannel(channel);
 			try {
 				final URLConnection connection =
-					Connections.openConnection(new URL(updateSite.getIndexURL()));
+					Connections.openConnection(new URL(files.indexURL(updateSite)));
 				final long lastModified = connection.getLastModified();
 				final int fileSize = connection.getContentLength();
 				final InputStream in =
@@ -268,7 +268,7 @@ public class XMLFileDownloader extends AbstractProgressable {
 		// only soften.
 		if (files.isCoreSite(site)) return false;
 		if (channel.equals(site.getChannel())) return false; // adopted
-		return ChannelManifest.read(site.getURL()).isPresent();
+		return ChannelManifest.read(files.sourceURL(site)).isPresent();
 	}
 
 	/** One message for all the sites that lag, rather than one apiece. */

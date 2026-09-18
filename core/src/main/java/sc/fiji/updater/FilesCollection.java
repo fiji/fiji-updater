@@ -47,6 +47,7 @@ import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Objects;
 import java.util.Set;
 import java.util.function.Predicate;
 import java.util.stream.StreamSupport;
@@ -133,6 +134,7 @@ public class FilesCollection implements Iterable<FileObject> {
 	public final static String DEFAULT_UPDATE_SITE =
 		UpdateSiteNetwork.MAIN_SITE_NAME;
 	private final File appRoot;
+	private String mirror;
 	private ChannelState declaredChannelState;
 	private List<String> channels;
 	private ChannelState pinnedChannelState;
@@ -179,6 +181,72 @@ public class FilesCollection implements Iterable<FileObject> {
 
 	public File getAppRoot() {
 		return appRoot;
+	}
+
+	// -- Where this installation reads its update sites from --
+
+	/**
+	 * The mirror this installation reads from, or null for the canonical
+	 * sources.
+	 *
+	 * @see #setMirror(String)
+	 */
+	public String getMirror() {
+		return mirror;
+	}
+
+	/**
+	 * Chooses the mirror this installation reads from.
+	 * <p>
+	 * One choice covers every site: a mirror is a stretch of URL space rather
+	 * than an arrangement with a particular site, so the sites a mirror carries
+	 * are read from it and the rest are read canonically. Nothing about a site
+	 * changes -- the choice is the installation's, it is recorded once, and
+	 * switching it is this one setting rather than a rewrite of every site's
+	 * URL.
+	 * </p>
+	 *
+	 * @param mirror a first element of {@link UpdateSiteNetwork#MIRRORS}, or
+	 *          null to read canonically.
+	 */
+	public void setMirror(final String mirror) {
+		if (mirror != null && !UpdateSiteNetwork.isKnownMirror(mirror)) {
+			throw new IllegalArgumentException("Not a known mirror: " + mirror);
+		}
+		if (!Objects.equals(this.mirror, mirror)) setUpdateSitesChanged(true);
+		this.mirror = mirror;
+	}
+
+	/**
+	 * Where to read the given update site from: its own URL, or the chosen
+	 * mirror's URL for it.
+	 * <p>
+	 * Note: everything that <em>reads</em> a site goes through here, and nothing
+	 * that writes one does. An upload addresses the site itself, because a
+	 * mirror is a copy that lags, and publishing against a stale index is how an
+	 * update site loses files.
+	 * </p>
+	 */
+	public String sourceURL(final UpdateSite site) {
+		if (mirror == null) return site.getURL();
+		final String mirrored =
+			UpdateSiteNetwork.mirrored(UpdateSite.canonicalURL(site.getURL()), mirror);
+		// A mirror carries what it carries; anything else is read canonically.
+		return mirrored == null ? site.getURL() : mirrored;
+	}
+
+	/** Where to read the given site's index from. See {@link #sourceURL}. */
+	public String indexURL(final UpdateSite site) {
+		return sourceURL(site) + site.getIndexPath();
+	}
+
+	/**
+	 * Where to read the given site's current channel from. See
+	 * {@link #sourceURL}.
+	 */
+	public String channelURL(final UpdateSite site) {
+		final String source = sourceURL(site);
+		return site.getChannel() == null ? source : source + site.getChannel() + "/";
 	}
 
 	// -- Asking an installation what it follows --
@@ -313,7 +381,7 @@ public class FilesCollection implements Iterable<FileObject> {
 		if (channels == null) {
 			final UpdateSite core = getCoreSite();
 			final ChannelManifest manifest = core == null
-				? ChannelManifest.absent() : ChannelManifest.read(core.getURL());
+				? ChannelManifest.absent() : ChannelManifest.read(sourceURL(core));
 			channels = manifest.isPresent() ? manifest.channels()
 				: Collections.<String> emptyList();
 		}
@@ -1004,7 +1072,7 @@ public class FilesCollection implements Iterable<FileObject> {
 		assert (siteName != null && !siteName.equals(""));
 		final UpdateSite site = getUpdateSite(siteName, false);
 		if (site == null) return null;
-		return site.getURL() + file.filename.replace(" ", "%20") + "-" +
+		return sourceURL(site) + file.filename.replace(" ", "%20") + "-" +
 			file.getTimestamp();
 	}
 

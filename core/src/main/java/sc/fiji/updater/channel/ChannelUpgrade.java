@@ -138,7 +138,7 @@ public class ChannelUpgrade {
 		final UpdateSite core = files.getCoreSite();
 		if (core == null) return null;
 
-		final ChannelManifest manifest = ChannelManifest.read(core.getURL());
+		final ChannelManifest manifest = ChannelManifest.read(files.sourceURL(core));
 		if (!manifest.isPresent()) return null;
 		files.setChannels(manifest.channels());
 
