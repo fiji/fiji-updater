@@ -32,8 +32,12 @@ package sc.fiji.updater.xml;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.regex.Matcher;
+import java.util.regex.Pattern;
 
 import javax.xml.parsers.ParserConfigurationException;
 import javax.xml.parsers.SAXParser;
@@ -63,14 +67,36 @@ public class POMParser extends DefaultHandler {
 
 	public static void fillMetadataFromJar(final FileObject object, final File file) throws ParserConfigurationException, IOException, SAXException {
 		final JarFile jar = new JarFile(file);
+		final Set<String> coordinates = new LinkedHashSet<>();
+		boolean read = false;
 		for (final JarEntry entry : UpdaterUtil.iterate(jar.entries())) {
-			if (entry.getName().matches("META-INF/maven/.*/pom.xml")) {
+			final Matcher matcher = POM_PATH.matcher(entry.getName());
+			if (matcher.matches()) {
+				coordinates.add(matcher.group(1) + ":" + matcher.group(2));
+			}
+			if (!read && entry.getName().matches("META-INF/maven/.*/pom.xml")) {
 				new POMParser(object).read(jar.getInputStream(entry));
-				break;
+				read = true;
 			}
 		}
 		jar.close();
+		// Note: a shaded .jar carries the coordinates of everything it absorbed,
+		// so the one it is known by cannot be told from the ones it contains.
+		if (coordinates.size() == 1) {
+			object.localCoordinate = coordinates.iterator().next();
+		}
 	}
+
+	/**
+	 * Where a Maven-built .jar records the coordinate it was built as.
+	 * <p>
+	 * The two path components are the groupId and the artifactId, which is
+	 * better than reading them from the {@code pom.xml}: either can be
+	 * inherited from a parent this parser cannot see.
+	 * </p>
+	 */
+	private static final Pattern POM_PATH = Pattern
+		.compile("META-INF/maven/([^/]+)/([^/]+)/pom\\.xml");
 
 	public void read(final InputStream in) throws ParserConfigurationException, IOException, SAXException {
 		final InputSource inputSource = new InputSource(in);

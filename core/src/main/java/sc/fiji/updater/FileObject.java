@@ -181,6 +181,28 @@ public class FileObject {
 	private Action action;
 	public String updateSite, originalUpdateSite, filename, description;
 	public boolean executable;
+
+	/**
+	 * The {@code groupId:artifactId} this file is published as, or null for
+	 * anything not built by Maven.
+	 * <p>
+	 * Identity is still the version-stripped {@link #filename}: this is a fact
+	 * recorded about the file, not a second key. What it buys is the ability to
+	 * tell two artifacts sharing an artifactId apart -- see
+	 * {@link #localCoordinate}.
+	 * </p>
+	 */
+	public String coordinate;
+
+	/**
+	 * What {@link #coordinate} said before an upload was staged, or null if no
+	 * upload is staged or it changes nothing.
+	 * <p>
+	 * The upload's coordinate differing from the update site's is the signal
+	 * that two artifacts are sharing an artifactId; see {@link #localCoordinate}.
+	 * </p>
+	 */
+	public String originalCoordinate;
 	public Version current;
 	public Set<Version> previous;
 	public long filesize;
@@ -189,6 +211,19 @@ public class FileObject {
 
 	public String localFilename, localChecksum;
 	public long localTimestamp;
+
+	/**
+	 * The {@code groupId:artifactId} of the file actually on disk, as read from
+	 * its {@code META-INF/maven/} path by the {@link Checksummer}.
+	 * <p>
+	 * Kept apart from {@link #coordinate} for the same reason
+	 * {@link #localChecksum} is kept apart from the current version's checksum:
+	 * the two disagreeing is the interesting case. A local file whose coordinate
+	 * differs from the update site's is not a new version of that file at all,
+	 * but an unrelated artifact that happens to share an artifactId.
+	 * </p>
+	 */
+	public String localCoordinate;
 
 	// These are LinkedHashMaps to retain the order of the entries
 	protected Map<String, Dependency> dependencies;
@@ -221,6 +256,7 @@ public class FileObject {
 		if (updateSite == null || updateSite.equals(upstream.updateSite)) {
 			updateSite = upstream.updateSite;
 			description = upstream.description;
+			coordinate = upstream.coordinate;
 			dependencies = upstream.dependencies;
 			authors = upstream.authors;
 			platforms = upstream.platforms;
@@ -246,6 +282,7 @@ public class FileObject {
 	 */
 	public void completeMetadataFrom(final FileObject other) {
 		if (description == null || description.isEmpty()) description = other.description;
+		if (coordinate == null) coordinate = other.coordinate;
 		if (links == null || links.isEmpty()) links = other.links;
 		if (authors == null || authors.isEmpty()) authors = other.authors;
 		if (platforms == null || platforms.isEmpty()) platforms = other.platforms;
@@ -513,6 +550,15 @@ public class FileObject {
 				current.filename = filename;
 				filename = localFilename;
 			}
+			// What gets uploaded is the local file, so its coordinate is the one
+			// the site will offer from now on. The one being replaced is kept, as
+			// originalUpdateSite keeps the site being replaced: a staged upload
+			// whose coordinate differs from the site's is not a new version of
+			// that file at all.
+			if (localCoordinate != null && !localCoordinate.equals(coordinate)) {
+				originalCoordinate = coordinate;
+				coordinate = localCoordinate;
+			}
 			if (updateSite == null) {
 				Collection<String> sites = files.getSiteNamesToUpload();
 				if (sites == null || sites.size() != 1) {
@@ -521,9 +567,15 @@ public class FileObject {
 				updateSite = sites.iterator().next();
 			}
 			files.updateDependencies(this);
-		} else if (originalUpdateSite != null && action != Action.REMOVE) {
-			updateSite = originalUpdateSite;
-			originalUpdateSite = null;
+		} else if (action != Action.REMOVE) {
+			if (originalUpdateSite != null) {
+				updateSite = originalUpdateSite;
+				originalUpdateSite = null;
+			}
+			if (originalCoordinate != null) {
+				coordinate = originalCoordinate;
+				originalCoordinate = null;
+			}
 		}
 		this.action = action;
 	}

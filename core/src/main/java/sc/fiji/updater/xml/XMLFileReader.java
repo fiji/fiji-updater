@@ -197,6 +197,7 @@ public class XMLFileReader extends DefaultHandler {
 					Status.NOT_INSTALLED);
 			final String executable = atts.getValue("executable");
 			if ("true".equalsIgnoreCase(executable)) current.executable = true;
+			current.coordinate = atts.getValue("coordinate");
 		}
 		else if (currentTag.equals("previous-version")) current.addPreviousVersion(
 			atts.getValue("checksum"), getLong(atts, "timestamp"), atts.getValue("filename"), getLong(atts, "timestamp-obsolete"));

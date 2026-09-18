@@ -107,6 +107,7 @@ public class XMLFileWriter {
 		+ "<!ATTLIST plugin update-site CDATA #IMPLIED>\n"
 		+ "<!ATTLIST plugin filename CDATA #REQUIRED>\n"
 		+ "<!ATTLIST plugin executable CDATA #IMPLIED>\n"
+		+ "<!ATTLIST plugin coordinate CDATA #IMPLIED>\n"
 		+ "<!ATTLIST dependency filename CDATA #REQUIRED>\n"
 		+ "<!ATTLIST dependency timestamp CDATA #IMPLIED>\n"
 		+ "<!ATTLIST dependency overrides CDATA #IMPLIED>\n"
@@ -225,6 +226,7 @@ public class XMLFileWriter {
 		if (local) setAttribute(attr, "update-site", file.updateSite);
 		setAttribute(attr, "filename", file.filename);
 		if (file.executable) setAttribute(attr, "executable", "true");
+		if (file.coordinate != null) setAttribute(attr, "coordinate", file.coordinate);
 		handler.startElement("", "", "plugin", attr);
 		writeSimpleTags("platform", file.getPlatforms());
 		writeSimpleTags("category", file.getCategories());
