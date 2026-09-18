@@ -535,6 +535,18 @@ public class FileObject {
 		action = null;
 	}
 
+	/**
+	 * Takes back a staged upload, so that what the update site's record says is
+	 * what this file says again.
+	 */
+	public void unstageUpload() {
+		if (originalCoordinate != null) {
+			coordinate = originalCoordinate;
+			originalCoordinate = null;
+		}
+		setNoAction();
+	}
+
 	public void setAction(final FilesCollection files, final Action action) {
 		if (!status.isValid(action) &&
 				(!(action.equals(Action.REMOVE) && overridesOtherUpdateSite()) &&
@@ -684,6 +696,24 @@ public class FileObject {
 			}
 		}
 		return result;
+	}
+
+	/**
+	 * The name that tells an artifact apart from others sharing its artifactId,
+	 * by prefixing its groupId: {@code jars/annotations-2.46.15.jar} becomes
+	 * {@code jars/software.amazon.awssdk.annotations-2.46.15.jar}.
+	 *
+	 * @param filename the file name to disambiguate
+	 * @param coordinate the {@code groupId:artifactId} of the artifact
+	 * @return the prefixed file name
+	 */
+	public static String disambiguate(final String filename,
+		final String coordinate)
+	{
+		final String group = coordinate.substring(0, coordinate.indexOf(':'));
+		final int slash = filename.lastIndexOf('/');
+		return filename.substring(0, slash + 1) + group + "." +
+			filename.substring(slash + 1);
 	}
 
 	public String getBaseName() {

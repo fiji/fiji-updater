@@ -31,6 +31,7 @@ package sc.fiji.updater;
 
 import java.io.File;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashSet;
 import java.util.LinkedHashSet;
@@ -238,6 +239,12 @@ public class Conflicts {
 					needsUpload.add(dep, file);
 				}
 			}
+			// test whether this is a different artifact wearing the same name
+			if (!files.ignoredConflicts.contains(file) &&
+				file.originalCoordinate != null)
+			{
+				conflicts.add(differentArtifact(file));
+			}
 			// test whether there are conflicting versions of the same file
 			if (!files.ignoredConflicts.contains(file) && file.filename.endsWith(".jar")) {
 				String baseName = file.getBaseName();
@@ -387,6 +394,32 @@ public class Conflicts {
 			.toArray(new Resolution[resolutions.size()]));
 	}
 
+	/**
+	 * Reports an upload that would publish one artifact under another's name.
+	 * <p>
+	 * Two artifacts sharing an artifactId are one file as far as the updater is
+	 * concerned, so uploading the second would record it as a new version of
+	 * the first: every installation would then replace one library with an
+	 * unrelated one. Prefixing the groupId is how such pairs have been kept
+	 * apart by hand (jars/antlr.antlr-2.7.7.jar next to jars/antlr-3.5.3.jar);
+	 * the rename here is that convention, applied by the updater.
+	 * </p>
+	 *
+	 * @param file the staged upload
+	 * @return the conflict to report
+	 */
+	protected Conflict differentArtifact(final FileObject file) {
+		final String localFilename = file.getLocalFilename(false);
+		final String renamed =
+			FileObject.disambiguate(localFilename, file.localCoordinate);
+		return new Conflict(Severity.CRITICAL_ERROR, file, localFilename + " is " +
+			file.localCoordinate + ", but " + file.getFilename(true) +
+			" on the update site is " + file.originalCoordinate +
+			".\nUploading it would replace that file everywhere it is installed.",
+			renameResolution("Rename it to " + renamed, file, renamed),
+			ignoreResolution("Upload it anyway (dangerous!)", file));
+	}
+
 	protected Conflict conflictingVersions(final FileObject file, final File otherFile, final String otherFileName) {
 		return new Conflict(Severity.ERROR, file, "Conflicting version found: " + otherFileName,
 				deleteFile("Delete " + otherFileName + " (dangerous!)", otherFile),
@@ -401,6 +434,42 @@ public class Conflicts {
 			@Override
 			public void resolve() {
 				files.ignoredConflicts.add(file);
+			}
+		};
+	}
+
+	/**
+	 * Renames the local file, then re-reads both names so that the renamed file
+	 * becomes an upload of its own and the file it was about to replace goes
+	 * back to being simply not installed.
+	 *
+	 * @param description how to describe the resolution
+	 * @param file the staged upload whose local file is to be renamed
+	 * @param renamed the name to give it
+	 * @return the resolution
+	 */
+	protected Resolution renameResolution(final String description,
+		final FileObject file, final String renamed)
+	{
+		return new Resolution(description) {
+
+			@Override
+			public void resolve() {
+				final String previous = file.getLocalFilename(false);
+				final String updateSite = file.updateSite;
+				if (!files.prefix(previous).renameTo(files.prefix(renamed))) {
+					throw new RuntimeException("Could not rename '" + previous +
+						"' to '" + renamed + "'");
+				}
+				// NB: taking the action back first, so that the re-read sees the
+				// file object as the update site's record rather than an upload.
+				file.unstageUpload();
+				new Checksummer(files, null).updateFromLocal(Arrays.asList(previous,
+					renamed));
+				final FileObject renamedFile = files.get(renamed);
+				if (renamedFile != null) {
+					renamedFile.stageForUpload(files, updateSite);
+				}
 			}
 		};
 	}
