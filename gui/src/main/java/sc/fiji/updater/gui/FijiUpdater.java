@@ -38,6 +38,7 @@ import java.net.HttpURLConnection;
 import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
+import java.util.Collection;
 import java.util.List;
 
 import org.scijava.Priority;
@@ -54,6 +55,7 @@ import sc.fiji.updater.Conflicts.Conflict;
 import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.Installer;
+import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.UpdaterCommand;
 import sc.fiji.updater.app.AppLayout;
 import sc.fiji.updater.channel.URLChange;
@@ -62,7 +64,6 @@ import sc.fiji.updater.progress.Progress;
 import sc.fiji.updater.progress.UpdateCanceledException;
 import sc.fiji.updater.site.AvailableSites;
 import sc.fiji.updater.site.Connections;
-import sc.fiji.updater.site.HTTPSUtil;
 import sc.fiji.updater.ui.UpdaterConsole;
 import sc.fiji.updater.upload.UploaderService;
 
@@ -130,10 +131,13 @@ public class FijiUpdater implements UpdaterCommand {
 
 		try {
 			files.tryLoadingCollection();
-			HTTPSUtil.checkHTTPSSupport(log);
-			if(!HTTPSUtil.supportsHTTPS()) {
-				main.warn("Your Java might be too old to handle updates via HTTPS. This is a security risk!\n" +
-						"Please download a recent version of this software.\n");
+			final Collection<UpdateSite> insecure = files.insecureSites();
+			if (!insecure.isEmpty()) {
+				main.warn("The following update sites are not using HTTPS, so what " +
+					"they serve cannot be authenticated:\n\n" +
+					UpdateSite.names(insecure) +
+					"\n\nThe updater installs what an update site serves, so " +
+					"consider switching these to HTTPS where the site offers it.\n");
 			}
 			refreshUpdateSites(files);
 			main.updateFilesTable();
@@ -325,7 +329,7 @@ public class FijiUpdater implements UpdaterCommand {
 	 * @throws IOException if the network cannot be reached at all.
 	 */
 	private static void testNetworkConnection() throws IOException {
-		final URL url = new URL(HTTPSUtil.getProtocol() + "imagej.net/");
+		final URL url = new URL("https://imagej.net/");
 		final URLConnection urlConn = Connections.openConnection(url);
 		urlConn.setConnectTimeout(NETWORK_TIMEOUT_MS);
 		urlConn.setReadTimeout(NETWORK_TIMEOUT_MS);

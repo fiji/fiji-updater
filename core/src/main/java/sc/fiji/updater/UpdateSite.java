@@ -29,8 +29,9 @@
 
 package sc.fiji.updater;
 
+import java.util.Collection;
+
 import sc.fiji.updater.internal.UpdaterUtil;
-import sc.fiji.updater.site.HTTPSUtil;
 import sc.fiji.updater.site.UpdateSiteNetwork;
 
 /**
@@ -108,6 +109,37 @@ public class UpdateSite implements Cloneable, Comparable<UpdateSite> {
 
 	public String getURL() {
 		return url;
+	}
+
+	/**
+	 * Whether what this site serves arrives unauthenticated, over plain HTTP.
+	 * <p>
+	 * Plain HTTP is allowed -- a site on a local network may have no
+	 * certificate, and third-party sites are nobody else's to move -- but the
+	 * updater installs what an update site serves, so it is worth saying out
+	 * loud.
+	 * </p>
+	 *
+	 * @return whether the site's URL is an {@code http://} one
+	 */
+	public boolean isInsecure() {
+		return url != null && url.startsWith("http://");
+	}
+
+	/**
+	 * Lists the given sites by name and URL, one per line, for a message to
+	 * the user.
+	 *
+	 * @param sites the sites to list
+	 * @return the listing
+	 */
+	public static String names(final Collection<UpdateSite> sites) {
+		final StringBuilder result = new StringBuilder();
+		for (final UpdateSite site : sites) {
+			if (result.length() > 0) result.append("\n");
+			result.append(site.getName()).append(": ").append(site.getURL());
+		}
+		return result.toString();
 	}
 
 	/**
@@ -305,7 +337,7 @@ public class UpdateSite implements Cloneable, Comparable<UpdateSite> {
 	private static String rewriteOldURLs(String url) {
 		for (final String[] entry : UpdateSiteNetwork.OBSOLETE_URLS) {
 			if (entry[0].equals(url)) {
-				return HTTPSUtil.getProtocol() + entry[1];
+				return "https://" + entry[1];
 			}
 		}
 		return url;

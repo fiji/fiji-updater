@@ -50,7 +50,6 @@ import java.util.List;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 
-import sc.fiji.updater.site.HTTPSUtil;
 import sc.fiji.updater.site.UpdateSiteNetwork;
 
 /**
@@ -69,8 +68,7 @@ import sc.fiji.updater.site.UpdateSiteNetwork;
  */
 public final class UpdaterUtil {
 
-	public static String MAIN_URL =
-		HTTPSUtil.getProtocol() + UpdateSiteNetwork.MAIN_SITE_PATH;
+	public static String MAIN_URL = "https://" + UpdateSiteNetwork.MAIN_SITE_PATH;
 	static String UPDATE_DIRECTORY =
 		UpdateSiteNetwork.MAIN_SITE_UPLOAD_DIRECTORY;
 	static String SSH_HOST = UpdateSiteNetwork.MAIN_SITE_SSH_HOST;

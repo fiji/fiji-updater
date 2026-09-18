@@ -95,7 +95,6 @@ import sc.fiji.updater.progress.Progress;
 import sc.fiji.updater.progress.StderrProgress;
 import sc.fiji.updater.site.AvailableSites;
 import sc.fiji.updater.site.Connections;
-import sc.fiji.updater.site.HTTPSUtil;
 import sc.fiji.updater.ui.UpdaterConsole;
 import sc.fiji.updater.upload.FilesUploader;
 
@@ -1323,6 +1322,17 @@ public class CommandLine {
 		return name + " (" + host + site.getUploadDirectory() + ")";
 	}
 
+	/**
+	 * Says which update sites serve their content over plain HTTP, which the
+	 * updater allows but cannot authenticate.
+	 */
+	private void warnAboutInsecureSites() {
+		final Collection<UpdateSite> insecure = files.insecureSites();
+		if (insecure.isEmpty()) return;
+		log.warn("These update sites are not using HTTPS, so what they serve " +
+			"cannot be authenticated:\n" + UpdateSite.names(insecure));
+	}
+
 	private void listUpdateSites(Collection<String> args) {
 		ensureChecksummed();
 		if (args == null || args.size() == 0)
@@ -1470,7 +1480,7 @@ public class CommandLine {
 		} catch (ParserConfigurationException | SAXException e) {
 			e.printStackTrace();
 		}
-		HTTPSUtil.checkHTTPSSupport(log);
+		warnAboutInsecureSites();
 		final List< URLChange > urlChanges = AvailableSites.initializeAndAddSites(files, log);
 		if(updateall) {
 			urlChanges.forEach( change -> change.setApproved(true));

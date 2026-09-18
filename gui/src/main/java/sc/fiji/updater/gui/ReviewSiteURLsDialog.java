@@ -52,7 +52,6 @@ import net.miginfocom.swing.MigLayout;
 
 import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.channel.URLChange;
-import sc.fiji.updater.site.HTTPSUtil;
 
 /**
  * The dialog in which updated URLs of available update sites will be shown
@@ -148,9 +147,6 @@ public class ReviewSiteURLsDialog extends JDialog implements ActionListener {
 		panel.add(createUpdatesAvailableMessage(), "span, wrap, wmax 600px");
 		panel.add(createAttentionIcon(), "w 100px!");
 		panel.add(createGeneralChoices(), "wrap, w 300px!, bottom, left");
-		if(HTTPSUtil.supportsHTTPS()) {
-			panel.add(createHTTPSInfo(), "wmax 250px, dock east");
-		}
 		return panel;
 	}
 
@@ -175,20 +171,6 @@ public class ReviewSiteURLsDialog extends JDialog implements ActionListener {
 				"<p>Please review the following update site URL changes.<br/>" +
 				"If you have never heard of update sites," +
 				" just click <b>OK</b> at the bottom.</p></html>");
-	}
-
-	private static Component createHTTPSInfo() {
-		// TODO remove note in Updater V2
-		JEditorPane text = createHTMLText("<html><h3>ImageJ is improving<br/>data security!</h3>" +
-				"From now on ImageJ updates more securely via HTTPS. " +
-				"Therefore addresses of update sites currently in use by your ImageJ installation " +
-				"need to be updated.</html>");
-		//text.setBackground(new Color(250,250,250));
-		//text.setBorder(BorderFactory.createEmptyBorder(25,15,25,25));
-		//String bodyRule = "body { color: #404042; }";
-		//((HTMLDocument)text.getDocument()).getStyleSheet().addRule(bodyRule);
-		//text.setOpaque(true);
-		return text;
 	}
 
 	private static JEditorPane createHTMLText(String text) {

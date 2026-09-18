@@ -83,8 +83,7 @@ public final class AvailableSites {
 	}
 
 	private static String downloadWikiPage(final Logger log) throws IOException {
-		final String wikiURL =
-			HTTPSUtil.getProtocol() + UpdateSiteNetwork.SITE_LIST_HOST + "/";
+		final String wikiURL = "https://" + UpdateSiteNetwork.SITE_LIST_HOST + "/";
 
 		if(log != null) log.info("Reading available sites from " + wikiURL);
 		else System.out.println("[INFO] Reading available sites from " + wikiURL);
@@ -206,8 +205,6 @@ public final class AvailableSites {
 			Collection< UpdateSite > availableSites)
 	{
 		// method is package private to allow testing
-		for (final UpdateSite site : availableSites)
-			site.setURL(HTTPSUtil.fixImageJUserSiteProtocol(site.getURL()));
 		final List<UpdateSite> sites = new ArrayList<>();
 		// make sure that the main update site is the first one.
 		sites.add(initializeMainUpdateSite());
@@ -253,9 +250,6 @@ public final class AvailableSites {
 			Integer index = findIndexByName(sites, local);
 			if (index == null) {
 				sites.add(local);
-				Optional< URLChange > change = URLChange.create(local,
-						HTTPSUtil.fixImageJUserSiteProtocol(local.getURL()));
-				change.ifPresent( urlChanges::add );
 			} else {
 				final UpdateSite available = sites.get(index);
 				local.setOfficial(available.isOfficial());
@@ -328,7 +322,6 @@ public final class AvailableSites {
 				return true;
 			}
 		}
-		if(HTTPSUtil.hasImageJUserSiteProtocolUpdates(plugins)) return true;
 		return false;
 	}
 

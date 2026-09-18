@@ -75,7 +75,6 @@ import sc.fiji.updater.internal.DependencyAnalyzer;
 import sc.fiji.updater.internal.UpdaterUtil;
 import sc.fiji.updater.progress.Progress;
 import sc.fiji.updater.progress.UpdateCanceledException;
-import sc.fiji.updater.site.HTTPSUtil;
 import sc.fiji.updater.site.UpdateSiteNetwork;
 import sc.fiji.updater.ui.UpdaterConsole;
 import sc.fiji.updater.upload.UploaderService;
@@ -425,6 +424,23 @@ public class FilesCollection implements Iterable<FileObject> {
 		final List<UpdateSite> result = new ArrayList<>();
 		for (final UpdateSite site : updateSites.values()) {
 			if (site.isActive()) result.add(site);
+		}
+		return result;
+	}
+
+	/**
+	 * The active update sites serving their content over plain HTTP.
+	 * <p>
+	 * Nothing refuses these -- see {@link UpdateSite#isInsecure()} -- but both
+	 * user interfaces say which ones they are at startup.
+	 * </p>
+	 *
+	 * @return the insecure sites, in the order the collection holds them
+	 */
+	public Collection<UpdateSite> insecureSites() {
+		final List<UpdateSite> result = new ArrayList<>();
+		for (final UpdateSite site : getUpdateSites(false)) {
+			if (site.isInsecure()) result.add(site);
 		}
 		return result;
 	}
@@ -1126,7 +1142,7 @@ public class FilesCollection implements Iterable<FileObject> {
 				// make sure that the Fiji update site is enabled
 				UpdateSite fiji = getUpdateSite("Fiji", true);
 				if (fiji == null) {
-					addUpdateSite("Fiji", HTTPSUtil.getProtocol() + "update.fiji.sc/", null, null, 0);
+					addUpdateSite("Fiji", "https://update.fiji.sc/", null, null, 0);
 				}
 			}
 		}

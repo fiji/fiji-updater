@@ -52,7 +52,6 @@ import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.app.AppLayout;
 import sc.fiji.updater.site.AvailableSites;
 import sc.fiji.updater.site.Connections;
-import sc.fiji.updater.site.HTTPSUtil;
 
 /**
  * This class helps to determine the status of the current ImageJ installation.
@@ -120,10 +119,6 @@ public class UpToDate {
 				plugins.read();
 			}
 			catch (final FileNotFoundException e) { /* ignore */}
-			HTTPSUtil.checkHTTPSSupport(null);
-			if(HTTPSUtil.noConnection()) {
-				return Result.OFFLINE;
-			}
 			if(AvailableSites.hasUpdateSiteURLUpdates(plugins)) {
 				return Result.UPDATEABLE;
 			}

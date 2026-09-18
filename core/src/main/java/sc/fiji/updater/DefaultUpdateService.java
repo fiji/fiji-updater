@@ -50,7 +50,6 @@ import org.xml.sax.SAXException;
 import sc.fiji.updater.app.AppLayout;
 import sc.fiji.updater.cli.CheckForUpdates;
 import sc.fiji.updater.site.AvailableSites;
-import sc.fiji.updater.site.HTTPSUtil;
 
 /**
  * Default service for managing ImageJ updates.
@@ -139,7 +138,6 @@ public class DefaultUpdateService extends AbstractService implements
 		final FilesCollection fc = new FilesCollection(rootDir());
 
 		// parse the official list of update sites
-		HTTPSUtil.checkHTTPSSupport(log);
 		AvailableSites.initializeAndAddSites(fc);
 
 		// parse the user's update site database (db.xml.gz)

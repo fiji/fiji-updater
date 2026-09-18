@@ -40,7 +40,7 @@ What the cross-module reference table actually says:
   `PromptUserToUpdate`, `StderrProgress`, `CommandLine`.
 - **Referenced only by the GUI.** `Diff`, `ByteCodeAnalyzer`, `Conflicts`,
   `Installer`, `Checksummer`, `GroupAction` and `action/*`, `URLChange`,
-  `ChannelUpgrade`, `AvailableSites`, `HTTPSUtil`, `JavaRequirement`,
+  `ChannelUpgrade`, `AvailableSites`, `JavaRequirement`,
   `ChannelManifest`, `ChannelState`, `AppLayout`.
 - **Referenced by the uploaders.** `Uploadable`, `Uploader`,
   `AbstractUploader`, `FilesUploader`, `UpdateSite`, `UpdaterConsole`,
@@ -66,7 +66,7 @@ sc.fiji.updater.ui       UpdaterConsole, StderrConsole   (gui, ssh, webdav)
 sc.fiji.updater.channel  Channels, ChannelState, ChannelManifest,
                          ChannelUpgrade, URLChange
 sc.fiji.updater.app      AppLayout, Platforms, JavaRequirement
-sc.fiji.updater.site     AvailableSites, UpdateSiteNetwork, HTTPSUtil
+sc.fiji.updater.site     AvailableSites, UpdateSiteNetwork
 sc.fiji.updater.diff     Diff, ByteCodeAnalyzer                   (gui)
 
   -- not exported --
@@ -251,9 +251,9 @@ That is roughly 80 members off the exported surface.
   launcher named. Wanted: one helper, `AppLayout.appRoot()` returning a
   `File`, called from all four.
 
-- **The bootstrap sequence, done four different ways.** The same four steps --
-  `tryLoadingCollection`, `checkHTTPSSupport`, `initializeAndAddSites`,
-  `applySitesURLUpdates` -- appear in `CommandLine.refreshUpdateSites`,
+- **The bootstrap sequence, done four different ways.** The same three steps --
+  `tryLoadingCollection`, `initializeAndAddSites`, `applySitesURLUpdates` --
+  appear in `CommandLine.refreshUpdateSites`,
   `FijiUpdater.run` together with its `refreshUpdateSites`,
   `DefaultUpdateService.initFilesCollection`, and `UpToDate.check`, in four
   different orders, with three different logger-passing conventions (`log`,
@@ -267,8 +267,6 @@ That is roughly 80 members off the exported surface.
 
 ### Smaller DRY
 
-- `HTTPSUtil.checkHTTPSSupport` is called from four places and is
-  idempotent by accident; fold it into the bootstrap.
 - `Diff` has 11 `protected static` helpers -- `copy`, `getClassVersion`
   twice, `offsetOfFirstDiff`, `isLocal`, `cacheFile` -- that are generic IO,
   not diffing.
@@ -327,9 +325,8 @@ and what each is waiting on.
   "Identify sites by URL, not by name" wants to land. Doing them together
   is what makes both cheap.
 
-- **Smaller DRY not yet taken:** folding `HTTPSUtil.checkHTTPSSupport` into
-  the bootstrap (waits on the bootstrap), `Diff`'s generic-IO helpers (they
-  are `protected static`, so not public surface, and moving them is a
-  judgement call about where they belong), and the stateless `GroupAction`
+- **Smaller DRY not yet taken:** `Diff`'s generic-IO helpers (they are
+  `protected static`, so not public surface, and moving them is a judgement
+  call about where they belong), and the stateless `GroupAction`
   singletons (three allocations per `getValidActions()` call, against a new
   public constant on each of three classes).

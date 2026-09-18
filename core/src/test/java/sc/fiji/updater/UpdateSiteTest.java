@@ -29,7 +29,13 @@
 package sc.fiji.updater;
 
 import static org.junit.Assert.assertEquals;
+import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNull;
+import static org.junit.Assert.assertTrue;
+import static sc.fiji.updater.UpdaterTestUtils.cleanup;
+import static sc.fiji.updater.UpdaterTestUtils.initialize;
+
+import java.util.Collections;
 
 import org.junit.Test;
 
@@ -42,6 +48,40 @@ public class UpdateSiteTest {
 
 	private UpdateSite site(final String url) {
 		return new UpdateSite("test", url, null, null, null, null, 0);
+	}
+
+	/**
+	 * Plain HTTP is allowed, and named as such. The updater installs what a
+	 * site serves, so both user interfaces say which sites cannot be
+	 * authenticated -- but nothing refuses them, and a site on a local network
+	 * may well have no certificate.
+	 */
+	@Test
+	public void testInsecureSitesAreAllowedAndNamed() {
+		assertTrue(site("http://updates.example.org/fiji/").isInsecure());
+		assertFalse(site("https://sites.imagej.net/MoBIE/").isInsecure());
+		// A file: URL is not served over the network at all.
+		assertFalse(site("file:/mnt/share/site/").isInsecure());
+
+		final UpdateSite insecure = site("http://updates.example.org/fiji/");
+		assertEquals("test: http://updates.example.org/fiji/",
+			UpdateSite.names(Collections.singletonList(insecure)));
+	}
+
+	/** Only the active sites are worth warning about. */
+	@Test
+	public void testInsecureSitesSkipsDisabledOnes() throws Exception {
+		final FilesCollection files = initialize();
+		files.addUpdateSite("insecure", "http://updates.example.org/fiji/", //
+			null, null, 0);
+		files.addUpdateSite("disabled", "http://disabled.example.org/fiji/", //
+			null, null, 0);
+		files.getUpdateSite("disabled", true).setActive(false);
+
+		assertEquals(1, files.insecureSites().size());
+		assertEquals("insecure", //
+			files.insecureSites().iterator().next().getName());
+		cleanup(files);
 	}
 
 	/**

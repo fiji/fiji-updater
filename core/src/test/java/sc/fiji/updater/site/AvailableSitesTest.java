@@ -33,8 +33,6 @@ import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertNotEquals;
-import static org.junit.Assert.assertNotNull;
-import static org.junit.Assume.assumeTrue;
 import static sc.fiji.updater.UpdaterTestUtils.cleanup;
 import static sc.fiji.updater.UpdaterTestUtils.initialize;
 import static sc.fiji.updater.UpdaterTestUtils.main;
@@ -57,33 +55,11 @@ import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.channel.URLChange;
 
 /**
- * Tests functionalities related to the available update sites,
- * including HTTPS compatibility
+ * Tests functionalities related to the available update sites
  *
  * @author Deborah Schmidt
  */
 public class AvailableSitesTest {
-
-	@Test
-	public void testSecureMode() throws IOException {
-		// check if HTTPS is supported
-		HTTPSUtil.checkHTTPSSupport(null);
-		boolean secure = HTTPSUtil.supportsHTTPS();
-
-		// get list of available sites
-		Map<String, UpdateSite > availableUpdateSites = AvailableSites.getAvailableSites();
-
-		// test whether the main ImageJ update site is using HTTP or HTTPS
-		UpdateSite mainUpdateSite = null;
-		for(UpdateSite site : availableUpdateSites.values()) {
-			if(site.getName().equals("ImageJ")) {
-				mainUpdateSite = site;
-				break;
-			}
-		}
-		assertNotNull(mainUpdateSite);
-		assertEquals(mainUpdateSite.getURL(), secure? "https://update.imagej.net/" : "http://update.imagej.net/");
-	}
 
 	@Test
 	public void testAvailableUpdateSites() throws Exception {
@@ -165,36 +141,12 @@ public class AvailableSitesTest {
 	}
 
 	@Test
-	public void testAutomaticSecureUpgrade() throws Exception {
-
-		// load initial files collection
-		FilesCollection files = initialize();
-
-		// skip test if HTTPS is not supported
-		HTTPSUtil.checkHTTPSSupport(null);
-		assumeTrue(HTTPSUtil.supportsHTTPS());
-
-		// add two official update sites
-		applyOfficialUpdateSitesList(files, "a", "http://sites.imagej.net/a/", "b", "http://other.server.net/b/");
-
-		// test whether the HTTPS URL is used for sites on imagej.net
-		assertEquals("https://sites.imagej.net/a/", files.getUpdateSite("a", true).getURL());
-		assertEquals("http://other.server.net/b/", files.getUpdateSite("b", true).getURL());
-
-		cleanup(files);
-	}
-
-	@Test
 	public void testMirrorMainUpdateSite() throws Exception {
 
 		String mirrorURL = "https://downloads.micron.ox.ac.uk/fiji_update/mirrors/imagej/";
 
 		// load initial files collection
 		FilesCollection files = initialize();
-
-		// skip test if HTTPS is not supported
-		HTTPSUtil.checkHTTPSSupport(null);
-		assumeTrue(HTTPSUtil.supportsHTTPS());
 
 		// apply mirror URL as source for main update site
 		applyOfficialUpdateSitesList(files,

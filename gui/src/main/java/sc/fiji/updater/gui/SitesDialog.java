@@ -84,7 +84,6 @@ import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.channel.URLChange;
 import sc.fiji.updater.site.AvailableSites;
 import sc.fiji.updater.site.Connections;
-import sc.fiji.updater.site.HTTPSUtil;
 import sc.fiji.updater.upload.UploaderService;
 
 /**
@@ -159,15 +158,6 @@ public class SitesDialog extends JDialog implements ActionListener {
 							if ("/".equals(value)) value = "";
 							final UpdateSite site = getUpdateSite(row);
 							if (value.equals(site.getURL())) return super.stopCellEditing();
-							if(!HTTPSUtil.supportsURLProtocol(value)) {
-								if(showYesNoQuestion("Convert HTTPS URL to HTTP?",
-										"Your installation cannot handle secure communication (HTTPS).\n" +
-												"Please download a recent version of this software.\n\n" +
-												"Do you want to use the insecure URL of this update site (HTTP)?")) {
-									value = HTTPSUtil.userSiteConvertToHTTP(value);
-									field.setText(value);
-								} else return false;
-							}
 							if (validURL(value)) {
 								site.setURL(value);
 								boolean wasActive = site.isActive();

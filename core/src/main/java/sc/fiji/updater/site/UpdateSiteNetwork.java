@@ -38,7 +38,7 @@ import sc.fiji.updater.app.AppLayout;
  * available sites comes from, and which historical URLs need rewriting. They
  * are gathered here so that the updater's coupling to one particular network is
  * visible and countable in one file, rather than scattered across
- * {@code UpdaterUtil}, {@code HTTPSUtil}, {@code FilesCollection},
+ * {@code UpdaterUtil}, {@code FilesCollection},
  * {@code AvailableSites}, {@code XMLFileReader} and {@code UpdateSite}, as it
  * was until this class existed.
  * </p>
@@ -188,20 +188,11 @@ public final class UpdateSiteNetwork {
 	 */
 	public static final String LEGACY_DEFAULT_SITE_NAME = "Fiji";
 
-	/** Host serving personal and third-party update sites. */
-	public static final String USER_SITE_HOST = "sites.imagej.net";
-
 	/** Wiki host from which the list of available update sites is read. */
 	public static final String SITE_LIST_HOST = "imagej.net";
 
 	/** Title of the wiki page listing the available update sites. */
 	public static final String SITE_LIST_PAGE_TITLE = "List of update sites";
-
-	/**
-	 * URL used to probe whether the running JVM can negotiate HTTPS with the
-	 * hosts this updater talks to.
-	 */
-	public static final String HTTPS_PROBE_URL = "https://imagej.net/api.php";
 
 	/**
 	 * Update site URLs that have moved, paired with their replacements.
