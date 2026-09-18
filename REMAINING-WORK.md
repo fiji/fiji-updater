@@ -1,12 +1,18 @@
 # Fiji Updater channels: remaining work
 
-State as of the fiji-updater `main` branch, 32 commits past `ea5f12e`
-(imagej-updater `master` as of this writing). Everything below is outstanding;
-what is already done is in the commit log and not repeated here.
+State as of the fiji-updater `main` branch at `b14f165`, 85 commits past
+`ea5f12e` (imagej-updater `master` when this work started). What is already
+done is in the commit log and not repeated here, except where a section needs
+it as context — those parts are marked *landed*.
 
-Nothing has been pushed. The branch is intended for a fresh
-`fiji/fiji-updater` repository, after which `imagej/imagej-updater` gets
-archived with a pointer rather than renamed.
+The branch now lives in `fiji/fiji-updater`, which is public, and `main` there
+is this commit. `imagej/imagej-updater` is **not yet archived**; archiving it
+with a pointer, rather than renaming it, is still to do.
+
+A companion document, `API-CLEANUP.md`, covers the API surface and the package
+layout. Two of its outstanding items — the bootstrap consolidation and
+`FileObject` encapsulation — are prerequisites in spirit for *Update site
+identity* below.
 
 ## Blockers before the first channel is minted
 
@@ -114,8 +120,8 @@ The updater keys update sites by **name**, in three places at once:
 `FilesCollection.updateSites` is a `Map<String, UpdateSite>` keyed by name,
 `FileObject.updateSite` is a name, and the local `db.xml.gz` stores
 `<update-site name=...>` alongside `<plugin update-site="Name">`. `UpdateSite`
-has no id field at all; the lone `// TODO use site id` at
-`AvailableSites.java:327` is the whole of the concept's presence in this
+has no id field at all; the lone `// TODO use site id` in
+`AvailableSites.updateSiteURL` is the whole of the concept's presence in this
 codebase.
 
 That is what makes renaming a site a data-model problem rather than a string
@@ -131,12 +137,13 @@ change, and it is the direct cause of the `Fiji` collision below.
   while the legacy `update.fiji.sc` entry matches nothing and is left alone as
   the disabled leftover it is.
 
-  Two things to fix on the way. `makeSureNamesAreUnique` `continue`s on active
-  sites *before* `names.add`, so its set only ever holds inactive names and an
-  inactive duplicate of an **active** name is never disambiguated — which is
-  precisely the case here, two entries named `Fiji`. And URL matching has to
-  happen after `OBSOLETE_URLS` rewriting, with mirrors accounted for, or a user
-  on a mirror looks like a user of an unrelated site.
+  Two things to fix on the way, both still present in the code.
+  `makeSureNamesAreUnique` `continue`s on active sites *before* `names.add`, so
+  its set only ever holds inactive names and an inactive duplicate of an
+  **active** name is never disambiguated — which is precisely the case here,
+  two entries named `Fiji`. And URL matching has to happen after
+  `OBSOLETE_URLS` rewriting, with mirrors accounted for, or a user on a mirror
+  looks like a user of an unrelated site.
 
 - **Then adopt the site `id`.** The second half, which does depend on consuming
   `sites.yml`, and which handles the one case URL matching cannot: a site whose
@@ -220,8 +227,12 @@ change, and it is the direct cause of the `Fiji` collision below.
   keep `jvm.version-min` as low as the app-launcher's own bytecode allows, so
   that the launcher always starts and only the *recommended* version moves.
 
-- **One-line launcher change:** `'--update|sc.fiji.updater.CommandLine'`
-  becomes `'--update|sc.fiji.updater.cli.CommandLine'`.
+- **One-line launcher change:** `fiji/fiji`'s `config/fiji.toml` still says
+  `'--update|net.imagej.updater.CommandLine'`, which is the *old* artifact's
+  entry point; it becomes `'--update|sc.fiji.updater.cli.CommandLine'`. Note
+  both halves change — the package root and the `cli` subpackage the API
+  cleanup introduced — so this is not the mechanical `net.imagej` to
+  `sc.fiji` substitution it looks like elsewhere.
 
 - **Publish a final `net.imagej:imagej-updater`** whose only job is to be
   obsoleted cleanly, so installations remove it rather than keeping it
