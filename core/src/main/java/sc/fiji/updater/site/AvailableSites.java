@@ -326,16 +326,30 @@ public final class AvailableSites {
 	}
 
 	/**
-	 * Apply prepared changes to update site URLs
+	 * Applies the approved changes among the given proposed update site URL
+	 * changes, and persists the collection if any were applied.
+	 * <p>
+	 * Note: the local index is written only when something changed. Proposing
+	 * changes and approving none is a read-only operation, and the up-to-date
+	 * check does exactly that on every launch -- it reports that updates are
+	 * available and leaves applying them to the user, who has not seen the
+	 * proposal yet.
+	 * </p>
+	 *
+	 * @return whether anything was changed.
 	 */
-	public static void applySitesURLUpdates(FilesCollection plugins, List< URLChange > urlChanges ) {
+	public static boolean applySitesURLUpdates(FilesCollection plugins, List< URLChange > urlChanges ) {
+		boolean changed = false;
 		for(URLChange site : urlChanges) {
-			site.applyIfApproved();
+			if (site.applyIfApproved()) changed = true;
 		}
+		if (!changed) return false;
+		plugins.setUpdateSitesChanged(true);
 		try {
 			plugins.write();
 		} catch (IOException | SAXException | TransformerConfigurationException e) {
 			e.printStackTrace();
 		}
+		return true;
 	}
 }

@@ -32,12 +32,15 @@ package sc.fiji.updater.site;
 import static junit.framework.TestCase.assertTrue;
 import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotEquals;
 import static sc.fiji.updater.UpdaterTestUtils.cleanup;
 import static sc.fiji.updater.UpdaterTestUtils.initialize;
 import static sc.fiji.updater.UpdaterTestUtils.main;
 
+import java.io.File;
 import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Iterator;
@@ -53,6 +56,7 @@ import org.xml.sax.SAXException;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.channel.URLChange;
+import sc.fiji.updater.internal.UpdaterUtil;
 
 /**
  * Tests functionalities related to the available update sites
@@ -324,6 +328,54 @@ public class AvailableSitesTest {
 		Optional< URLChange > change =
 				URLChange.create(updateSite, "https://sites.imagej.net/ImageJ");
 		assertFalse(change.isPresent());
+	}
+
+	/**
+	 * A proposal nobody approved changes nothing, and leaves the local index
+	 * untouched.
+	 * <p>
+	 * The up-to-date check runs on every launch and approves nothing: it
+	 * reports that updates are available and leaves applying them to the user.
+	 * Writing there would rewrite an installation's site URLs behind the user's
+	 * back, on a code path they never saw.
+	 * </p>
+	 */
+	@Test
+	public void testUnapprovedChangesAreNotWritten() throws Exception {
+		final FilesCollection files = initialize();
+		files.addUpdateSite("a", "http://a.de/", null, null, 0);
+		files.write();
+
+		final File db = files.prefix(UpdaterUtil.XML_COMPRESSED);
+		final byte[] before = Files.readAllBytes(db.toPath());
+
+		final List< URLChange > changes = AvailableSites.initializeAndAddSites(
+				files, asListOfUpdateSites(new String[] { "a", "http://moved.de/" }));
+		changes.forEach(change -> change.setApproved(false));
+
+		assertFalse(AvailableSites.applySitesURLUpdates(files, changes));
+		assertArrayEquals(before, Files.readAllBytes(db.toPath()));
+		assertEquals("http://a.de/", readFromDb(files).getUpdateSite("a", true).getURL());
+
+		cleanup(files);
+	}
+
+	/** An approved change is applied, and does reach the local index. */
+	@Test
+	public void testApprovedChangesAreWritten() throws Exception {
+		final FilesCollection files = initialize();
+		files.addUpdateSite("a", "http://a.de/", null, null, 0);
+		files.write();
+
+		final List< URLChange > changes = AvailableSites.initializeAndAddSites(
+				files, asListOfUpdateSites(new String[] { "a", "http://moved.de/" }));
+		changes.forEach(change -> change.setApproved(true));
+
+		assertTrue(AvailableSites.applySitesURLUpdates(files, changes));
+		assertEquals("http://moved.de/",
+				readFromDb(files).getUpdateSite("a", true).getURL());
+
+		cleanup(files);
 	}
 
 	protected static FilesCollection readFromDb(final FilesCollection ijRoot) {

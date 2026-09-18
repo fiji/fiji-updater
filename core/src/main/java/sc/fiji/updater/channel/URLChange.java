@@ -78,12 +78,19 @@ public class URLChange {
 		return approved;
 	}
 
-	public void applyIfApproved() {
-		if(newUrl == null) return;
-		if(approved) {
-			site.setURL(newUrl);
-			site.setKeepURL(false);
-		}
+	/**
+	 * Applies this change, if it was approved.
+	 *
+	 * @return whether anything was changed. Callers persist the collection only
+	 *         when something was, so that a passive check -- one that proposes
+	 *         changes and approves none -- does not rewrite the local index.
+	 */
+	public boolean applyIfApproved() {
+		if(newUrl == null) return false;
+		if(!approved) return false;
+		site.setURL(newUrl);
+		site.setKeepURL(false);
+		return true;
 	}
 
 	public String toString() {
