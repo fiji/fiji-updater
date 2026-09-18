@@ -459,6 +459,33 @@ public class FilesCollection implements Iterable<FileObject> {
 		}
 	}
 
+	/**
+	 * Points every file that named one update site at that site's new name.
+	 * <p>
+	 * The file-to-site association is the site's <em>name</em>, so renaming a
+	 * site without this leaves its files claiming a site that no longer exists.
+	 * Unlike {@link #renameUpdateSite}, this touches only the files: the caller
+	 * owns the site list and renames the sites themselves.
+	 * </p>
+	 * <p>
+	 * Note: the whole map is applied at once, from the names as they were. A
+	 * rename at a time would be wrong, because the point at which two sites
+	 * momentarily share a name is exactly the point at which their files can no
+	 * longer be told apart -- which is the case this exists to survive.
+	 * </p>
+	 *
+	 * @param renames old site name to new site name.
+	 */
+	public void renameUpdateSiteReferences(final Map<String, String> renames) {
+		if (renames.isEmpty()) return;
+		for (final FileObject file : this) {
+			final String site = renames.get(file.updateSite);
+			if (site != null) file.updateSite = site;
+			final String original = renames.get(file.originalUpdateSite);
+			if (original != null) file.originalUpdateSite = original;
+		}
+	}
+
 	public void removeUpdateSite(final String name) {
 		for (final FileObject file : clone(forUpdateSite(name))) {
 			file.removeFromUpdateSite(name, this);

@@ -324,6 +324,36 @@ public class UpdateSite implements Cloneable, Comparable<UpdateSite> {
 		this.keepURLModification = keepURL;
 	}
 
+	/**
+	 * Whether two URLs name the same update site.
+	 * <p>
+	 * Identity is the URL, but not the URL as a string: an installation left
+	 * alone since before HTTPS holds {@code http://} for a site now served over
+	 * {@code https://}, and a trailing slash is decoration. A mirror is a
+	 * different source for the same site rather than a different site, so the
+	 * known sources of the main site compare equal to each other too.
+	 * </p>
+	 * <p>
+	 * Note: the scheme is not identity, but it is not therefore irrelevant. Two
+	 * URLs differing only in scheme are the same site, and the published one
+	 * still supersedes the local one -- which is how an installation gets moved
+	 * off plain HTTP.
+	 * </p>
+	 */
+	public static boolean sameURL(final String a, final String b) {
+		if (a == null || b == null) return false;
+		if (canonicalURL(a).equals(canonicalURL(b))) return true;
+		// The main site is the one site with more than one legitimate source.
+		return UpdateSiteNetwork.isMainSite(a) && UpdateSiteNetwork.isMainSite(b);
+	}
+
+	/** The form of a URL used to compare it with another. See {@link #sameURL}. */
+	public static String canonicalURL(final String url) {
+		final String formatted = format(url);
+		return formatted.startsWith("http://") ? //
+			"https://" + formatted.substring("http://".length()) : formatted;
+	}
+
 	public static String format(String url) {
 		if(url == null || url.isEmpty()) return url;
 		if (!url.endsWith("/")) {

@@ -84,6 +84,54 @@ public class UpdateSiteTest {
 		cleanup(files);
 	}
 
+	/** A trailing slash is decoration, not identity. */
+	@Test
+	public void testSameURLIgnoresTrailingSlash() {
+		assertTrue(UpdateSite.sameURL("https://sites.imagej.net/MoBIE",
+			"https://sites.imagej.net/MoBIE/"));
+	}
+
+	/**
+	 * An installation left alone since before HTTPS holds {@code http://} for a
+	 * site now served over {@code https://}. It is the same site.
+	 */
+	@Test
+	public void testSameURLIgnoresScheme() {
+		assertTrue(UpdateSite.sameURL("http://sites.imagej.net/MoBIE/",
+			"https://sites.imagej.net/MoBIE/"));
+	}
+
+	/** A mirror is a different source for the same site. */
+	@Test
+	public void testSameURLAcceptsAMirrorOfTheMainSite() {
+		assertTrue(UpdateSite.sameURL("https://sites.imagej.net/Fiji/",
+			"https://downloads.micron.ox.ac.uk/fiji_update/mirrors/sites-fiji/"));
+	}
+
+	/**
+	 * A mirror operator's own sites live alongside the mirrored tree, not
+	 * inside it, so hosting a mirror does not make everything on that host one.
+	 */
+	@Test
+	public void testSameURLRejectsUnrelatedSitesOnAMirrorHost() {
+		assertFalse(UpdateSite.sameURL("https://sites.imagej.net/Fiji/",
+			"https://downloads.micron.ox.ac.uk/fiji_update/SIMcheck/"));
+	}
+
+	/** A URL that has moved is rewritten before being compared. */
+	@Test
+	public void testSameURLFollowsObsoleteURLs() {
+		assertTrue(UpdateSite.sameURL("http://fiji.sc/update/",
+			"https://update.fiji.sc/"));
+	}
+
+	@Test
+	public void testSameURLRejectsUnrelatedSites() {
+		assertFalse(UpdateSite.sameURL("https://sites.imagej.net/MoBIE/",
+			"https://sites.imagej.net/Fiji/"));
+		assertFalse(UpdateSite.sameURL(null, "https://sites.imagej.net/Fiji/"));
+	}
+
 	/**
 	 * With no channel, the index URL is exactly what the call sites used to
 	 * build by hand. This is what makes the change to centralize them inert.

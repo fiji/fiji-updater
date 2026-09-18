@@ -36,7 +36,9 @@ import java.net.URLEncoder;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.IdentityHashMap;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -190,11 +192,19 @@ public final class AvailableSites {
 	static List< URLChange > initializeAndAddSites(
 			final FilesCollection files, final Collection< UpdateSite > availableSites)
 	{
+		// The names the installation's sites had before any of this, so that the
+		// files naming them can be pointed at wherever those sites end up.
+		final Map< UpdateSite, String > namesBefore = new IdentityHashMap<>();
+		for (final UpdateSite site : files.getUpdateSites(true)) {
+			namesBefore.put(site, site.getName());
+		}
+
 		final List< UpdateSite > sites = prepareAvailableUpdateSites(availableSites);
 		// method is package private to allow testing
 		ArrayList< URLChange > urlChanges = mergeLocalAndAvailableUpdateSites(
 				files, sites);
 		makeSureNamesAreUnique(sites);
+		files.renameUpdateSiteReferences(renames(namesBefore));
 
 		files.replaceUpdateSites(sites);
 
@@ -233,7 +243,7 @@ public final class AvailableSites {
 			Collection< UpdateSite > availableSites)
 	{
 		for (final UpdateSite site : availableSites ) {
-			Integer index = findIndexByName(sites, site);
+			Integer index = findPublishedIndex(sites, site);
 			if (index == null) {
 				sites.add(site);
 			} else {
@@ -242,29 +252,165 @@ public final class AvailableSites {
 		}
 	}
 
+	/**
+	 * Matches an installation's own update sites against the published list.
+	 * <p>
+	 * Each published entry can be claimed by at most one local site, and a
+	 * claim by identity -- the URL, or being the core site -- is made before
+	 * any claim by name, so it wins. Without that, an installation carrying a
+	 * stale entry under the name the published list has since given to a site
+	 * it already follows would have the stale one displace the real one: both
+	 * would claim the same published entry, and the loser would vanish along
+	 * with its files.
+	 * </p>
+	 */
 	private static ArrayList< URLChange > mergeLocalAndAvailableUpdateSites(FilesCollection files,
 	                                                                        List< UpdateSite > sites)
 	{
+		// Matching is against the published list as it stands, not against the
+		// list being built, so that one local site cannot match another.
+		final List< UpdateSite > published = new ArrayList<>(sites);
+		final List< UpdateSite > locals = new ArrayList<>(files.getUpdateSites(true));
+		final Integer[] matches = new Integer[locals.size()];
+		final Set<Integer> claimed = new HashSet<>();
+
+		for (int i = 0; i < locals.size(); i++) {
+			matches[i] = findIndexByIdentity(published, locals.get(i), claimed);
+			if (matches[i] != null) claimed.add(matches[i]);
+		}
+		for (int i = 0; i < locals.size(); i++) {
+			if (matches[i] != null) continue;
+			matches[i] = findIndexByName(published, locals.get(i), claimed);
+			if (matches[i] != null) claimed.add(matches[i]);
+		}
+
 		ArrayList< URLChange > urlChanges = new ArrayList<>();
-		for (final UpdateSite local : files.getUpdateSites(true)) {
-			Integer index = findIndexByName(sites, local);
-			if (index == null) {
+		for (int i = 0; i < locals.size(); i++) {
+			final UpdateSite local = locals.get(i);
+			if (matches[i] == null) {
 				sites.add(local);
 			} else {
-				final UpdateSite available = sites.get(index);
+				final UpdateSite available = published.get(matches[i]);
 				local.setOfficial(available.isOfficial());
 				local.setDescription(available.getDescription());
 				local.setMaintainer(available.getMaintainer());
+				adoptName(local, available.getName());
 				Optional< URLChange > change =
 						URLChange.create(local, available.getURL());
 				change.ifPresent( urlChanges::add );
-				sites.set(index, local);
+				sites.set(matches[i], local);
 			}
 		}
 		return urlChanges;
 	}
 
-	private static Integer findIndexByName(List<UpdateSite> sites, UpdateSite site) {
+	/** Which sites ended up named something other than what they started as. */
+	private static Map< String, String > renames(
+		final Map< UpdateSite, String > namesBefore)
+	{
+		final Map< String, String > renames = new HashMap<>();
+		namesBefore.forEach((site, before) -> {
+			if (!before.equals(site.getName())) renames.put(before, site.getName());
+		});
+		return renames;
+	}
+
+	/**
+	 * Renames a local site to what the published list calls it.
+	 * <p>
+	 * The published name is authoritative for a published site, so a rename
+	 * there propagates by itself rather than appearing as a second site. This
+	 * is what the {@code Fiji-Latest} to {@code Fiji} rename rides on: the
+	 * local site is recognized by its URL, and follows the name.
+	 * </p>
+	 * <p>
+	 * Note: unlike a URL change, this is not offered for review. A name is a
+	 * label, and changing it moves nothing and downloads nothing.
+	 * </p>
+	 */
+	private static void adoptName(final UpdateSite local, final String name) {
+		if (name == null || name.equals(local.getName())) return;
+		local.setName(name);
+	}
+
+	/**
+	 * Finds the unclaimed entry that is the same site as the given one.
+	 * <p>
+	 * This is identity rather than naming: a site renamed in the published list
+	 * is still the site an installation is following, and matching by name
+	 * alone would take it for a new one and leave the old entry behind as a
+	 * duplicate. That is what makes a rename in the published list propagate by
+	 * itself.
+	 * </p>
+	 */
+	private static Integer findIndexByIdentity(List<UpdateSite> sites,
+		UpdateSite site, Set<Integer> claimed)
+	{
+		// Most specific first. The same URL is the same site.
+		for (int i = 0; i < sites.size(); i++) {
+			if (claimed.contains(i)) continue;
+			if (UpdateSite.canonicalURL(sites.get(i).getURL())
+					.equals(UpdateSite.canonicalURL(site.getURL()))) return i;
+		}
+		// Then a different source for the same site: a user reading the main
+		// site from a mirror is following the main site. Note this pass comes
+		// second so that a user on a mirror matches the mirror's own entry in
+		// the published list, where there is one, rather than the canonical one.
+		for (int i = 0; i < sites.size(); i++) {
+			if (claimed.contains(i)) continue;
+			if (UpdateSite.sameURL(sites.get(i).getURL(), site.getURL())) return i;
+		}
+		// The core site is the one site whose identity is known independently of
+		// the published list, so it is recognized even when the URL cannot speak
+		// for it: an installation whose main site URL points somewhere
+		// unrecognizable still has a main site, and it is this one.
+		for (int i = 0; i < sites.size(); i++) {
+			if (claimed.contains(i)) continue;
+			if (isCoreSite(sites.get(i)) && isCoreSite(site)) return i;
+		}
+		return null;
+	}
+
+	/**
+	 * Finds an unclaimed entry with the given site's name.
+	 * <p>
+	 * The last resort, for the sites the URL cannot speak for: one whose URL
+	 * the user has edited, and -- until sites carry an id -- one that has
+	 * genuinely moved.
+	 * </p>
+	 */
+	private static Integer findIndexByName(List<UpdateSite> sites,
+		UpdateSite site, Set<Integer> claimed)
+	{
+		for (int i = 0; i < sites.size(); i++) {
+			if (claimed.contains(i)) continue;
+			if( sites.get(i).getName().equals(site.getName()) )
+				return i;
+		}
+		return null;
+	}
+
+	private static boolean isCoreSite(final UpdateSite site) {
+		return UpdateSiteNetwork.isCoreSite(site.getName(), site.getURL());
+	}
+
+	/**
+	 * Finds the entry a published one coincides with.
+	 * <p>
+	 * This folds the published list onto itself and onto the seeded main site,
+	 * which is a narrower question than {@link #findIndex} answers. The exact
+	 * URL counts -- the main site listed under a new name must land on the seed
+	 * rather than beside it, or an installation would see two of it -- but
+	 * equivalent URLs deliberately do not: the published list carries a mirror
+	 * as its own entry, and folding it into the site it mirrors would delete a
+	 * listing users pick from.
+	 * </p>
+	 */
+	private static Integer findPublishedIndex(List<UpdateSite> sites, UpdateSite site) {
+		for (int i = 0; i < sites.size(); i++) {
+			if (UpdateSite.canonicalURL(sites.get(i).getURL())
+					.equals(UpdateSite.canonicalURL(site.getURL()))) return i;
+		}
 		for (int i = 0; i < sites.size(); i++) {
 			if( sites.get(i).getName().equals(site.getName()) )
 				return i;
@@ -272,11 +418,28 @@ public final class AvailableSites {
 		return null;
 	}
 
-	private static void makeSureNamesAreUnique(List< UpdateSite > sites)
+	/**
+	 * Disambiguates sites that ended up sharing a name.
+	 * <p>
+	 * The list is keyed by name once it reaches the collection, so a duplicate
+	 * is not a cosmetic problem: one entry would silently displace the other.
+	 * The first holder of a name keeps it and later ones are suffixed, which
+	 * puts the published list ahead of local leftovers, since the published
+	 * sites are merged first.
+	 * </p>
+	 * <p>
+	 * Note: every site is considered, active or not. This used to skip active
+	 * sites before recording their names, so the set only ever held inactive
+	 * ones and an inactive duplicate of an <em>active</em> name was never
+	 * disambiguated -- which is precisely the case it exists for, an
+	 * installation carrying a disabled legacy entry under a name the published
+	 * list has since reused.
+	 * </p>
+	 */
+	private static void makeSureNamesAreUnique(final List< UpdateSite > sites)
 	{
 		final Set<String> names = new HashSet<>();
 		for (final UpdateSite site : sites) {
-			if (site.isActive()) continue;
 			if (names.contains(site.getName())) {
 				int i = 2;
 				while (names.contains(site.getName() + "-" + i))

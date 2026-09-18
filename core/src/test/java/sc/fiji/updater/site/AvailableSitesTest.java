@@ -34,6 +34,8 @@ import static org.junit.Assert.assertEquals;
 import static org.junit.Assert.assertFalse;
 import static org.junit.Assert.assertArrayEquals;
 import static org.junit.Assert.assertNotEquals;
+import static org.junit.Assert.assertNotNull;
+import static org.junit.Assert.assertNull;
 import static sc.fiji.updater.UpdaterTestUtils.cleanup;
 import static sc.fiji.updater.UpdaterTestUtils.initialize;
 import static sc.fiji.updater.UpdaterTestUtils.main;
@@ -53,6 +55,7 @@ import javax.xml.parsers.ParserConfigurationException;
 import org.junit.Test;
 import org.xml.sax.SAXException;
 
+import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.channel.URLChange;
@@ -328,6 +331,126 @@ public class AvailableSitesTest {
 		Optional< URLChange > change =
 				URLChange.create(updateSite, "https://sites.imagej.net/ImageJ");
 		assertFalse(change.isPresent());
+	}
+
+	/**
+	 * A site renamed in the published list is recognized by its URL, and
+	 * follows the name rather than appearing as a second site.
+	 * <p>
+	 * This is what the {@code Fiji-Latest} to {@code Fiji} rename rides on.
+	 * </p>
+	 */
+	@Test
+	public void testRenameInPublishedListPropagates() throws Exception {
+		final FilesCollection files = initialize();
+		files.addUpdateSite("Old", "https://sites.example.org/thing/", null, null, 0);
+		files.add(fileOn("Old", "jars/thing.jar"));
+
+		applyOfficialUpdateSitesList(files, "New", "https://sites.example.org/thing/");
+
+		assertNull(files.getUpdateSite("Old", true));
+		assertNotNull(files.getUpdateSite("New", true));
+		assertEquals("New", files.get("jars/thing.jar").updateSite);
+
+		cleanup(files);
+	}
+
+	/**
+	 * The collision the rename has to survive: an installation carrying both the
+	 * real main site under its old name and a disabled legacy entry under the
+	 * name the published list is about to reuse.
+	 */
+	@Test
+	public void testRenameSurvivesACollisionWithALegacyEntry() throws Exception {
+		final FilesCollection files = initialize();
+		final UpdateSite main = files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true);
+		main.setURL("https://sites.imagej.net/Fiji/");
+		main.setActive(true);
+		files.add(fileOn(FilesCollection.DEFAULT_UPDATE_SITE, "jars/ij.jar"));
+		// The leftover an installation that once followed update.fiji.sc has.
+		files.addUpdateSite("Fiji", "https://update.fiji.sc/", null, null, 0);
+		files.getUpdateSite("Fiji", true).setActive(false);
+		files.add(fileOn("Fiji", "jars/legacy.jar"));
+
+		// The published list, after the server-side rename.
+		applyOfficialUpdateSitesList(files, "Fiji", "https://sites.imagej.net/Fiji/");
+
+		// The real main site took the name, and its files came with it.
+		final UpdateSite renamed = files.getUpdateSite("Fiji", true);
+		assertEquals("https://sites.imagej.net/Fiji/", renamed.getURL());
+		assertTrue(renamed.isActive());
+		assertEquals("Fiji", files.get("jars/ij.jar").updateSite);
+
+		// The legacy entry was disambiguated rather than silently displacing it,
+		// and kept both its URL and its files.
+		final UpdateSite legacy = files.getUpdateSite("Fiji-2", true);
+		assertNotNull(legacy);
+		assertEquals("https://update.fiji.sc/", legacy.getURL());
+		assertFalse(legacy.isActive());
+		assertEquals("Fiji-2", files.get("jars/legacy.jar").updateSite);
+
+		cleanup(files);
+	}
+
+	/** A user reading the main site from a mirror is following the main site. */
+	@Test
+	public void testMirrorIsNotASecondSite() throws Exception {
+		final FilesCollection files = initialize();
+		final UpdateSite main = files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true);
+		main.setURL("https://downloads.micron.ox.ac.uk/fiji_update/mirrors/sites-fiji/");
+		main.setActive(true);
+
+		applyOfficialUpdateSitesList(files, "Fiji", "https://sites.imagej.net/Fiji/");
+
+		// One main site, not two, and the user was left on their mirror.
+		assertNull(files.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, true));
+		final UpdateSite renamed = files.getUpdateSite("Fiji", true);
+		assertNotNull(renamed);
+		assertEquals("https://downloads.micron.ox.ac.uk/fiji_update/mirrors/sites-fiji/",
+				renamed.getURL());
+
+		cleanup(files);
+	}
+
+	/** An installation predating HTTPS is on the same site, not a different one. */
+	@Test
+	public void testSchemeIsNotIdentity() throws Exception {
+		final FilesCollection files = initialize();
+		files.addUpdateSite("Thing", "http://sites.example.org/thing/", null, null, 0);
+
+		applyOfficialUpdateSitesList(files, "Thing", "https://sites.example.org/thing/");
+
+		assertEquals(1, countSitesNamed(files, "Thing"));
+		// Matching ignores the scheme; the published URL still supersedes it,
+		// which is how an installation gets moved off plain HTTP.
+		assertEquals("https://sites.example.org/thing/",
+				files.getUpdateSite("Thing", true).getURL());
+
+		cleanup(files);
+	}
+
+	/** Two unrelated sites stay two sites. */
+	@Test
+	public void testUnrelatedSitesAreNotMerged() throws Exception {
+		final FilesCollection files = initialize();
+		files.addUpdateSite("Mine", "https://sites.example.org/mine/", null, null, 0);
+
+		applyOfficialUpdateSitesList(files, "Yours", "https://sites.example.org/yours/");
+
+		assertNotNull(files.getUpdateSite("Mine", true));
+		assertNotNull(files.getUpdateSite("Yours", true));
+
+		cleanup(files);
+	}
+
+	private static long countSitesNamed(final FilesCollection files, final String name) {
+		return files.getUpdateSites(true).stream()
+				.filter(site -> name.equals(site.getName())).count();
+	}
+
+	private static FileObject fileOn(final String updateSite, final String filename) {
+		return new FileObject(updateSite, filename, 0, "0000000000000000000000000000000000000000",
+				0, FileObject.Status.INSTALLED);
 	}
 
 	/**
