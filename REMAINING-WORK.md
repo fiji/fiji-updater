@@ -127,30 +127,58 @@ codebase.
 That is what makes renaming a site a data-model problem rather than a string
 change, and it is the direct cause of the `Fiji` collision below.
 
-- **Identify sites by URL, not by name.** The first half, and it depends on
-  nothing: the URL is already in every local `db.xml.gz`, so this needs no
-  `sites.yml` and no format change. `findIndexByName` becomes a URL match, and
-  on a match the local site adopts the published *name*, rewriting the
-  `update-site` attribute of every file that referred to it. A rename in the
-  published list then propagates by itself, and the `Fiji` collision stops
-  existing: the main site matches the local `Fiji-Latest` by URL and is renamed,
-  while the legacy `update.fiji.sc` entry matches nothing and is left alone as
-  the disabled leftover it is.
+- **Identify sites by URL, not by name — landed.** Matching asks the URL
+  first, then whether both sides are the core site, and only then the name.
+  On a match the local site adopts the published *name*, and the file
+  references follow it, so a rename in the published list propagates by itself
+  and the `Fiji` collision stops existing: the main site is recognized by URL
+  and renamed, while the legacy `update.fiji.sc` entry matches nothing and is
+  disambiguated to `Fiji-2` rather than displacing it.
 
-  Two things to fix on the way, both still present in the code.
-  `makeSureNamesAreUnique` `continue`s on active sites *before* `names.add`, so
-  its set only ever holds inactive names and an inactive duplicate of an
-  **active** name is never disambiguated — which is precisely the case here,
-  two entries named `Fiji`. And URL matching has to happen after
-  `OBSOLETE_URLS` rewriting, with mirrors accounted for, or a user on a mirror
-  looks like a user of an unrelated site.
+  Three things that turned out to matter, each pinned by a test. A published
+  entry can be claimed by at most one local site, identity claims beating name
+  claims — otherwise the disabled legacy `Fiji` displaces the real main site
+  the moment that site adopts the name, taking every file with it. Renaming
+  has to rewrite file references once at the end, from the names as they were,
+  because a rename at a time is ambiguous exactly when two sites share a name.
+  And folding the published list onto itself must *not* treat equivalent URLs
+  as the same entry, since the list carries `Fiji-Latest (Europe mirror)` as
+  its own entry.
 
-- **Then adopt the site `id`.** The second half, which does depend on consuming
-  `sites.yml`, and which handles the one case URL matching cannot: a site whose
-  *URL* changes. Ids also give per-site channel resolution a stable cache key,
-  and retire the `-2` suffixing in `makeSureNamesAreUnique` outright. Note the
-  id can never be the sole key — a user's own private site will never have one
-  — so it layers over URL identity rather than replacing it.
+  `makeSureNamesAreUnique` no longer skips active sites before recording their
+  names, which is why an inactive duplicate of an active name was never
+  disambiguated.
+
+- **Then adopt the site `id`.** The second half, and the end state: a UUID
+  minted at a site's first upload, recorded in the site's own `db.xml.gz` and
+  read back from there, so nothing has to be specified by hand and nothing has
+  to live in `sites.yml`. It handles the one case URL matching cannot — a site
+  whose *URL* changes — gives per-site channel resolution a stable cache key,
+  and makes a mirror self-identifying: same id at two URLs is a mirror swap
+  rather than a move, which retires `MIRROR_URL_PREFIXES` and
+  `MAIN_SITE_MIRRORS`. Because a mirror is normally a copy of the canonical
+  site's index, mirrors get their id for free.
+
+  Once sites are keyed by id, a name is a label: two sites may share one, and
+  renaming becomes a field write rather than a data-model operation.
+  `renameUpdateSite`, `makeSureNamesAreUnique` and the `-2` suffixing all go
+  away, and uniqueness becomes a display concern.
+
+  What the id does *not* do is replace URL matching. No site serves an id
+  today; a third-party site acquires one only when its maintainer re-uploads,
+  and an abandoned-but-serving site never will. An id is also learned by
+  fetching the site's index, which needs the URL — so the URL stays the
+  locator and the id becomes the identity, layered over it. Two consequences
+  worth recording: the `Fiji` rename cannot wait for ids, because it has to
+  work on installations that have never met a site serving one; and a
+  maintainer who rebuilds an index from scratch mints a fresh id, which the
+  URL layer underneath is what catches.
+
+  The index format can carry it: `XMLFileReader` reads attributes by name and
+  ignores unknown ones, and validation is switched off, so every existing
+  client tolerates an `id` on `<update-site>`. One hazard — an old updater
+  writing the local index drops attributes it does not know, silently erasing
+  ids, which is another reason the stray `imagej-updater.jar` has to go.
 
 - **A published blocklist of retired site URLs** — deferred, and deliberately
   not the mechanism for the `Fiji` rename. Anything fetched cannot be a
@@ -206,8 +234,8 @@ change, and it is the direct cause of the `Fiji` collision below.
     ends up following the main site twice under two names, with every
     `FileObject.updateSite` still saying `Fiji-Latest`.
 
-  So the rename is gated on **URL identity** (see *Update site identity*),
-  shipped in or before the release that flips the constant. That is a better
+  So the rename is gated on **URL identity** (see *Update site identity*,
+  now landed), shipped in or before the release that flips the constant. That is a better
   answer than a bespoke one-shot migration: it fixes the mechanism rather than
   this instance of it, needs nothing fetched at run time, and leaves every
   future rename a no-op.
