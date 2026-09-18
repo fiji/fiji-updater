@@ -349,6 +349,17 @@ keeps indefinitely (design principle 4, and layer 3 of its Phase 2).
 
 ## Smaller cleanups
 
+- **HTTPS is assumed, deliberately.** The old `HTTPSUtil` probe downgraded the
+  whole session to plain HTTP on a TLS handshake failure, a timeout or a socket
+  error, for a tool that installs what it downloads. It is gone: the handshake
+  case needed Java 8u101 or older, and the fallback could not work anyway,
+  since every host answers HTTP with a 301 to https and `HttpURLConnection`
+  will not follow a redirect that changes protocol. Should a report arrive
+  from behind a corporate proxy, the fix is in `Connections.useSystemProxies`
+  or the proxy credentials path -- not a protocol downgrade. What remains is
+  informational: `FilesCollection.insecureSites()` names the active `http://`
+  sites, and both user interfaces say so at startup without refusing them.
+
 - **Consolidate the lagging-site check.** `ChannelUpgradePrompt.laggingSites`
   and `XMLFileDownloader.hasNotAdopted` answer the same question two ways.
 
