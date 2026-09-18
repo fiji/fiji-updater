@@ -34,7 +34,9 @@ import java.io.IOException;
 import java.nio.file.*;
 import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.HashSet;
+import java.util.Map;
 import java.util.List;
 import java.util.Set;
 
@@ -102,6 +104,11 @@ public class Installer {
 		protected String url;
 		protected File destination;
 
+		/**
+		 * Where the wanted content already sits on disk, or null to download it.
+		 */
+		protected File source;
+
 		Download(final FileObject file, final String url, final File destination) {
 			this.file = file;
 			this.url = url;
@@ -129,6 +136,52 @@ public class Installer {
 		}
 	}
 
+	/**
+	 * The content currently on disk, by checksum.
+	 * <p>
+	 * Only what the installation itself recorded is trusted here: a checksum
+	 * the checksummer computed for a file it found, which is the same value the
+	 * update site publishes for the same content. The copy is verified like a
+	 * download in any case, so a stale entry costs a fallback, not a wrong file.
+	 * </p>
+	 */
+	private Map<String, String> localContent() {
+		final Map<String, String> result = new HashMap<>();
+		for (final FileObject file : files.installed()) {
+			if (file.localChecksum == null) continue;
+			result.putIfAbsent(file.localChecksum, file.getLocalFilename(false));
+		}
+		return result;
+	}
+
+	/**
+	 * Puts content already on disk where a download would have put it.
+	 * <p>
+	 * The copy is verified exactly as a download is, so content that turns out
+	 * not to match -- a file changed since it was checksummed, say -- falls back
+	 * to being downloaded rather than being installed wrongly.
+	 * </p>
+	 */
+	private void copy(final Download download) throws IOException {
+		final File destination = download.getDestination();
+		downloader.addItem(download);
+		try {
+			final File parentDirectory = destination.getParentFile();
+			if (parentDirectory != null) parentDirectory.mkdirs();
+			Files.copy(download.source.toPath(), destination.toPath(),
+				StandardCopyOption.REPLACE_EXISTING);
+			// NB: this is what verifies the copy, via the installer's own
+			// progress listener, exactly as it verifies a finished download.
+			downloader.itemDone(download);
+		}
+		catch (final IOException | RuntimeException e) {
+			files.log.warn("Could not reuse '" + download.source + "' for '" +
+				download.file.filename + "'; downloading it instead", e);
+			destination.delete();
+			downloader.start(download);
+		}
+	}
+
 	public synchronized void start() throws IOException {
 		final Iterable<Conflict> conflicts = new Conflicts(files).getConflicts(false);
 		if (Conflicts.needsFeedback(conflicts)) {
@@ -152,6 +205,8 @@ public class Installer {
 			}
 
 		final List<Downloadable> list = new ArrayList<>();
+		final List<Download> reusable = new ArrayList<>();
+		final Map<String, String> localContent = localContent();
 
 		// Special care must be taken when updating files in the Mac bundle (Fiji.app)
 		// These files are all signed together as one unit, so individual files can not be modified.
@@ -215,9 +270,18 @@ public class Installer {
 
 			final String url = files.getURL(file);
 			final Download download = new Download(file, url, saveTo);
-			list.add(download);
+			// The bytes this file wants may be on disk already, under another
+			// name: a file renamed on the update site, a downgrade to a version
+			// that is still around, or the same content served by two sites.
+			final String source = localContent.get(file.getChecksum());
+			if (source != null && saveTo.equals(files.prefixUpdate(name))) {
+				download.source = files.prefix(source);
+				reusable.add(download);
+			}
+			else list.add(download);
 		}
 
+		for (final Download download : reusable) copy(download);
 		downloader.start(list);
 
 		for (final FileObject file : uninstalled)
