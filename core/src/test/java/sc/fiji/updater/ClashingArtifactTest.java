@@ -136,6 +136,43 @@ public class ClashingArtifactTest {
 	}
 
 	/**
+	 * Two clashing artifacts installed at once are reported as what they are,
+	 * rather than as multiple versions of one file with an offer to delete one.
+	 */
+	@Test
+	public void testBothInstalledIsReportedAsClash() throws Exception {
+		files = publishJetbrainsAnnotations();
+		writeMavenJar("jars/annotations-2.46.15.jar", AWSSDK);
+		files = readDb(files);
+
+		final List<Conflict> conflicts = criticalConflicts(files.getConflicts());
+		assertEquals(1, conflicts.size());
+		final Conflict conflict = conflicts.get(0);
+		assertTrue(conflict.getConflict().contains(JETBRAINS));
+		assertTrue(conflict.getConflict().contains(AWSSDK));
+		final Resolution rename = conflict.getResolutions()[0];
+		assertEquals("Rename to jars/software.amazon.awssdk.annotations-2.46.15.jar",
+			rename.getDescription());
+
+		rename.resolve();
+		assertFalse(files.prefix("jars/annotations-2.46.15.jar").exists());
+		assertTrue(files.prefix(
+			"jars/software.amazon.awssdk.annotations-2.46.15.jar").exists());
+
+		// The artifact the update site knows kept the plain name, installed and
+		// up-to-date; the other is a local-only file of its own.
+		final FileObject annotations = files.get("jars/annotations.jar");
+		assertEquals(JETBRAINS, annotations.coordinate);
+		assertEquals(Status.INSTALLED, annotations.getStatus());
+		assertTrue(files.prefix("jars/annotations-13.0.jar").exists());
+		final FileObject renamed =
+			files.get("jars/software.amazon.awssdk.annotations.jar");
+		assertNotNull(renamed);
+		assertEquals(AWSSDK, renamed.localCoordinate);
+		assertEquals(Status.LOCAL_ONLY, renamed.getStatus());
+	}
+
+	/**
 	 * Publishes {@code jars/annotations-13.0.jar} as
 	 * {@code org.jetbrains:annotations}, then replaces it on disk with a second
 	 * .jar and stages that for upload.
@@ -147,13 +184,7 @@ public class ClashingArtifactTest {
 	private FileObject stageSecondJar(final String path, final String coordinate)
 		throws Exception
 	{
-		files = initialize();
-		writeMavenJar("jars/annotations-13.0.jar", JETBRAINS);
-		files = readDb(files);
-		files.get("jars/annotations.jar").stageForUpload(files,
-			FilesCollection.DEFAULT_UPDATE_SITE);
-		upload(files);
-
+		files = publishJetbrainsAnnotations();
 		assertTrue(files.prefix("jars/annotations-13.0.jar").delete());
 		writeMavenJar(path, coordinate);
 		files = readDb(files);
@@ -164,6 +195,17 @@ public class ClashingArtifactTest {
 		return file;
 	}
 
+	/** Stands up a site offering jars/annotations-13.0.jar, and installs it. */
+	private FilesCollection publishJetbrainsAnnotations() throws Exception {
+		files = initialize();
+		writeMavenJar("jars/annotations-13.0.jar", JETBRAINS);
+		files = readDb(files);
+		files.get("jars/annotations.jar").stageForUpload(files,
+			FilesCollection.DEFAULT_UPDATE_SITE);
+		upload(files);
+		return files;
+	}
+
 	private void writeMavenJar(final String path, final String coordinate)
 		throws Exception
 	{
@@ -172,8 +214,12 @@ public class ClashingArtifactTest {
 	}
 
 	private List<Conflict> criticalConflicts() {
+		return criticalConflicts(new Conflicts(files).getConflicts(true));
+	}
+
+	private List<Conflict> criticalConflicts(final Iterable<Conflict> conflicts) {
 		final List<Conflict> result = new ArrayList<>();
-		for (final Conflict conflict : new Conflicts(files).getConflicts(true)) {
+		for (final Conflict conflict : conflicts) {
 			if (conflict.getSeverity() == Severity.CRITICAL_ERROR) {
 				result.add(conflict);
 			}

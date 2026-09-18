@@ -44,6 +44,7 @@ import java.util.HashMap;
 import java.util.HashSet;
 import java.util.Iterator;
 import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
@@ -96,6 +97,7 @@ public class Checksummer extends AbstractProgressable {
 		private final File file;
 		public long timestamp;
 		public String checksum;
+		public String coordinate;
 
 		protected StringAndFile(final String path, final File file) {
 			this.path = path;
@@ -213,6 +215,8 @@ public class Checksummer extends AbstractProgressable {
 			return;
 		}
 
+		if (unversioned.endsWith(".jar") && handleClash(unversioned, pairs)) return;
+
 		// there are multiple versions of the same component;
 		StringAndFile pair = null;
 		FileObject object = files.get(unversioned);
@@ -261,6 +265,110 @@ public class Checksummer extends AbstractProgressable {
 				addConflict(pair.path, "up-to-date", false, convert(upToDates));
 		}
 		handle(pair);
+	}
+
+	/**
+	 * Handles .jar files that are not versions of one component at all, but
+	 * different artifacts whose artifactIds happen to match.
+	 * <p>
+	 * Telling them apart matters because the alternative on offer is deleting
+	 * one -- and deleting an unrelated library is exactly the damage of
+	 * <a href="https://github.com/imagej/imagej-updater/issues/120">
+	 * imagej/imagej-updater#120</a>. The one the update site knows keeps the
+	 * plain name; anything else is offered the groupId-prefixed name that such
+	 * pairs have been kept apart by all along.
+	 * </p>
+	 *
+	 * @param unversioned the name the files share
+	 * @param pairs the files sharing it
+	 * @return whether the files were different artifacts, and so handled here
+	 */
+	protected boolean handleClash(final String unversioned,
+		final List<StringAndFile> pairs)
+	{
+		final Set<String> coordinates = new LinkedHashSet<>();
+		for (final StringAndFile pair : pairs) {
+			pair.coordinate = coordinateOf(pair.file);
+			if (pair.coordinate != null) coordinates.add(pair.coordinate);
+		}
+		if (coordinates.size() < 2) return false;
+
+		final FileObject object = files.get(unversioned);
+		final String known = object == null ? null : object.coordinate;
+		StringAndFile keeper = null;
+		for (final StringAndFile pair : pairs) {
+			if (pair.coordinate != null && pair.coordinate.equals(known)) keeper = pair;
+		}
+		// With no record of which artifact owns the name, the newest file keeps
+		// it, as it would if these really were versions of one component.
+		if (keeper == null) keeper = pickNewest(new ArrayList<>(pairs));
+
+		final Map<String, String> renames = new LinkedHashMap<>();
+		final StringBuilder message = new StringBuilder();
+		message.append("Different artifacts are sharing the name ")
+			.append(unversioned).append(":");
+		for (final StringAndFile pair : pairs) {
+			message.append("\n").append(pair.path).append(" is ")
+				.append(pair.coordinate == null ? "not a Maven artifact"
+					: pair.coordinate);
+			if (pair == keeper || pair.coordinate == null) continue;
+			renames.put(pair.path, FileObject.disambiguate(pair.path,
+				pair.coordinate));
+		}
+		message.append("\nOnly one of them can be ").append(unversioned).append(".");
+		addClashConflict(keeper.path, message.toString(), renames);
+
+		handle(keeper);
+		return true;
+	}
+
+	private String coordinateOf(final File file) {
+		try {
+			return POMParser.readCoordinate(file);
+		}
+		catch (final IOException e) {
+			files.log.error("Could not read the coordinate of " + file, e);
+			return null;
+		}
+	}
+
+	/**
+	 * Reports clashing artifacts, offering to give all but one of them the
+	 * groupId-prefixed name.
+	 *
+	 * @param filename the file the conflict is reported against
+	 * @param message what the clash is
+	 * @param renames the files to rename, mapped to their new names
+	 */
+	protected void addClashConflict(final String filename, final String message,
+		final Map<String, String> renames)
+	{
+		final Resolution ignore = new Resolution("Ignore for now") {
+			@Override
+			public void resolve() {
+				removeConflict(filename);
+			}
+		};
+		final Resolution rename = new Resolution("Rename to " +
+			UpdaterUtil.join(", ", renames.values()))
+		{
+			@Override
+			public void resolve() {
+				for (final Map.Entry<String, String> entry : renames.entrySet()) {
+					if (!files.prefix(entry.getKey()).renameTo(files.prefix(entry
+						.getValue())))
+					{
+						throw new RuntimeException("Could not rename '" +
+							entry.getKey() + "' to '" + entry.getValue() + "'");
+					}
+				}
+				new Checksummer(files, null).updateFromLocal(new ArrayList<>(renames
+					.values()));
+				removeConflict(filename);
+			}
+		};
+		files.conflicts.add(new Conflict(Severity.CRITICAL_ERROR, filename,
+			message, rename, ignore));
 	}
 
 	protected static StringAndFile pickNewest(final List<StringAndFile> list) {

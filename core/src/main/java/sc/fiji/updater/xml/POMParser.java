@@ -67,24 +67,45 @@ public class POMParser extends DefaultHandler {
 
 	public static void fillMetadataFromJar(final FileObject object, final File file) throws ParserConfigurationException, IOException, SAXException {
 		final JarFile jar = new JarFile(file);
-		final Set<String> coordinates = new LinkedHashSet<>();
 		boolean read = false;
 		for (final JarEntry entry : UpdaterUtil.iterate(jar.entries())) {
-			final Matcher matcher = POM_PATH.matcher(entry.getName());
-			if (matcher.matches()) {
-				coordinates.add(matcher.group(1) + ":" + matcher.group(2));
-			}
 			if (!read && entry.getName().matches("META-INF/maven/.*/pom.xml")) {
 				new POMParser(object).read(jar.getInputStream(entry));
 				read = true;
 			}
 		}
+		object.localCoordinate = coordinate(jar);
 		jar.close();
+	}
+
+	/**
+	 * Reads the {@code groupId:artifactId} a .jar was built as.
+	 *
+	 * @param file the .jar file
+	 * @return the coordinate, or null if the file does not name exactly one
+	 * @throws IOException if the file cannot be read as a .jar
+	 */
+	public static String readCoordinate(final File file) throws IOException {
+		final JarFile jar = new JarFile(file);
+		try {
+			return coordinate(jar);
+		}
+		finally {
+			jar.close();
+		}
+	}
+
+	private static String coordinate(final JarFile jar) {
+		final Set<String> coordinates = new LinkedHashSet<>();
+		for (final JarEntry entry : UpdaterUtil.iterate(jar.entries())) {
+			final Matcher matcher = POM_PATH.matcher(entry.getName());
+			if (matcher.matches()) {
+				coordinates.add(matcher.group(1) + ":" + matcher.group(2));
+			}
+		}
 		// Note: a shaded .jar carries the coordinates of everything it absorbed,
 		// so the one it is known by cannot be told from the ones it contains.
-		if (coordinates.size() == 1) {
-			object.localCoordinate = coordinates.iterator().next();
-		}
+		return coordinates.size() == 1 ? coordinates.iterator().next() : null;
 	}
 
 	/**
