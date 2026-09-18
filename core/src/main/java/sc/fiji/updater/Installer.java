@@ -158,11 +158,15 @@ public class Installer {
 	 * Puts content already on disk where a download would have put it.
 	 * <p>
 	 * The copy is verified exactly as a download is, so content that turns out
-	 * not to match -- a file changed since it was checksummed, say -- falls back
-	 * to being downloaded rather than being installed wrongly.
+	 * not to match -- a file changed since it was checksummed, say -- is left
+	 * to the downloader rather than being installed wrongly.
 	 * </p>
+	 *
+	 * @param download what to install, and where the content already is
+	 * @return whether the content was installed, so that the caller can hand
+	 *         the file to the downloader if it was not
 	 */
-	private void copy(final Download download) throws IOException {
+	private boolean copy(final Download download) {
 		final File destination = download.getDestination();
 		downloader.addItem(download);
 		try {
@@ -173,12 +177,17 @@ public class Installer {
 			// NB: this is what verifies the copy, via the installer's own
 			// progress listener, exactly as it verifies a finished download.
 			downloader.itemDone(download);
+			return true;
 		}
 		catch (final IOException | RuntimeException e) {
-			files.log.warn("Could not reuse '" + download.source + "' for '" +
-				download.file.filename + "'; downloading it instead", e);
+			// Note: an expected outcome, not a failure -- the file is downloaded
+			// instead. The exception is the detail of what did not match.
+			final String message = "Could not reuse '" + download.source +
+				"' for '" + download.file.filename + "'; downloading it instead";
+			if (files.log.isDebug()) files.log.debug(message, e);
+			else files.log.info(message);
 			destination.delete();
-			downloader.start(download);
+			return false;
 		}
 	}
 
@@ -281,7 +290,11 @@ public class Installer {
 			else list.add(download);
 		}
 
-		for (final Download download : reusable) copy(download);
+		// NB: the copies run first, so that whatever cannot be reused is still
+		// part of the one download the downloader reports progress for.
+		for (final Download download : reusable) {
+			if (!copy(download)) list.add(download);
+		}
 		downloader.start(list);
 
 		for (final FileObject file : uninstalled)
