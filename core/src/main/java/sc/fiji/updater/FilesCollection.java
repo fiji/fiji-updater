@@ -67,6 +67,7 @@ import sc.fiji.updater.action.KeepAsIs;
 import sc.fiji.updater.action.Remove;
 import sc.fiji.updater.action.Uninstall;
 import sc.fiji.updater.action.Upload;
+import sc.fiji.updater.app.AppLayout;
 import sc.fiji.updater.app.Platforms;
 import sc.fiji.updater.channel.ChannelManifest;
 import sc.fiji.updater.channel.ChannelState;
@@ -178,6 +179,83 @@ public class FilesCollection implements Iterable<FileObject> {
 
 	public File getAppRoot() {
 		return appRoot;
+	}
+
+	// -- Asking an installation what it follows --
+
+	/**
+	 * The names of the update sites the installation at the app root follows.
+	 * <p>
+	 * A convenience for callers outside the updater -- a plugin asking whether
+	 * the site shipping it is subscribed to, say -- that would otherwise
+	 * assemble a {@link FilesCollection} of their own.
+	 * </p>
+	 *
+	 * @throws IOException if the installation's index cannot be read.
+	 */
+	public static Collection<String> activeUpdateSites() throws IOException {
+		return activeUpdateSites(AppLayout.appRoot());
+	}
+
+	/**
+	 * As {@link #activeUpdateSites()}, for a given installation.
+	 *
+	 * @param appRoot the application base directory.
+	 * @throws IOException if the installation's index cannot be read.
+	 */
+	public static Collection<String> activeUpdateSites(final File appRoot)
+		throws IOException
+	{
+		return load(appRoot).getUpdateSiteNames(false);
+	}
+
+	/**
+	 * Whether the installation at the app root follows the named update site.
+	 *
+	 * @param name the update site's name.
+	 * @throws IOException if the installation's index cannot be read.
+	 */
+	public static boolean isUpdateSiteActive(final String name)
+		throws IOException
+	{
+		return isUpdateSiteActive(name, AppLayout.appRoot());
+	}
+
+	/**
+	 * As {@link #isUpdateSiteActive(String)}, for a given installation.
+	 *
+	 * @param name the update site's name.
+	 * @param appRoot the application base directory.
+	 * @throws IOException if the installation's index cannot be read.
+	 */
+	public static boolean isUpdateSiteActive(final String name,
+		final File appRoot) throws IOException
+	{
+		return load(appRoot).getUpdateSite(name, false) != null;
+	}
+
+	/**
+	 * Reads an installation's index.
+	 * <p>
+	 * Note: deliberately re-read on every call rather than cached. Which sites
+	 * an installation follows is exactly what the updater changes, so a cached
+	 * answer is stale from the first time the user edits their subscriptions --
+	 * and reading the index costs milliseconds.
+	 * </p>
+	 */
+	private static FilesCollection load(final File appRoot) throws IOException {
+		final FilesCollection files = new FilesCollection(appRoot);
+		try {
+			files.read();
+		}
+		catch (final FileNotFoundException e) {
+			// No index yet: the installation follows what the constructor seeded,
+			// and nothing more.
+		}
+		catch (final ParserConfigurationException | SAXException e) {
+			throw new IOException("Could not read the index of " + appRoot, e);
+		}
+		return files;
 	}
 
 	/**

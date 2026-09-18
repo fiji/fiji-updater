@@ -32,7 +32,7 @@
  * The Fiji Updater's Swing user interface.
  * <p>
  * Split from the core so that the command line, the startup check and the
- * {@code UpdateService} can run without AWT being loaded.
+ * update check can run without AWT being loaded.
  * </p>
  */
 module sc.fiji.updater.gui {

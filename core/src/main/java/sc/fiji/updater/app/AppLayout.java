@@ -145,7 +145,7 @@ public final class AppLayout {
 	 * The installation root to operate on.
 	 * <p>
 	 * This is the one answer to "which installation is being updated": every
-	 * entry point -- the GUI, the command line, the {@code UpdateService} and
+	 * entry point -- the GUI, the command line, the update check and
 	 * the startup check -- goes through here, so that they cannot disagree.
 	 * </p>
 	 * <p>
