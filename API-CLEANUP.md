@@ -330,17 +330,21 @@ Taken:
   by whether the conflict names a `FileObject` or a bare filename, with the
   `Severity` enum carrying what the other four encoded.
 
-Not taken:
+Also taken:
 
-- `Diff` still has its generic-IO helpers -- `copy`, `getClassVersion` twice,
-  `offsetOfFirstDiff`, `isLocal`, `cacheFile` -- which are `protected static`,
-  not diffing, and not public surface.
-- The five `GroupAction` implementations each still restate `toString()` as
-  either a literal or `getLabel(null, emptyList())`. They cannot be collapsed
-  into a default method: Java forbids an interface from defaulting an `Object`
-  method, so this needs `GroupAction` to become an abstract class first.
-  `KeepAsIs` and `Uninstall` are stateless and are still `new`'d on every
-  `getValidActions()` call, and again in `UpdaterFrame`'s button setup.
+- `Diff`'s generic-IO helpers turned out not to be a question of where they
+  belong. Nothing extends `Diff` and nothing outside the file calls them, so
+  `protected` was advertising a subclass contract that does not exist; they are
+  private. The stream copy went further: six of its seven uses were a byte
+  array going into a file, which is what they say now, and the seventh is
+  `InputStream.transferTo`, which the JDK has had since 9.
+- The five `GroupAction` implementations each restated `toString()` as either
+  `getLabel(null, emptyList())` or the literal that works out to. `GroupAction`
+  is an abstract class now and says it once -- Java forbids an interface from
+  defaulting an `Object` method, which is why it had to stop being one. The
+  three stateless implementations -- `KeepAsIs`, `Uninstall` and
+  `InstallOrUpdate` -- are single instances with private constructors rather
+  than allocations on every `getValidActions()` call.
 
 ## Still outstanding
 
@@ -363,9 +367,6 @@ What the pass did not cover, and what each is waiting on.
   `ChannelState.CHANNEL_PROPERTY`; `UpdateSiteNetwork.MIRROR_URL_PREFIXES`;
   `AvailableSites.getAvailableSites`. Plus `Installer`'s three `FileVisitor`
   overrides, which are public because the interface is and should stay.
-
-- **Smaller DRY not yet taken:** `Diff`'s generic-IO helpers and the stateless
-  `GroupAction` singletons, both described above.
 
 Note the two documents interacted as expected: the bootstrap consolidation and
 the `FileObject.updateSite` encapsulation were both prerequisites in spirit for
