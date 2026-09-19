@@ -277,7 +277,7 @@ public class Diff {
 	 *            the <i>.jar</i> file
 	 * @return the sorted list
 	 */
-	protected static List<JarEntry> getSortedEntries(JarFile jar) {
+	private static List<JarEntry> getSortedEntries(JarFile jar) {
 		List<JarEntry> result = new ArrayList<>();
 		for (final JarEntry entry : new IteratorPlus<>(jar.entries())) {
 			result.add(entry);
@@ -305,7 +305,7 @@ public class Diff {
 	 */
 	protected void hexdump(File inputFile, File outputFile) throws FileNotFoundException, IOException {
 		final String result = ProcessUtils.exec(null, out, null, "hexdump", "-C", inputFile.getAbsolutePath());
-		copy(new ByteArrayInputStream(result.getBytes()), new FileOutputStream(outputFile), true, true);
+		write(outputFile, result.getBytes());
 	}
 
 	/**
@@ -318,11 +318,9 @@ public class Diff {
 	 * @throws FileNotFoundException
 	 * @throws IOException
 	 */
-	protected static void analyzeByteCode(final InputStream in, File outputFile) throws FileNotFoundException, IOException {
+	private static void analyzeByteCode(final InputStream in, File outputFile) throws FileNotFoundException, IOException {
 		final ByteCodeAnalyzer analyzer = analyzeByteCode(in, true);
-		InputStream inStream = new ByteArrayInputStream(analyzer.toString()
-				.getBytes());
-		copy(inStream, new FileOutputStream(outputFile), true, true);
+		write(outputFile, analyzer.toString().getBytes());
 	}
 
 	/**
@@ -332,7 +330,12 @@ public class Diff {
 	 */
 	public static ByteCodeAnalyzer analyzeByteCode(final InputStream in, boolean closeStream) throws IOException {
 		final ByteArrayOutputStream outStream = new ByteArrayOutputStream();
-		copy(in, outStream, closeStream, true);
+		try {
+			in.transferTo(outStream);
+		}
+		finally {
+			if (closeStream) in.close();
+		}
 		return new ByteCodeAnalyzer(outStream.toByteArray(), ByteCodeAnalyzer.Mode.ALL);
 	}
 
@@ -350,7 +353,7 @@ public class Diff {
 		File file = File.createTempFile("javap-", "");
 		try {
 			final String result = ProcessUtils.exec(null, out, null, "javap", "-classpath", jarFile.getAbsolutePath(), "-c", className);
-			copy(new ByteArrayInputStream(result.getBytes()), new FileOutputStream(file), true, true);
+			write(file, result.getBytes());
 		} catch (RuntimeException e) {
 			if (e.getCause() != null && e.getCause() instanceof InterruptedException)
 				throw e;
@@ -374,13 +377,13 @@ public class Diff {
 		file.delete();
 		File classFile = new File(file, path);
 		classFile.getParentFile().mkdirs();
-		copy(new ByteArrayInputStream(buffer), new FileOutputStream(classFile), true, true);
+		write(classFile, buffer);
 		final String result = ProcessUtils.exec(null, out, null, "javap", "-classpath", file.getAbsolutePath(), "-c", path.replace('/', '.'));
 		while (!classFile.equals(file)) {
 			classFile.delete();
 			classFile = classFile.getParentFile();
 		}
-		copy(new ByteArrayInputStream(result.getBytes()), new FileOutputStream(file), true, true);
+		write(file, result.getBytes());
 	}
 
 	/**
@@ -391,7 +394,7 @@ public class Diff {
 	 * @return the version in dotted format
 	 * @throws IOException
 	 */
-	protected static float getClassVersion(File file) throws IOException {
+	private static float getClassVersion(File file) throws IOException {
 		return getClassVersion(new FileInputStream(file));
 	}
 
@@ -403,7 +406,7 @@ public class Diff {
 	 * @return the version in dotted format
 	 * @throws IOException
 	 */
-	protected static float getClassVersion(InputStream stream) throws IOException {
+	private static float getClassVersion(InputStream stream) throws IOException {
 		DataInputStream data = new DataInputStream(stream);
 
 		if (data.readInt() != 0xcafebabe)
@@ -425,14 +428,18 @@ public class Diff {
 	 * @return the cached file, or the original file if nothing was cached
 	 * @throws IOException
 	 */
-	protected File cacheFile(final URL url, boolean evenLocal) throws IOException {
+	private File cacheFile(final URL url, boolean evenLocal) throws IOException {
 		if (!evenLocal && isLocal(url))
 			return new File(url.getPath());
 		String extension = FileUtils.getExtension(url.getFile());
 		if (extension.startsWith("jar-")) extension = "jar";
 		final File result = File.createTempFile("diff-", "".equals(extension) ? "" : "." + extension);
 		result.deleteOnExit();
-		copy(Connections.openStream(url), new FileOutputStream(result), true, true);
+		try (final InputStream in = Connections.openStream(url);
+				final OutputStream out = new FileOutputStream(result))
+		{
+			in.transferTo(out);
+		}
 		return result;
 	}
 
@@ -443,7 +450,7 @@ public class Diff {
 	 *            the URL
 	 * @return whether the URL is really a local one
 	 */
-	protected static boolean isLocal(URL url) {
+	private static boolean isLocal(URL url) {
 		return url.getProtocol().equals("file");
 	}
 
@@ -458,7 +465,7 @@ public class Diff {
 	 *         are identical
 	 * @throws IOException
 	 */
-	protected static long offsetOfFirstDiff(final File file1, final File file2) throws IOException {
+	private static long offsetOfFirstDiff(final File file1, final File file2) throws IOException {
 		final BufferedInputStream in1 = new BufferedInputStream(new FileInputStream(file1));
 		final BufferedInputStream in2 = new BufferedInputStream(new FileInputStream(file2));
 		long counter = 0;
@@ -477,30 +484,18 @@ public class Diff {
 	}
 
 	/**
-	 * Copy bytes from an {@link InputStream} to an {@link OutputStream}.
-	 * 
-	 * @param in
-	 *            the input
-	 * @param out
-	 *            the output
-	 * @param closeIn
-	 *            whether to close {@code in} after reading
-	 * @param closeOut
-	 *            whether to close {@code out} after reading
-	 * @throws IOException
+	 * Writes bytes to a file, replacing whatever was there.
+	 * <p>
+	 * Note: the stream-to-stream copy this replaced had one caller left that
+	 * was not this, and {@link InputStream#transferTo} has done that job since
+	 * Java 9.
+	 * </p>
 	 */
-	protected static void copy(final InputStream in, final OutputStream out, boolean closeIn, boolean closeOut) throws IOException {
-		byte[] buffer = new byte[16384];
-		for (;;) {
-			int count = in.read(buffer);
-			if (count < 0)
-				break;
-			out.write(buffer, 0, count);
+	private static void write(final File file, final byte[] bytes)
+		throws IOException
+	{
+		try (final OutputStream out = new FileOutputStream(file)) {
+			out.write(bytes);
 		}
-		if (closeIn)
-			in.close();
-		if (closeOut)
-			out.flush();
-		out.close();
 	}
 }
