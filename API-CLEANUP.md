@@ -294,20 +294,25 @@ The first three landed; the last two did not.
   than `imagej.dir` alone. `AppLayoutTest` pins the precedence against
   regression.
 
-- **The bootstrap sequence, done four different ways. Not done.** The same
-  three steps -- `tryLoadingCollection`, `initializeAndAddSites`,
-  `applySitesURLUpdates` -- still appear in `CommandLine.refreshUpdateSites`,
+- **The bootstrap sequence, done four different ways. Landed.** The same three
+  steps -- `tryLoadingCollection`, `initializeAndAddSites`,
+  `applySitesURLUpdates` -- appeared in `CommandLine.refreshUpdateSites`,
   `FijiUpdater.run` together with its `refreshUpdateSites`,
-  `DefaultUpdateService.initFilesCollection`, and `UpToDate.check`, in four
-  different orders, with three different logger-passing conventions (`log`,
-  `(Logger) log`, `null`). `DefaultUpdateService` still does not call
-  `applySitesURLUpdates` at all; `UpToDate` still calls
-  `hasUpdateSiteURLUpdates` instead. Wanted: one
-  `FilesCollection.bootstrap(...)`, or a small builder, with the URL-change
-  review supplied as a callback -- the GUI's dialog, the CLI's `--updateall`
-  flag, headless's auto-approve. This is also what makes "Consume `sites.yml`
-  directly" and "Identify sites by URL, not by name" land in one place instead
-  of four.
+  `DefaultUpdateService.initFilesCollection` and `UpToDate.check`, in four
+  different orders, with three logger-passing conventions, and one of them did
+  not apply the changes at all.
+
+  `AvailableSites.bootstrap` is now those three steps, and `URLChangeReview` is
+  the only thing the entry points vary. That it is a callback rather than a
+  boolean is what the up-to-date check forced: it runs unattended on every
+  launch and must see the proposals without acting on them, which is what
+  `hasUpdateSiteURLUpdates` was a read-only shadow of. Both it and the
+  no-logger `initializeAndAddSites` are gone.
+
+  One of the four went away rather than being converted: `UpdateService`'s
+  ordering was the wrong one -- it merged the published list into an empty
+  collection and only then read the local index -- and removing the service
+  removed it.
 
 ### Smaller DRY
 
@@ -341,12 +346,6 @@ What the pass did not cover, and what each is waiting on.
   them. Worth doing, and worth doing with the accessor names agreed first,
   since they are the API that replaces them. Note that the coordinate work
   added three more fields in the meantime, so this gets no cheaper by waiting.
-
-- **The bootstrap sequence.** Still four orderings in four entry points.
-  This one is not mechanical -- it needs the shape of the URL-change
-  callback decided -- and it is the place where `REMAINING-WORK.md`'s
-  "Identify sites by URL, not by name" wants to land. Doing them together
-  is what makes both cheap.
 
 - **Filename-derived automatic modules.** `miglayout-swing`, `jsch` and
   `jackrabbit-webdav` declare no `Automatic-Module-Name`, so the names the

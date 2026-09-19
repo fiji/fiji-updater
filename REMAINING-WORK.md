@@ -10,9 +10,8 @@ is this commit. `imagej/imagej-updater` is **not yet archived**; archiving it
 with a pointer, rather than renaming it, is still to do.
 
 A companion document, `API-CLEANUP.md`, covers the API surface and the package
-layout. Two of its outstanding items — the bootstrap consolidation and
-`FileObject` encapsulation — are prerequisites in spirit for *Update site
-identity* below.
+layout. One of its outstanding items, `FileObject` encapsulation, is a
+prerequisite in spirit for *Update site identity* below.
 
 ## Blockers before the first channel is minted
 
