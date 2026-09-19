@@ -203,14 +203,14 @@ public class XMLFileReader extends DefaultHandler {
 				new FileObject(updateSite, atts.getValue("filename"), -1, null, 0,
 					Status.NOT_INSTALLED);
 			final String executable = atts.getValue("executable");
-			if ("true".equalsIgnoreCase(executable)) current.executable = true;
-			current.coordinate = atts.getValue("coordinate");
+			if ("true".equalsIgnoreCase(executable)) current.setExecutable(true);
+			current.setCoordinate(atts.getValue("coordinate"));
 		}
 		else if (currentTag.equals("previous-version")) current.addPreviousVersion(
 			atts.getValue("checksum"), getLong(atts, "timestamp"), atts.getValue("filename"), getLong(atts, "timestamp-obsolete"));
 		else if (currentTag.equals("version")) {
 			current.setVersion(atts.getValue("checksum"), getLong(atts, "timestamp"));
-			current.filesize = getLong(atts, "filesize");
+			current.setFilesize(getLong(atts, "filesize"));
 		}
 		else if (currentTag.equals("dependency")) {
 			// maybe sometime in the future final String timestamp =
@@ -248,7 +248,7 @@ public class XMLFileReader extends DefaultHandler {
 		if ("".equals(uri)) tagName = qName;
 		else tagName = name;
 
-		if (tagName.equals("description")) current.description = body;
+		if (tagName.equals("description")) current.setDescription(body);
 		else if (tagName.equals("author")) current.addAuthor(body);
 		else if (tagName.equals("platform")) current.addPlatform(body);
 		else if (tagName.equals("category")) current.addCategory(body);
@@ -256,7 +256,7 @@ public class XMLFileReader extends DefaultHandler {
 		else if (tagName.equals("plugin")) {
 			fillPreviousFilenames(current);
 
-			if (current.current == null) current
+			if (current.getCurrentVersion() == null) current
 				.setStatus(Status.OBSOLETE_UNINSTALLED);
 			else if (current.isNewerThan(newTimestamp)) {
 				current.setStatus(Status.NEW);
@@ -265,9 +265,9 @@ public class XMLFileReader extends DefaultHandler {
 					current.setAction(files, FileObject.Action.INSTALL);
 				}
 			}
-			FileObject file = files.get(current.filename);
-			if (updateSite == null && current.updateSite != null &&
-				files.getUpdateSite(current.updateSite, false) == null) ; // ignore file with invalid update site
+			FileObject file = files.get(current.getFilename());
+			if (updateSite == null && current.getUpdateSite() != null &&
+				files.getUpdateSite(current.getUpdateSite(), false) == null) ; // ignore file with invalid update site
 			else if (file == null) {
 				files.add(current);
 				filesFromThisSite.add(current);
@@ -276,7 +276,7 @@ public class XMLFileReader extends DefaultHandler {
 				// Be nice to old-style update sites where Jama-1.0.2.jar and Jama.jar were different file objects
 				if (filesFromThisSite.contains(file)) {
 					if (file.isObsolete()) {
-						files.remove(file.filename);
+						files.remove(file.getFilename());
 						final FileObject swap = file;
 						file = current;
 						current = swap;
@@ -285,46 +285,46 @@ public class XMLFileReader extends DefaultHandler {
 					}
 					addPreviousVersions(current, file);
 				} else if (file.isObsolete()) {
-					if (file.updateSite != null) {
+					if (file.getUpdateSite() != null) {
 						for (String site : file.overriddenUpdateSites().keySet())
 							current.overriddenUpdateSites().put(site,  file.overriddenUpdateSites().get(site));
-						current.overriddenUpdateSites().put(file.updateSite, file);
+						current.overriddenUpdateSites().put(file.getUpdateSite(), file);
 					}
 					files.add(current);
 					filesFromThisSite.add(current);
 				} else if (current.isObsolete()) {
-					if (current.updateSite != null)
-						file.overriddenUpdateSites().put(current.updateSite, current);
-				} else if (getRank(files, updateSite) >= getRank(files, file.updateSite)) {
-					if ((updateSite != null && updateSite.equals(file.updateSite)) || (updateSite == null && file.updateSite == null)) {
+					if (current.getUpdateSite() != null)
+						file.overriddenUpdateSites().put(current.getUpdateSite(), current);
+				} else if (getRank(files, updateSite) >= getRank(files, file.getUpdateSite())) {
+					if ((updateSite != null && updateSite.equals(file.getUpdateSite())) || (updateSite == null && file.getUpdateSite() == null)) {
 						 // simply update the object
 					} else {
 						for (String site : file.overriddenUpdateSites().keySet())
 							current.overriddenUpdateSites().put(site, file.overriddenUpdateSites().get(site));
-						if (file.updateSite != null && !file.updateSite.equals(updateSite)) {
-							current.overriddenUpdateSites().put(file.updateSite, file);
+						if (file.getUpdateSite() != null && !file.getUpdateSite().equals(updateSite)) {
+							current.overriddenUpdateSites().put(file.getUpdateSite(), file);
 						}
 					}
-					if (file.localFilename != null) {
-						current.localFilename = file.localFilename;
+					if (file.getLocalFilename() != null) {
+						current.setLocalFilename(file.getLocalFilename());
 					}
 					// do not forget metadata
 					current.completeMetadataFrom(file);
 					files.add(current);
 					filesFromThisSite.add(current);
-					if (this.updateSite != null && file.updateSite != null && getRank(files, this.updateSite) > getRank(files, file.updateSite))
-						files.log.debug("'" + current.filename
-								+ "' from update site '" + current.updateSite
+					if (this.updateSite != null && file.getUpdateSite() != null && getRank(files, this.updateSite) > getRank(files, file.getUpdateSite()))
+						files.log.debug("'" + current.getFilename()
+								+ "' from update site '" + current.getUpdateSite()
 								+ "' shadows the one from update site '"
-								+ file.updateSite + "'");
+								+ file.getUpdateSite() + "'");
 				}
 				else {
 					file.overriddenUpdateSites().put(updateSite, current);
-					if (this.updateSite != null && file.updateSite != null && getRank(files, file.updateSite) > getRank(files, this.updateSite))
-						files.log.debug("'" + file.filename
-								+ "' from update site '" + file.updateSite
+					if (this.updateSite != null && file.getUpdateSite() != null && getRank(files, file.getUpdateSite()) > getRank(files, this.updateSite))
+						files.log.debug("'" + file.getFilename()
+								+ "' from update site '" + file.getUpdateSite()
 								+ "' shadows the one from update site '"
-								+ current.updateSite + "'");
+								+ current.getUpdateSite() + "'");
 				}
 			}
 			current = null;
@@ -339,31 +339,31 @@ public class XMLFileReader extends DefaultHandler {
 	 */
 	private static void fillPreviousFilenames(final FileObject file) {
 		List<FileObject.Version> versions = new ArrayList<>();
-		if (file.current != null)
-			versions.add(file.current);
-		for (final FileObject.Version version : file.previous)
+		if (file.getCurrentVersion() != null)
+			versions.add(file.getCurrentVersion());
+		for (final FileObject.Version version : file.getPrevious())
 			versions.add(version);
 		Collections.sort(versions, new Comparator<FileObject.Version>() {
 			@Override
 			public int compare(Version v1, Version v2) {
-				long diff = v1.timestamp - v2.timestamp;
+				long diff = v1.getTimestamp() - v2.getTimestamp();
 				return diff > 0 ? -1 : (diff < 0 ? +1 : 0);
 			}
 		});
-		String filename = file.filename;
+		String filename = file.getFilename();
 		for (final FileObject.Version version : versions) {
-			if (version.filename != null)
-				filename = version.filename;
+			if (version.getFilename() != null)
+				filename = version.getFilename();
 			else
-				version.filename = filename;
+				version.setFilename(filename);
 		}
 	}
 
 	private static void addPreviousVersions(FileObject from, FileObject to) {
-		if (from.current != null) {
-			to.addPreviousVersion(from.current.checksum, from.current.timestamp, from.getLocalFilename(false), 0);
+		if (from.getCurrentVersion() != null) {
+			to.addPreviousVersion(from.getCurrentVersion().getChecksum(), from.getCurrentVersion().getTimestamp(), from.getLocalFilename(false), 0);
 		}
-		for (final FileObject.Version version : from.previous) {
+		for (final FileObject.Version version : from.getPrevious()) {
 			to.addPreviousVersion(version);
 		}
 	}

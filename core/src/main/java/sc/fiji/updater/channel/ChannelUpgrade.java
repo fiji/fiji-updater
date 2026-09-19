@@ -213,7 +213,7 @@ public class ChannelUpgrade {
 		stranded.clear();
 		for (final FileObject file : files.values()) {
 			if (!wasManaged.contains(file.getFilename())) continue;
-			if (file.updateSite != null) continue; // still offered by someone
+			if (file.getUpdateSite() != null) continue; // still offered by someone
 			if (!file.isLocalOnly()) continue;
 			stranded.add(file.getFilename());
 		}
@@ -247,7 +247,7 @@ public class ChannelUpgrade {
 			if (file != null) file.stageForUninstall(files);
 		}
 		for (final FileObject file : files.values()) {
-			if (file.updateSite == null) continue;
+			if (file.getUpdateSite() == null) continue;
 			switch (file.getStatus()) {
 				case OBSOLETE:
 				case OBSOLETE_MODIFIED:

@@ -61,9 +61,9 @@ public class CoordinateTest {
 	public void testCoordinateFromJar() throws Exception {
 		final FileObject file = checksum("jars/annotations-13.0.jar",
 			"META-INF/maven/org.jetbrains/annotations/pom.xml", "<project/>");
-		assertEquals("org.jetbrains:annotations", file.localCoordinate);
+		assertEquals("org.jetbrains:annotations", file.getLocalCoordinate());
 		// Nothing has been uploaded, so the site knows no coordinate yet.
-		assertNull(file.coordinate);
+		assertNull(file.getCoordinate());
 	}
 
 	/** A .jar that is not Maven-built has no coordinate at all. */
@@ -71,7 +71,7 @@ public class CoordinateTest {
 	public void testNoCoordinateWithoutMavenMetadata() throws Exception {
 		final FileObject file = checksum("jars/hand-built.jar", "Whatever.class",
 			"not really a class");
-		assertNull(file.localCoordinate);
+		assertNull(file.getLocalCoordinate());
 	}
 
 	/**
@@ -83,7 +83,7 @@ public class CoordinateTest {
 		final FileObject file = checksum("jars/shaded-1.0.0.jar",
 			"META-INF/maven/org.example/shaded/pom.xml", "<project/>",
 			"META-INF/maven/com.google.guava/guava/pom.xml", "<project/>");
-		assertNull(file.localCoordinate);
+		assertNull(file.getLocalCoordinate());
 	}
 
 	/** Uploading adopts the local coordinate, and the index records it. */
@@ -92,12 +92,12 @@ public class CoordinateTest {
 		final FileObject file = checksum("jars/annotations-13.0.jar",
 			"META-INF/maven/org.jetbrains/annotations/pom.xml", "<project/>");
 		file.stageForUpload(files, FilesCollection.DEFAULT_UPDATE_SITE);
-		assertEquals("org.jetbrains:annotations", file.coordinate);
+		assertEquals("org.jetbrains:annotations", file.getCoordinate());
 		upload(files);
 
 		final FilesCollection reread = readDb(files);
 		assertEquals("org.jetbrains:annotations", //
-			reread.get("jars/annotations.jar").coordinate);
+			reread.get("jars/annotations.jar").getCoordinate());
 	}
 
 	/**

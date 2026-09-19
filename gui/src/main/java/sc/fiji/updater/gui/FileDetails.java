@@ -209,19 +209,19 @@ public class FileDetails extends JTextPane implements UndoableEditListener {
 		if (!updaterFrame.files.hasUploadableSites() &&
 			(description == null || description.trim().equals(""))) return;
 		blankLine();
-		bold("Description" + (file.descriptionFromPOM ? " (from pom.xml)" : "") + ":\n");
+		bold("Description" + (file.isDescriptionFromPOM() ? " (from pom.xml)" : "") + ":\n");
 		final int offset = getCaretPosition();
 		normal(description);
-		if (!file.descriptionFromPOM)
+		if (!file.isDescriptionFromPOM())
 			addEditableRegion(offset, "Description", file);
 	}
 
 	public void executable(final FileObject file) {
-		if (!updaterFrame.files.hasUploadableSites() && !file.executable) return;
+		if (!updaterFrame.files.hasUploadableSites() && !file.isExecutable()) return;
 		blankLine();
 		bold("Executable:\n");
 		final int offset = getCaretPosition();
-		normal(file.executable ? "true" : "false");
+		normal(file.isExecutable() ? "true" : "false");
 		addEditableRegion(offset, "Executable", file);
 	}
 
@@ -286,10 +286,10 @@ public class FileDetails extends JTextPane implements UndoableEditListener {
 			italic("This file was locally modified");
 		}
 		blankLine();
-		if (file.current == null) bold("This file is no longer needed");
+		if (file.getCurrentVersion() == null) bold("This file is no longer needed");
 		else {
 			bold("Release date:\n");
-			normal(prettyPrintTimestamp(file.current.timestamp));
+			normal(prettyPrintTimestamp(file.getCurrentVersion().getTimestamp()));
 		}
 		description(file.getDescription(), file);
 		list("Author", false, file.getAuthors(), ", ", file);
@@ -298,7 +298,7 @@ public class FileDetails extends JTextPane implements UndoableEditListener {
 		list("Category", false, file.getCategories(), ", ", file);
 		list("Link", true, file.getLinks(), "\n", file);
 		list("Dependency", false, file.getDependencies(), ",\n", file);
-		if (file.executable) executable(file);
+		if (file.isExecutable()) executable(file);
 		showProvenance(file);
 
 		// scroll to top
@@ -322,17 +322,17 @@ public class FileDetails extends JTextPane implements UndoableEditListener {
 	 * </p>
 	 */
 	private void showProvenance(final FileObject file) {
-		if (file.updateSite == null) return;
+		if (file.getUpdateSite() == null) return;
 		final UpdateSite site =
-			updaterFrame.files.getUpdateSite(file.updateSite, true);
+			updaterFrame.files.getUpdateSite(file.getUpdateSite(), true);
 		final String channel = site == null ? null : site.getChannel();
 		final boolean mainSite =
-			file.updateSite.equals(FilesCollection.DEFAULT_UPDATE_SITE);
+			file.getUpdateSite().equals(FilesCollection.DEFAULT_UPDATE_SITE);
 
 		if (channel != null || !mainSite) {
 			blankLine();
 			bold("Update site:\n");
-			normal(file.updateSite);
+			normal(file.getUpdateSite());
 		}
 		if (channel != null) {
 			blankLine();
@@ -428,13 +428,13 @@ public class FileDetails extends JTextPane implements UndoableEditListener {
 			return false;
 		}
 
-		editable.file.metadataChanged = true;
+		editable.file.setMetadataChanged(true);
 		if (editable.tag.equals("Description")) {
-			editable.file.description = text.trim();
+			editable.file.setDescription(text.trim());
 			return true;
 		}
 		else if (editable.tag.equals("Executable")) {
-			editable.file.executable = "true".equalsIgnoreCase(text.trim());
+			editable.file.setExecutable("true".equalsIgnoreCase(text.trim()));
 			return true;
 		}
 		final String[] list = text.split(editable.tag.equals("Link") ? "\n" : ",");

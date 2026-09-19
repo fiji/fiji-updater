@@ -230,7 +230,7 @@ public abstract class AbstractUploaderTestBase {
 		files.read();
 		files.clear();
 		files.downloadIndexAndChecksum(new StderrProgress());
-		final long timestamp = files.get(path).current.timestamp;
+		final long timestamp = files.get(path).getCurrentVersion().getTimestamp();
 		final long minimalTimestamp = 20130322000000l;
 		assertTrue("" + timestamp + " >= " + minimalTimestamp,
 				timestamp >= minimalTimestamp);

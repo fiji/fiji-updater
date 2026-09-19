@@ -62,14 +62,58 @@ public class FileObject {
 
 	public static class Version implements Comparable<Version> {
 
-		public String checksum;
+		private String checksum;
 		// This timestamp is not a Unix epoch!
 		// Instead, it is Long.parseLong(Util.timestamp(epoch))
-		public long timestamp;
-		public long timestampObsolete;
+		private long timestamp;
+		private long timestampObsolete;
 
 		// optional (can differ from FileObject.filename if the version differs)
-		public String filename;
+		private String filename;
+
+		public String getChecksum() {
+			return checksum;
+		}
+
+		public void setChecksum(final String checksum) {
+			this.checksum = checksum;
+		}
+
+		/**
+		 * When this version was published.
+		 * <p>
+		 * Note: not a Unix epoch. It is
+		 * {@code Long.parseLong(Timestamps.timestamp(epoch))}.
+		 * </p>
+		 */
+		public long getTimestamp() {
+			return timestamp;
+		}
+
+		public void setTimestamp(final long timestamp) {
+			this.timestamp = timestamp;
+		}
+
+		/** When this version stopped being current, or 0 while it still is. */
+		public long getTimestampObsolete() {
+			return timestampObsolete;
+		}
+
+		public void setTimestampObsolete(final long timestampObsolete) {
+			this.timestampObsolete = timestampObsolete;
+		}
+
+		/**
+		 * This version's own file name, which can differ from the file's when the
+		 * version is part of the name. Optional.
+		 */
+		public String getFilename() {
+			return filename;
+		}
+
+		public void setFilename(final String filename) {
+			this.filename = filename;
+		}
 
 		public Version(final String checksum, final long timestamp) {
 			this.checksum = checksum;
@@ -179,8 +223,8 @@ public class FileObject {
 	protected Map<String, FileObject> overriddenUpdateSites = new LinkedHashMap<>();
 	private Status status;
 	private Action action;
-	public String updateSite, originalUpdateSite, filename, description;
-	public boolean executable;
+	private String updateSite, originalUpdateSite, filename, description;
+	private boolean executable;
 
 	/**
 	 * The {@code groupId:artifactId} this file is published as, or null for
@@ -192,7 +236,7 @@ public class FileObject {
 	 * {@link #localCoordinate}.
 	 * </p>
 	 */
-	public String coordinate;
+	private String coordinate;
 
 	/**
 	 * What {@link #coordinate} said before an upload was staged, or null if no
@@ -202,15 +246,15 @@ public class FileObject {
 	 * that two artifacts are sharing an artifactId; see {@link #localCoordinate}.
 	 * </p>
 	 */
-	public String originalCoordinate;
-	public Version current;
-	public Set<Version> previous;
-	public long filesize;
-	public boolean metadataChanged;
-	public boolean descriptionFromPOM;
+	private String originalCoordinate;
+	private Version current;
+	private Set<Version> previous;
+	private long filesize;
+	private boolean metadataChanged;
+	private boolean descriptionFromPOM;
 
-	public String localFilename, localChecksum;
-	public long localTimestamp;
+	private String localFilename, localChecksum;
+	private long localTimestamp;
 
 	/**
 	 * The {@code groupId:artifactId} of the file actually on disk, as read from
@@ -223,7 +267,7 @@ public class FileObject {
 	 * but an unrelated artifact that happens to share an artifactId.
 	 * </p>
 	 */
-	public String localCoordinate;
+	private String localCoordinate;
 
 	// These are LinkedHashMaps to retain the order of the entries
 	protected Map<String, Dependency> dependencies;
@@ -399,8 +443,138 @@ public class FileObject {
 		setNoAction();
 	}
 
+	/** The update site this file is served by, by name. */
+	public String getUpdateSite() {
+		return updateSite;
+	}
+
+	public void setUpdateSite(final String updateSite) {
+		this.updateSite = updateSite;
+	}
+
+	/**
+	 * The site this file was served by before an upload was staged to another
+	 * one, or null when no upload is staged or it shadows nothing.
+	 */
+	public String getOriginalUpdateSite() {
+		return originalUpdateSite;
+	}
+
+	public void setOriginalUpdateSite(final String originalUpdateSite) {
+		this.originalUpdateSite = originalUpdateSite;
+	}
+
+	public void setFilename(final String filename) {
+		this.filename = filename;
+	}
+
 	public String getDescription() {
 		return description;
+	}
+
+	public void setDescription(final String description) {
+		this.description = description;
+	}
+
+	/** Whether this file must be executable where it is installed. */
+	public boolean isExecutable() {
+		return executable;
+	}
+
+	public void setExecutable(final boolean executable) {
+		this.executable = executable;
+	}
+
+	public String getCoordinate() {
+		return coordinate;
+	}
+
+	public void setCoordinate(final String coordinate) {
+		this.coordinate = coordinate;
+	}
+
+	public String getOriginalCoordinate() {
+		return originalCoordinate;
+	}
+
+	public void setOriginalCoordinate(final String originalCoordinate) {
+		this.originalCoordinate = originalCoordinate;
+	}
+
+	/**
+	 * The version this file's update site currently serves, or null when it
+	 * serves none.
+	 * <p>
+	 * Note: not the same question as {@link #getChecksum()} and
+	 * {@link #getTimestamp()}, which answer for the version a staged action
+	 * would leave behind.
+	 * </p>
+	 */
+	public Version getCurrentVersion() {
+		return current;
+	}
+
+	public void setCurrentVersion(final Version current) {
+		this.current = current;
+	}
+
+	public long getFilesize() {
+		return filesize;
+	}
+
+	public void setFilesize(final long filesize) {
+		this.filesize = filesize;
+	}
+
+	/** Whether something other than the file's content needs uploading. */
+	public boolean isMetadataChanged() {
+		return metadataChanged;
+	}
+
+	public void setMetadataChanged(final boolean metadataChanged) {
+		this.metadataChanged = metadataChanged;
+	}
+
+	/** Whether the description was read from the artifact's POM. */
+	public boolean isDescriptionFromPOM() {
+		return descriptionFromPOM;
+	}
+
+	public void setDescriptionFromPOM(final boolean descriptionFromPOM) {
+		this.descriptionFromPOM = descriptionFromPOM;
+	}
+
+	/** What this file is called on disk, when that differs from its own name. */
+	public String getLocalFilename() {
+		return localFilename;
+	}
+
+	public void setLocalFilename(final String localFilename) {
+		this.localFilename = localFilename;
+	}
+
+	public String getLocalChecksum() {
+		return localChecksum;
+	}
+
+	public void setLocalChecksum(final String localChecksum) {
+		this.localChecksum = localChecksum;
+	}
+
+	public long getLocalTimestamp() {
+		return localTimestamp;
+	}
+
+	public void setLocalTimestamp(final long localTimestamp) {
+		this.localTimestamp = localTimestamp;
+	}
+
+	public String getLocalCoordinate() {
+		return localCoordinate;
+	}
+
+	public void setLocalCoordinate(final String localCoordinate) {
+		this.localCoordinate = localCoordinate;
 	}
 
 	public void addDependency(final FilesCollection files,

@@ -92,15 +92,15 @@ public class MultipleSitesTest {
 		files.removeUpdateSite("third");
 		assertCount(1, files);
 		assertEquals(check2, files.get(macro).getChecksum());
-		final Iterator<Version> iterator = files.get(macro).previous.iterator();
-		assertEquals(check1, iterator.next().checksum);
+		final Iterator<Version> iterator = files.get(macro).getPrevious().iterator();
+		assertEquals(check1, iterator.next().getChecksum());
 		assertFalse(iterator.hasNext());
 		assertEquals(Action.UPDATE, files.get(macro).getAction());
 
 		files.removeUpdateSite("second");
 		assertCount(1, files);
 		assertEquals(check1, files.get(macro).getChecksum());
-		assertFalse(files.get(macro).previous.iterator().hasNext());
+		assertFalse(files.get(macro).getPrevious().iterator().hasNext());
 		assertEquals(Action.UPDATE, files.get(macro).getAction());
 
 		files.removeUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE);

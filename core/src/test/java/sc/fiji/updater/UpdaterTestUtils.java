@@ -352,7 +352,7 @@ public class UpdaterTestUtils {
 
 	protected static void upload(final FilesCollection files, final String updateSite) throws Exception {
 		for (final FileObject file : files.toUpload())
-			assertEquals(updateSite, file.updateSite);
+			assertEquals(updateSite, file.getUpdateSite());
 		final FilesUploader uploader =
 			new FilesUploader(null, files, updateSite, progress);
 		assertTrue(uploader.login());
@@ -391,7 +391,7 @@ public class UpdaterTestUtils {
 		final FileObject file)
 	{
 		assertNotNull("Object " + file, file);
-		assertEquals("Action of " + file.filename, action, file.getAction());
+		assertEquals("Action of " + file.getFilename(), action, file.getAction());
 	}
 
 	/**
@@ -408,7 +408,7 @@ public class UpdaterTestUtils {
 		final FileObject file)
 	{
 		assertStatus(status, file);
-		assertNull("Action of " + file.filename, file.getAction());
+		assertNull("Action of " + file.getFilename(), file.getAction());
 	}
 
 	protected static void assertNotEqual(final Object object1,

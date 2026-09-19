@@ -132,7 +132,7 @@ public class Installer {
 
 		@Override
 		public long getFilesize() {
-			return file.filesize;
+			return file.getFilesize();
 		}
 	}
 
@@ -148,8 +148,8 @@ public class Installer {
 	private Map<String, String> localContent() {
 		final Map<String, String> result = new HashMap<>();
 		for (final FileObject file : files.installed()) {
-			if (file.localChecksum == null) continue;
-			result.putIfAbsent(file.localChecksum, file.getLocalFilename(false));
+			if (file.getLocalChecksum() == null) continue;
+			result.putIfAbsent(file.getLocalChecksum(), file.getLocalFilename(false));
 		}
 		return result;
 	}
@@ -183,7 +183,7 @@ public class Installer {
 			// Note: an expected outcome, not a failure -- the file is downloaded
 			// instead. The exception is the detail of what did not match.
 			final String message = "Could not reuse '" + download.source +
-				"' for '" + download.file.filename + "'; downloading it instead";
+				"' for '" + download.file.getFilename() + "'; downloading it instead";
 			if (files.log.isDebug()) files.log.debug(message, e);
 			else files.log.info(message);
 			destination.delete();
@@ -222,7 +222,7 @@ public class Installer {
 		// First we scan the update list to see if there's anything in Fiji.app to update
 		boolean updateMacApp = false;
 		for (final FileObject file : files.toInstallOrUpdate()) {
-			if (file.filename.contains(AppLayout.MAC_BUNDLE)) {
+			if (file.getFilename().contains(AppLayout.MAC_BUNDLE)) {
 				updateMacApp = true;
 				break;
 			}
@@ -236,7 +236,7 @@ public class Installer {
 			// If there's no Fiji.app folder to back up we can just skip this step
 			if (Files.exists(macBundlePath)) {
 				for (FileObject installed : files.installed()) {
-					if (installed.filename.contains(AppLayout.MAC_BUNDLE)) {
+					if (installed.getFilename().contains(AppLayout.MAC_BUNDLE)) {
 						installed.stageForUpdate(files, true);
 					}
 				}
@@ -250,11 +250,11 @@ public class Installer {
 		}
 
 		for (final FileObject file : files.toInstallOrUpdate()) {
-			final String name = file.filename;
+			final String name = file.getFilename();
 			File saveTo = files.prefixUpdate(name);
-			if (file.localFilename != null && !file.localFilename.equals(file.filename)) {
+			if (file.getLocalFilename() != null && !file.getLocalFilename().equals(file.getFilename())) {
 				// if the name changed, remove the file with the old name
-				FileObject.touch(files.prefixUpdate(file.localFilename));
+				FileObject.touch(files.prefixUpdate(file.getLocalFilename()));
 			}
 			// CTR FIXME factor this out into a dedicated isCriticalFile method.
 			// Files necessary for launch are handled differently - we do not want to
@@ -266,7 +266,7 @@ public class Installer {
 			// so all we need to do is update the saveTo to download directly and not to the update directory
 			if (name.contains(AppLayout.MAC_BUNDLE)) {
 				saveTo = files.prefix(name);
-			} else if (file.executable ||
+			} else if (file.isExecutable() ||
 					saveTo.getAbsolutePath().contains("config" + File.separator + "jaunch")) {
 				saveTo = files.prefix(name);
 				String oldName = saveTo.getAbsolutePath() + ".old";
@@ -466,7 +466,7 @@ public class Installer {
 		file.setLocalVersion(file.getFilename(), digest, file.getTimestamp());
 		file.setStatus(FileObject.Status.INSTALLED);
 
-		if (file.executable && !Platforms.isWindows(files.platform())) try {
+		if (file.isExecutable() && !Platforms.isWindows(files.platform())) try {
 			// Use Java's native file permissions API instead of spawning chmod process
 			download.destination.setExecutable(true, false);
 		}

@@ -130,7 +130,7 @@ public class Upload implements GroupAction {
 		final Status status = file.getStatus();
 		final boolean canUpload = status.isValid(Action.UPLOAD);
 
-		boolean shadowing = file.updateSite != null && !updateSite.equals(file.updateSite);
+		boolean shadowing = file.getUpdateSite() != null && !updateSite.equals(file.getUpdateSite());
 
 		if (!canUpload && status != Status.INSTALLED) return false;
 
@@ -139,7 +139,7 @@ public class Upload implements GroupAction {
 
 		if (shadowing) {
 			final UpdateSite shadowingSite = files.getUpdateSite(updateSite, false);
-			final UpdateSite shadowedSite = files.getUpdateSite(file.updateSite, false);
+			final UpdateSite shadowedSite = files.getUpdateSite(file.getUpdateSite(), false);
 			if (shadowingSite.getRank() < shadowedSite.getRank()) return false;
 		}
 
@@ -148,11 +148,11 @@ public class Upload implements GroupAction {
 
 	@Override
 	public void setAction(FilesCollection files, FileObject file) {
-		if (file.updateSite != null && !file.updateSite.equals(updateSite) &&
-				file.originalUpdateSite == null) {
-			file.originalUpdateSite = file.updateSite;
+		if (file.getUpdateSite() != null && !file.getUpdateSite().equals(updateSite) &&
+				file.getOriginalUpdateSite() == null) {
+			file.setOriginalUpdateSite(file.getUpdateSite());
 		}
-		file.updateSite = updateSite;
+		file.setUpdateSite(updateSite);
 		if (file.getStatus() == Status.INSTALLED) file.setStatus(Status.MODIFIED); // TODO: add to overriding
 		file.setAction(files, Action.UPLOAD);
 	}
@@ -163,7 +163,7 @@ public class Upload implements GroupAction {
 		for (final FileObject file : selected) {
 			final Status status = file.getStatus();
 			if (status.isValid(Action.UPLOAD) || status == Status.INSTALLED) {
-				if (file.updateSite != null && !file.updateSite.equals(updateSite)) {
+				if (file.getUpdateSite() != null && !file.getUpdateSite().equals(updateSite)) {
 					shadowing = true;
 				}
 			}

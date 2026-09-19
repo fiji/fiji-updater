@@ -237,7 +237,7 @@ public class Checksummer extends AbstractProgressable {
 			final List<StringAndFile> obsoletes = new ArrayList<>();
 			final List<StringAndFile> locallyModifieds = new ArrayList<>();
 			for (final StringAndFile p : pairs) {
-				if (object.current.checksum.equals(p.checksum))
+				if (object.getCurrentVersion().getChecksum().equals(p.checksum))
 					upToDates.add(p);
 				else if (object.hasPreviousVersion(p.checksum))
 					obsoletes.add(p);
@@ -294,7 +294,7 @@ public class Checksummer extends AbstractProgressable {
 		if (coordinates.size() < 2) return false;
 
 		final FileObject object = files.get(unversioned);
-		final String known = object == null ? null : object.coordinate;
+		final String known = object == null ? null : object.getCoordinate();
 		StringAndFile keeper = null;
 		for (final StringAndFile pair : pairs) {
 			if (pair.coordinate != null && pair.coordinate.equals(known)) keeper = pair;
@@ -449,11 +449,11 @@ public class Checksummer extends AbstractProgressable {
 				object =
 					new FileObject(null, pair.path, pair.file.length(), pair.checksum, pair.timestamp,
 						Status.LOCAL_ONLY);
-				object.localFilename = pair.path;
-				object.localChecksum = pair.checksum;
-				object.localTimestamp = pair.timestamp;
+				object.setLocalFilename(pair.path);
+				object.setLocalChecksum(pair.checksum);
+				object.setLocalTimestamp(pair.timestamp);
 				if ((!isWindows && UpdaterUtil.canExecute(pair.file)) || pair.path.endsWith(".exe"))
-					object.executable = true;
+					object.setExecutable(true);
 				guessPlatform(object);
 				files.add(object);
 			}
@@ -462,17 +462,17 @@ public class Checksummer extends AbstractProgressable {
 						cachedChecksums.get(":" + pair.checksum);
 				if (!object.hasPreviousVersion(pair.checksum)) {
 					if (obsoletes != null) {
-						for (final String obsolete : obsoletes.checksum.split(":")) {
+						for (final String obsolete : obsoletes.getChecksum().split(":")) {
 							if (object.hasPreviousVersion(obsolete)) {
 								pair.checksum = obsolete;
 								break;
 							}
 						}
 					}
-				} else if (object.current != null && obsoletes != null
-						&& (":" + obsoletes.checksum + ":").contains(":" + object.current.checksum + ":")) {
+				} else if (object.getCurrentVersion() != null && obsoletes != null
+						&& (":" + obsoletes.getChecksum() + ":").contains(":" + object.getCurrentVersion().getChecksum() + ":")) {
 					// if the recorded checksum is an obsolete equivalent of the current one, use the obsolete one
-					pair.checksum = object.current.checksum;
+					pair.checksum = object.getCurrentVersion().getChecksum();
 				}
 				object.setLocalVersion(pair.path, pair.checksum, pair.timestamp);
 				if (object.getStatus() == Status.OBSOLETE_UNINSTALLED) object
@@ -534,19 +534,19 @@ public class Checksummer extends AbstractProgressable {
 	protected boolean guessPlatform(final FileObject file) {
 		// Look for platform names as subdirectories of jars/ and lib/
 		String platform;
-		if (file.executable) {
-			platform = Platforms.platformForLauncher(file.filename);
+		if (file.isExecutable()) {
+			platform = Platforms.platformForLauncher(file.getFilename());
 			if (platform == null) return false;
 		}
 		else {
-			if (file.filename.startsWith("jars/")) {
-				platform = file.filename.substring(5);
+			if (file.getFilename().startsWith("jars/")) {
+				platform = file.getFilename().substring(5);
 			}
-			else if (file.filename.startsWith("lib/")) {
-				platform = file.filename.substring(4);
+			else if (file.getFilename().startsWith("lib/")) {
+				platform = file.getFilename().substring(4);
 			}
-			else if (file.filename.startsWith("mm/")) {
-				platform = file.filename.substring(3);
+			else if (file.getFilename().startsWith("mm/")) {
+				platform = file.getFilename().substring(3);
 			}
 			else return false;
 
@@ -714,7 +714,7 @@ public class Checksummer extends AbstractProgressable {
 			for (final String filename : cachedChecksums.keySet())
 				if (filename.startsWith(":") || files.prefix(filename).exists()) {
 					final FileObject.Version version = cachedChecksums.get(filename);
-					writer.write(version.checksum + " " + version.timestamp + " " +
+					writer.write(version.getChecksum() + " " + version.getTimestamp() + " " +
 						filename + "\n");
 				}
 			writer.close();
@@ -729,14 +729,14 @@ public class Checksummer extends AbstractProgressable {
 	{
 		if (cachedChecksums == null) readCachedChecksums();
 		FileObject.Version version = cachedChecksums.get(path);
-		if (version == null || timestamp != version.timestamp) {
+		if (version == null || timestamp != version.getTimestamp()) {
 			final String checksum = path.equals(AppLayout.LEGACY_UPDATER_JAR) ?
 				UpdaterUtil.getJarDigest(file, false, false, false) :
 				UpdaterUtil.getDigest(path, file);
 			version = new FileObject.Version(checksum, timestamp);
 			cachedChecksums.put(path, version);
 		}
-		if (!cachedChecksums.containsKey(":" + version.checksum)) {
+		if (!cachedChecksums.containsKey(":" + version.getChecksum())) {
 			final List<String> obsoletes = UpdaterUtil.getObsoleteDigests(path, file);
 			if (obsoletes != null) {
 				final StringBuilder builder = new StringBuilder();
@@ -744,10 +744,10 @@ public class Checksummer extends AbstractProgressable {
 					if (builder.length() > 0) builder.append(':');
 					builder.append(obsolete);
 				}
-				cachedChecksums.put(":" + version.checksum, new FileObject.Version(
+				cachedChecksums.put(":" + version.getChecksum(), new FileObject.Version(
 					builder.toString(), timestamp));
 			}
 		}
-		return version.checksum;
+		return version.getChecksum();
 	}
 }

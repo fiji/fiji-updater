@@ -121,7 +121,7 @@ public class DefaultUploaderService extends AbstractService implements
 				toInstall.add(file);
 				file.setAction(toInstall, Action.INSTALL);
 				try {
-					urls.add(toInstall.prefixUpdate(file.filename).toURI().toURL());
+					urls.add(toInstall.prefixUpdate(file.getFilename()).toURI().toURL());
 				} catch (MalformedURLException e) {
 					log.error(e);
 					return null;
@@ -133,7 +133,7 @@ public class DefaultUploaderService extends AbstractService implements
 				// FALL THRU
 			case INSTALLED:
 				try {
-					urls.add(toInstall.prefix(file.filename).toURI().toURL());
+					urls.add(toInstall.prefix(file.getFilename()).toURI().toURL());
 				} catch (MalformedURLException e) {
 					log.error(e);
 					return null;

@@ -291,7 +291,7 @@ public class CommandLine {
 	private void listCurrent(final List<String> list) {
 		ensureChecksummed();
 		for (final FileObject file : files.filter(new FileFilter(list)))
-			System.out.println(file.filename + "-" + file.getTimestamp());
+			System.out.println(file.getFilename() + "-" + file.getTimestamp());
 	}
 
 	private void list(final List<String> list, Predicate<FileObject> filter) {
@@ -300,7 +300,7 @@ public class CommandLine {
 			: new FileFilter(list).and(filter);
 		files.sort();
 		for (final FileObject file : files.filter(filter)) {
-			System.out.println(file.filename + "\t(" + file.getStatus() + ")\t"
+			System.out.println(file.getFilename() + "\t(" + file.getStatus() + ")\t"
 					+ file.getTimestamp());
 		}
 	}
@@ -347,13 +347,13 @@ public class CommandLine {
 				.entrySet())
 			{
 				final FileObject other = entry.getValue();
-				if (other != null && other.current != null) {
+				if (other != null && other.getCurrentVersion() != null) {
 					overridden.add(entry.getKey());
 				}
 			}
 			if (overridden.isEmpty()) continue;
-			System.out.println(file.filename + "\t(" + file.getStatus() + ")\t" +
-				file.updateSite + " overrides " + overridden);
+			System.out.println(file.getFilename() + "\t(" + file.getStatus() + ")\t" +
+				file.getUpdateSite() + " overrides " + overridden);
 			overridden.clear();
 		}
 	}
@@ -382,29 +382,29 @@ public class CommandLine {
 
 		System.out.println();
 		System.out.println("File: " + file.getFilename(true));
-		if (!file.getFilename(true).equals(file.localFilename)) {
-			System.out.println("(Local filename: " + file.localFilename + ")");
+		if (!file.getFilename(true).equals(file.getLocalFilename())) {
+			System.out.println("(Local filename: " + file.getLocalFilename() + ")");
 		}
-		String description = file.description;
+		String description = file.getDescription();
 		if (description != null && description.length() > 0) {
 			description = "\t" + (description.replaceAll("\n", "\n\t"));
 			System.out.println("Description:\n" + description);
 		}
-		System.out.println("Update site: " + file.updateSite);
-		if (file.current == null) {
+		System.out.println("Update site: " + file.getUpdateSite());
+		if (file.getCurrentVersion() == null) {
 			System.out.println("Removed from update site");
 		} else {
 			System.out.println("URL: " + files.getURL(file));
-			System.out.println("checksum: " + file.current.checksum
-					+ ", timestamp: " + file.current.timestamp);
+			System.out.println("checksum: " + file.getCurrentVersion().getChecksum()
+					+ ", timestamp: " + file.getCurrentVersion().getTimestamp());
 		}
-		if (file.localChecksum != null
-				&& (file.current == null || !file.localChecksum
-						.equals(file.current.checksum))) {
+		if (file.getLocalChecksum() != null
+				&& (file.getCurrentVersion() == null || !file.getLocalChecksum()
+						.equals(file.getCurrentVersion().getChecksum()))) {
 			System.out.println("Local checksum: "
-					+ file.localChecksum
+					+ file.getLocalChecksum()
 					+ " ("
-					+ (file.hasPreviousVersion(file.localChecksum) ? ""
+					+ (file.hasPreviousVersion(file.getLocalChecksum()) ? ""
 							: "NOT a ") + "previous version)");
 		}
 		final StringBuilder builder = new StringBuilder();
@@ -431,7 +431,7 @@ public class CommandLine {
 			}
 		}
 
-		final File jarFile = files.prefix(file.localFilename != null ? file.localFilename : file.filename);
+		final File jarFile = files.prefix(file.getLocalFilename() != null ? file.getLocalFilename() : file.getFilename());
 		if (jarFile.exists()) {
 			final Map<String, String> map = new LinkedHashMap<>();
 			try {
@@ -508,11 +508,11 @@ public class CommandLine {
 		{
 
 			public void add(final FileObject file) {
-				if (file.current != null) {
-					add(file.current.timestamp, file);
+				if (file.getCurrentVersion() != null) {
+					add(file.getCurrentVersion().getTimestamp(), file);
 				}
-				for (final Version version : file.previous) {
-					add(version.timestamp, file);
+				for (final Version version : file.getPrevious()) {
+					add(version.getTimestamp(), file);
 				}
 			}
 
@@ -566,7 +566,7 @@ public class CommandLine {
 
 		@Override
 		public File getDestination() {
-			return files.prefix(file.filename);
+			return files.prefix(file.getFilename());
 		}
 
 		@Override
@@ -576,12 +576,12 @@ public class CommandLine {
 
 		@Override
 		public long getFilesize() {
-			return file.filesize;
+			return file.getFilesize();
 		}
 
 		@Override
 		public String toString() {
-			return file.filename;
+			return file.getFilename();
 		}
 	}
 
@@ -589,27 +589,27 @@ public class CommandLine {
 		ensureChecksummed();
 		try {
 			new Downloader(progress).start(new OneFile(file));
-			if (file.executable && !Platforms.isWindows(files.platform())) {
+			if (file.isExecutable() && !Platforms.isWindows(files.platform())) {
 				try {
 					// Use Java's native file permissions API instead of spawning chmod process
-					files.prefix(file.filename).setExecutable(true, false);
+					files.prefix(file.getFilename()).setExecutable(true, false);
 				} catch (final Exception e) {
 					e.printStackTrace();
-					throw die("Could not mark " + file.filename
+					throw die("Could not mark " + file.getFilename()
 							+ " as executable");
 				}
 			}
-			log.info("Installed " + file.filename);
+			log.info("Installed " + file.getFilename());
 		} catch (final IOException e) {
-			log.error("IO error downloading " + file.filename, e);
+			log.error("IO error downloading " + file.getFilename(), e);
 		}
 	}
 
 	private void delete(final FileObject file) {
-		if (new File(file.filename).delete()) {
-			log.info("Deleted " + file.filename);
+		if (new File(file.getFilename()).delete()) {
+			log.info("Deleted " + file.getFilename());
 		} else {
-			log.error("Failed to delete " + file.filename);
+			log.error("Failed to delete " + file.getFilename());
 		}
 	}
 
@@ -639,20 +639,20 @@ public class CommandLine {
 						file.setAction(files, Action.UNINSTALL);
 				} else if (file.isObsolete()) {
 					if (file.getStatus() == Status.OBSOLETE) {
-						log.info("Removing " + file.filename);
+						log.info("Removing " + file.getFilename());
 						file.stageForUninstall(files);
 					} else if (file.getStatus() == Status.OBSOLETE_MODIFIED) {
 						if (force || pristine) {
 							file.stageForUninstall(files);
-							log.info("Removing " + file.filename);
+							log.info("Removing " + file.getFilename());
 						} else {
 							log.warn("Skipping obsolete, but modified "
-									+ file.filename);
+									+ file.getFilename());
 						}
 					}
 				} else if (file.getStatus() != Status.INSTALLED
 						&& !file.stageForUpdate(files, force)) {
-					log.warn("Skipping " + file.filename);
+					log.warn("Skipping " + file.getFilename());
 				}
 				// remove obsolete versions in pristine mode
 				if (pristine) {
@@ -715,7 +715,7 @@ public class CommandLine {
 					continue;
 			}
 
-			if (file.filename.endsWith(".dll")) {
+			if (file.getFilename().endsWith(".dll")) {
 				try {
 					final DllFile dll = new DllFile(files.prefix(file));
 					try {
@@ -732,7 +732,7 @@ public class CommandLine {
 					continue;
 				}
 				if (simulate) {
-					System.out.println("Would overwrite " + file.filename);
+					System.out.println("Would overwrite " + file.getFilename());
 				}
 				else {
 					file.setAction(files, Action.UPDATE);
@@ -803,10 +803,10 @@ public class CommandLine {
 		int count = 0;
 		for (final FileObject file : files.filter(new FileFilter(list))) {
 			if (file.getStatus() == Status.LOCAL_ONLY) continue;
-			if (file.current != null && file.current.timestamp <= timestamp) {
-				if (!file.current.checksum.equals(file.localChecksum)) {
+			if (file.getCurrentVersion() != null && file.getCurrentVersion().getTimestamp() <= timestamp) {
+				if (!file.getCurrentVersion().getChecksum().equals(file.getLocalChecksum())) {
 					if (simulate) {
-						System.out.println("Would update/install " + file.current.filename);
+						System.out.println("Would update/install " + file.getCurrentVersion().getFilename());
 					}
 					else {
 						file.setStatus(Status.UPDATEABLE);
@@ -820,16 +820,16 @@ public class CommandLine {
 			String result = null;
 			String checksum = null;
 			long matchedTimestamp = 0;
-			for (final Version version : file.previous) {
-				if (timestamp >= version.timestamp && version.timestamp > matchedTimestamp) {
-					result = version.filename;
-					checksum = version.checksum;
-					matchedTimestamp = version.timestamp;
+			for (final Version version : file.getPrevious()) {
+				if (timestamp >= version.getTimestamp() && version.getTimestamp() > matchedTimestamp) {
+					result = version.getFilename();
+					checksum = version.getChecksum();
+					matchedTimestamp = version.getTimestamp();
 				}
 			}
 
 			if (checksum == null) {
-				if (file.localChecksum != null) {
+				if (file.getLocalChecksum() != null) {
 					if (simulate) {
 						System.out.println("Would uninstall " + file.getLocalFilename(false));
 					}
@@ -839,20 +839,21 @@ public class CommandLine {
 					count++;
 				}
 			}
-			else if (!result.equals(file.filename) || !checksum.equals(file.localChecksum)) {
+			else if (!result.equals(file.getFilename()) || !checksum.equals(file.getLocalChecksum())) {
 				if (simulate) {
 					System.out.println("Would update/install " + result);
 				}
 				else {
-					if (file.current == null) {
-						file.current = new Version(checksum, matchedTimestamp);
+					if (file.getCurrentVersion() == null) {
+						file.setCurrentVersion(new Version(checksum, matchedTimestamp));
 					}
 					else {
-						file.current.checksum = checksum;
-						file.current.timestamp = matchedTimestamp;
+						file.getCurrentVersion().setChecksum(checksum);
+						file.getCurrentVersion().setTimestamp(matchedTimestamp);
 					}
-					file.filename = file.current.filename = result;
-					file.filesize = -1;
+					file.getCurrentVersion().setFilename(result);
+					file.setFilename(result);
+					file.setFilesize(-1);
 					file.setStatus(Status.UPDATEABLE);
 					file.setFirstValidAction(files, Action.UPDATE, Action.INSTALL);
 				}
@@ -920,10 +921,10 @@ public class CommandLine {
 			if (file == null) {
 				throw die("No file '" + name + "' found!");
 			}
-			if (file.getStatus() == Status.INSTALLED && (file.localFilename == null || file.localFilename.equals(file.filename))) {
-				if (forceShadow && !updateSite.equals(file.updateSite)) {
+			if (file.getStatus() == Status.INSTALLED && (file.getLocalFilename() == null || file.getLocalFilename().equals(file.getFilename()))) {
+				if (forceShadow && !updateSite.equals(file.getUpdateSite())) {
 					// TODO: add overridden update site
-					file.updateSite = updateSite;
+					file.setUpdateSite(updateSite);
 					file.setStatus(Status.MODIFIED);
 					log.info("Uploading (force-shadow) '" + name
 							+ "' to site '" + updateSite + "'");
@@ -934,24 +935,25 @@ public class CommandLine {
 			}
 			handleLauncherForUpload(file);
 			if (updateSite == null) {
-				updateSite = file.updateSite;
+				updateSite = file.getUpdateSite();
 				if (updateSite == null) {
-					updateSite = file.updateSite = chooseUploadSite(name);
+					updateSite = chooseUploadSite(name);
+					file.setUpdateSite(updateSite);
 				}
 				if (updateSite == null) {
 					throw die("Canceled");
 				}
-			} else if (file.updateSite == null) {
+			} else if (file.getUpdateSite() == null) {
 				log.info("Uploading new file '" + name + "' to  site '"
 						+ updateSite + "'");
-				file.updateSite = updateSite;
-			} else if (!file.updateSite.equals(updateSite)) {
+				file.setUpdateSite(updateSite);
+			} else if (!file.getUpdateSite().equals(updateSite)) {
 				if (forceUpdateSite) {
-					file.updateSite = updateSite;
+					file.setUpdateSite(updateSite);
 				} else {
 					throw die("Cannot upload to multiple update sites ("
 							+ list.get(0) + " to " + updateSite + " and "
-							+ name + " to " + file.updateSite + ")");
+							+ name + " to " + file.getUpdateSite() + ")");
 				}
 			}
 			if (file.getStatus() == Status.NOT_INSTALLED
@@ -962,8 +964,8 @@ public class CommandLine {
 				if (simulate) {
 					log.info("Would upload '" + name + "'");
 				}
-				if (file.localFilename != null && !file.localFilename.equals(file.filename)) {
-					file.addPreviousVersion(file.current.checksum, file.current.timestamp, file.filename, 0);
+				if (file.getLocalFilename() != null && !file.getLocalFilename().equals(file.getFilename())) {
+					file.addPreviousVersion(file.getCurrentVersion().getChecksum(), file.getCurrentVersion().getTimestamp(), file.getFilename(), 0);
 				}
 				file.setAction(files, Action.UPLOAD);
 			}
@@ -1061,22 +1063,22 @@ public class CommandLine {
 			if (!file.isActivePlatform(files)) {
 				continue;
 			}
-			final String name = file.filename;
+			final String name = file.getFilename();
 			handleLauncherForUpload(file);
 			switch (file.getStatus()) {
 			case OBSOLETE:
 			case OBSOLETE_MODIFIED:
 				if (forceShadow) {
-					file.updateSite = updateSite;
+					file.setUpdateSite(updateSite);
 					file.setAction(files, Action.UPLOAD);
 					if (simulate) {
-						log.info("Would upload " + file.filename);
+						log.info("Would upload " + file.getFilename());
 					}
 					uploadCount++;
-				} else if (ignoreWarnings && updateSite.equals(file.updateSite)) {
+				} else if (ignoreWarnings && updateSite.equals(file.getUpdateSite())) {
 					file.setAction(files, Action.UPLOAD);
 					if (simulate) {
-						log.info("Would re-upload " + file.filename);
+						log.info("Would re-upload " + file.getFilename());
 					}
 					uploadCount++;
 
@@ -1087,15 +1089,15 @@ public class CommandLine {
 				break;
 			case UPDATEABLE:
 			case MODIFIED:
-				if (!forceShadow && !updateSite.equals(file.updateSite)) {
+				if (!forceShadow && !updateSite.equals(file.getUpdateSite())) {
 					log.warn("'" + name + "' of update site '"
-							+ file.updateSite + "' is not up-to-date!");
+							+ file.getUpdateSite() + "' is not up-to-date!");
 					warningCount++;
 					continue;
 				}
 				//$FALL-THROUGH$
 			case LOCAL_ONLY:
-				file.updateSite = updateSite;
+				file.setUpdateSite(updateSite);
 				file.setAction(files, Action.UPLOAD);
 				if (simulate) {
 					log.info("Would upload new "
@@ -1115,7 +1117,7 @@ public class CommandLine {
 				if (!file.isActivePlatform(files)) break;
 				file.setAction(files, Action.REMOVE);
 				if (simulate) {
-					log.info("Would mark " + file.filename + " obsolete");
+					log.info("Would mark " + file.getFilename() + " obsolete");
 				}
 				removeCount++;
 				break;
@@ -1134,7 +1136,7 @@ public class CommandLine {
 			for (final FileObject dependency : file.getFileDependencies(files,
 					false)) {
 				if (dependency.willNotBeInstalled()
-						&& updateSite.equals(dependency.updateSite)) {
+						&& updateSite.equals(dependency.getUpdateSite())) {
 					file.removeDependency(dependency.getFilename(false));
 				}
 			}
@@ -1186,9 +1188,9 @@ public class CommandLine {
 
 	private void handleLauncherForUpload(final FileObject file) {
 		if (file.getStatus() == Status.LOCAL_ONLY
-				&& Platforms.isLauncher(file.filename)) {
-			file.executable = true;
-			file.addPlatform(Platforms.platformForLauncher(file.filename));
+				&& Platforms.isLauncher(file.getFilename())) {
+			file.setExecutable(true);
+			file.addPlatform(Platforms.platformForLauncher(file.getFilename()));
 			for (final String fileName : new String[] { "jars/imagej-launcher.jar" }) {
 				final FileObject dependency = files.get(fileName);
 				if (dependency != null) {

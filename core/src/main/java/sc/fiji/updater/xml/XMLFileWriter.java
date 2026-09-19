@@ -226,24 +226,24 @@ public class XMLFileWriter {
 	protected void writeSingle(final boolean local, final AttributesImpl attr,
 			final FileObject file, final long timestampObsolete) throws SAXException {
 		attr.clear();
-		assert (file.updateSite != null && !file.updateSite.equals(""));
-		if (local) setAttribute(attr, "update-site", file.updateSite);
-		setAttribute(attr, "filename", file.filename);
-		if (file.executable) setAttribute(attr, "executable", "true");
-		if (file.coordinate != null) setAttribute(attr, "coordinate", file.coordinate);
+		assert (file.getUpdateSite() != null && !file.getUpdateSite().equals(""));
+		if (local) setAttribute(attr, "update-site", file.getUpdateSite());
+		setAttribute(attr, "filename", file.getFilename());
+		if (file.isExecutable()) setAttribute(attr, "executable", "true");
+		if (file.getCoordinate() != null) setAttribute(attr, "coordinate", file.getCoordinate());
 		handler.startElement("", "", "plugin", attr);
 		writeSimpleTags("platform", file.getPlatforms());
 		writeSimpleTags("category", file.getCategories());
 
-		final FileObject.Version current = file.current;
+		final FileObject.Version current = file.getCurrentVersion();
 		if (file.getChecksum() != null) {
 			attr.clear();
 			setAttribute(attr, "checksum", file.getChecksum());
 			setAttribute(attr, "timestamp", file.getTimestamp());
-			setAttribute(attr, "filesize", file.filesize);
+			setAttribute(attr, "filesize", file.getFilesize());
 			handler.startElement("", "", "version", attr);
-			if (file.description != null) writeSimpleTag("description",
-				file.description);
+			if (file.getDescription() != null) writeSimpleTag("description",
+				file.getDescription());
 
 			for (final Dependency dependency : file.getDependencies()) {
 				attr.clear();
@@ -257,16 +257,16 @@ public class XMLFileWriter {
 			writeSimpleTags("author", file.getAuthors());
 			handler.endElement("", "", "version");
 		}
-		if (current != null && !current.checksum.equals(file.getChecksum())) {
-			current.timestampObsolete = timestampObsolete;
+		if (current != null && !current.getChecksum().equals(file.getChecksum())) {
+			current.setTimestampObsolete(timestampObsolete);
 			file.addPreviousVersion(current);
 		}
 		for (final FileObject.Version version : file.getPrevious()) {
 			attr.clear();
-			setAttribute(attr, "timestamp", version.timestamp);
-			setAttribute(attr, "timestamp-obsolete", version.timestampObsolete);
-			setAttribute(attr, "checksum", version.checksum);
-			if (version.filename != null) setAttribute(attr, "filename", version.filename);
+			setAttribute(attr, "timestamp", version.getTimestamp());
+			setAttribute(attr, "timestamp-obsolete", version.getTimestampObsolete());
+			setAttribute(attr, "checksum", version.getChecksum());
+			if (version.getFilename() != null) setAttribute(attr, "filename", version.getFilename());
 			writeSimpleTag("previous-version", null, attr);
 		}
 		handler.endElement("", "", "plugin");

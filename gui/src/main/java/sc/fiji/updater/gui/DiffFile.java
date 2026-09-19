@@ -227,7 +227,7 @@ public class DiffFile extends JFrame {
 			directory = directory.getParentFile();
 			if (directory == null) return;
 		}
-		final String baseName = fileObject.filename.substring(fileObject.filename.lastIndexOf('/') + 1);
+		final String baseName = fileObject.getFilename().substring(fileObject.getFilename().lastIndexOf('/') + 1);
 		for (String pair : new String[] { "ij-[1-9].* ImageJA", "ij-[a-z].* imagej2", "imglib.* imglib", "TrakEM2.* TrakEM2", "mpicbg.* mpicbg" }) {
 			final int space = pair.indexOf(' ');
 			final String pattern = pair.substring(0, space);
@@ -253,7 +253,7 @@ public class DiffFile extends JFrame {
 		}
 		else {
 			commitRange = commitLocal;
-			long millis = Timestamps.timestamp2millis(fileObject.current.timestamp);
+			long millis = Timestamps.timestamp2millis(fileObject.getCurrentVersion().getTimestamp());
 			since = "--since=" + (millis / 1000l - 5 * 60);
 			warning = "No precise commit information in the remote .jar;\n"
 					+ "\tUsing timestamp from Updater instead: " + new Date(millis) + " - 5 minutes";

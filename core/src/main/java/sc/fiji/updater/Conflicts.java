@@ -241,19 +241,19 @@ public class Conflicts {
 			}
 			// test whether this is a different artifact wearing the same name
 			if (!files.ignoredConflicts.contains(file) &&
-				file.originalCoordinate != null)
+				file.getOriginalCoordinate() != null)
 			{
 				conflicts.add(differentArtifact(file));
 			}
 			// test whether there are conflicting versions of the same file
-			if (!files.ignoredConflicts.contains(file) && file.filename.endsWith(".jar")) {
+			if (!files.ignoredConflicts.contains(file) && file.getFilename().endsWith(".jar")) {
 				String baseName = file.getBaseName();
 				int slash = baseName.lastIndexOf('/');
 				String prefix = baseName.substring(0, slash + 1);
 				baseName = baseName.substring(slash + 1);
 				for (final String name : files.prefix(file).getParentFile().list()) {
 					final String prefixed = prefix + name;
-					if (name.startsWith(baseName) && !file.filename.equals(prefixed) && file.getFilename(true).equals(FileObject.getFilename(prefixed, true))) {
+					if (name.startsWith(baseName) && !file.getFilename().equals(prefixed) && file.getFilename(true).equals(FileObject.getFilename(prefixed, true))) {
 						conflicts.add(conflictingVersions(file, files.prefix(prefixed), prefixed));
 					}
 				}
@@ -268,7 +268,7 @@ public class Conflicts {
 		// Replace dependencies on to-be-removed files
 		for (final FileObject file : files.managedFiles()) {
 			if (file.getAction() == Action.REMOVE || file.isObsolete()) continue;
-			if (sites.size() > 0 && !sites.contains(file.updateSite)) continue;
+			if (sites.size() > 0 && !sites.contains(file.getUpdateSite())) continue;
 			for (final Dependency dependency : file.getDependencies()) {
 				final FileObject dependencyObject = files.get(dependency.filename);
 				if (dependency.overrides) {
@@ -349,7 +349,7 @@ public class Conflicts {
 					obsoleting.removeDependency(obsoleted.getFilename());
 				}
 			});
-		if (obsoleting.updateSite.equals(obsoleted.updateSite)) {
+		if (obsoleting.getUpdateSite().equals(obsoleted.getUpdateSite())) {
 			resolutions.add(new Resolution("Remove " + obsoleted.getFilename() +
 				" from the Update Site")
 			{
@@ -411,10 +411,10 @@ public class Conflicts {
 	protected Conflict differentArtifact(final FileObject file) {
 		final String localFilename = file.getLocalFilename(false);
 		final String renamed =
-			FileObject.disambiguate(localFilename, file.localCoordinate);
+			FileObject.disambiguate(localFilename, file.getLocalCoordinate());
 		return new Conflict(Severity.CRITICAL_ERROR, file, localFilename + " is " +
-			file.localCoordinate + ", but " + file.getFilename(true) +
-			" on the update site is " + file.originalCoordinate +
+			file.getLocalCoordinate() + ", but " + file.getFilename(true) +
+			" on the update site is " + file.getOriginalCoordinate() +
 			".\nUploading it would replace that file everywhere it is installed.",
 			renameResolution("Rename it to " + renamed, file, renamed),
 			ignoreResolution("Upload it anyway (dangerous!)", file));
@@ -456,7 +456,7 @@ public class Conflicts {
 			@Override
 			public void resolve() {
 				final String previous = file.getLocalFilename(false);
-				final String updateSite = file.updateSite;
+				final String updateSite = file.getUpdateSite();
 				if (!files.prefix(previous).renameTo(files.prefix(renamed))) {
 					throw new RuntimeException("Could not rename '" + previous +
 						"' to '" + renamed + "'");

@@ -133,13 +133,13 @@ public class UpdaterTest {
 		assertNotEqual(null, narf);
 		assertNotEqual(null, egads);
 
-		assertEquals(true, ij.executable);
-		assertEquals(false, narf.executable);
-		assertEquals(false, egads.executable);
+		assertEquals(true, ij.isExecutable());
+		assertEquals(false, narf.isExecutable());
+		assertEquals(false, egads.isExecutable());
 
-		assertNotEqual(ij.current.checksum, narf.current.checksum);
-		assertNotEqual(narf.current.checksum, egads.current.checksum);
-		assertNotEqual(egads.current.checksum, ij.current.checksum);
+		assertNotEqual(ij.getCurrentVersion().getChecksum(), narf.getCurrentVersion().getChecksum());
+		assertNotEqual(narf.getCurrentVersion().getChecksum(), egads.getCurrentVersion().getChecksum());
+		assertNotEqual(egads.getCurrentVersion().getChecksum(), ij.getCurrentVersion().getChecksum());
 
 		assertCount(3, files.localOnly());
 
@@ -303,9 +303,9 @@ public class UpdaterTest {
 
 		final Resolution[] resolutions = conflict.getResolutions();
 		assertEquals(1, resolutions.length);
-		assertEquals(20030115203432l, object.localTimestamp);
+		assertEquals(20030115203432l, object.getLocalTimestamp());
 		resolutions[0].resolve();
-		assertNotEqual(20030115203432l, object.localTimestamp);
+		assertNotEqual(20030115203432l, object.getLocalTimestamp());
 
 		// Make sure that the resolution allows the upload to succeed
 
@@ -521,8 +521,8 @@ public class UpdaterTest {
 		new Checksummer(files, progress).updateFromLocal();
 		tooOld = files.get("jars/too-old.jar");
 		assertTrue(tooOld.getFilename().equals("jars/too-old-3.11.jar"));
-		assertTrue(tooOld.localFilename.equals("jars/too-old-3.12.jar"));
-		tooOld.stageForUpload(files, tooOld.updateSite);
+		assertTrue(tooOld.getLocalFilename().equals("jars/too-old-3.12.jar"));
+		tooOld.stageForUpload(files, tooOld.getUpdateSite());
 		upload(files);
 
 		// check that webRoot's db.xml.gz's previous versions contain the old filename
@@ -531,7 +531,7 @@ public class UpdaterTest {
 		Pattern regex = Pattern.compile(".*<previous-version [^>]*filename=\"jars/too-old-3.11.jar\".*", Pattern.DOTALL);
 		assertTrue(regex.matcher(db).matches());
 
-		assertTrue(new File(webRoot, "jars/too-old-3.12.jar-" + tooOld.localTimestamp).exists());
+		assertTrue(new File(webRoot, "jars/too-old-3.12.jar-" + tooOld.getLocalTimestamp()).exists());
 
 		// The dependencies should be updated automatically
 
@@ -561,17 +561,17 @@ public class UpdaterTest {
 		new XMLFileReader(files).read(FilesCollection.DEFAULT_UPDATE_SITE);
 		final FileObject jama = files.get("jars/Jama.jar");
 		assertNotNull(jama);
-		assertCount(3, jama.previous);
+		assertCount(3, jama.getPrevious());
 		final FileObject.Version previous[] = new FileObject.Version[3];
-		for (final FileObject.Version version : jama.previous) {
-			previous[(int)(version.timestamp - 1)] = version;
+		for (final FileObject.Version version : jama.getPrevious()) {
+			previous[(int)(version.getTimestamp() - 1)] = version;
 		}
-		assertTrue("a".equals(previous[0].checksum));
-		assertEquals("jars/Jama-1.0.2.jar", previous[0].filename);
-		assertTrue("b".equals(previous[1].checksum));
-		assertEquals("jars/Jama-1.0.2.jar", previous[1].filename);
-		assertTrue("c".equals(previous[2].checksum));
-		assertEquals("jars/Jama.jar", previous[2].filename);
+		assertTrue("a".equals(previous[0].getChecksum()));
+		assertEquals("jars/Jama-1.0.2.jar", previous[0].getFilename());
+		assertTrue("b".equals(previous[1].getChecksum()));
+		assertEquals("jars/Jama-1.0.2.jar", previous[1].getFilename());
+		assertTrue("c".equals(previous[2].getChecksum()));
+		assertEquals("jars/Jama.jar", previous[2].getFilename());
 	}
 
 	@Test
@@ -699,14 +699,14 @@ public class UpdaterTest {
 		writeJar(files, "jars/hello-2.0.jar", "new-file", "empty");
 		files.prefix(".checksums").delete();
 		new Checksummer(files, progress).updateFromLocal();
-		String newChecksum = files.get("jars/hello.jar").localChecksum;
+		String newChecksum = files.get("jars/hello.jar").getLocalChecksum();
 		assertEquals(newChecksum, UpdaterUtil.getJarDigest(files.prefix("jars/hello-2.0.jar")));
 
 		assertNotEqual(origChecksum, newChecksum);
 
 		// upload that version
 		files.get("jars/hello.jar").stageForUpload(files, FilesCollection.DEFAULT_UPDATE_SITE);
-		assertEquals(newChecksum, files.get("jars/hello.jar").localChecksum);
+		assertEquals(newChecksum, files.get("jars/hello.jar").getLocalChecksum());
 		upload(files);
 
 		FilesCollection files2 = new FilesCollection(files.prefix("invalid"));
@@ -714,7 +714,7 @@ public class UpdaterTest {
 		files2.getUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE, false).setURL(webRoot.toURI().toURL().toString());
 		XMLFileDownloader xmlLoader = new XMLFileDownloader(files2);
 		xmlLoader.start();
-		String newChecksum2 = files2.get("jars/hello.jar").current.checksum;
+		String newChecksum2 = files2.get("jars/hello.jar").getCurrentVersion().getChecksum();
 		assertEquals(newChecksum, newChecksum2);
 
 		// re-write the original version
@@ -722,13 +722,13 @@ public class UpdaterTest {
 		writeFile(files, "jars/hello.jar");
 		assertTrue(files.prefix("jars/hello-2.0.jar").delete());
 		files = readDb(files);
-		String origChecksum2 = files.get("jars/hello.jar").localChecksum;
+		String origChecksum2 = files.get("jars/hello.jar").getLocalChecksum();
 		assertEquals(origChecksum, origChecksum2);
 		assertEquals(origChecksum, UpdaterUtil.getJarDigest(files.prefix("jars/hello.jar")));
 
 		initDb(files);
 		files = readDb(files);
-		assertEquals(newChecksum, files.get("jars/hello.jar").current.checksum);
+		assertEquals(newChecksum, files.get("jars/hello.jar").getCurrentVersion().getChecksum());
 
 		assertStatus(Status.UPDATEABLE, files.get("jars/hello.jar"));
 		files.get("jars/hello.jar").setAction(files, Action.UPDATE);
@@ -747,15 +747,15 @@ public class UpdaterTest {
 	public void testReReadFiles() throws Exception {
 		files = initialize("macros/macro.ijm");
 		files = readDb(files);
-		files.get("macros/macro.ijm").description = "Narf";
+		files.get("macros/macro.ijm").setDescription("Narf");
 		files.write();
 		upload(files);
 
 		files = readDb(files);
-		assertEquals("Narf", files.get("macros/macro.ijm").description);
+		assertEquals("Narf", files.get("macros/macro.ijm").getDescription());
 		files.prefix(".checksums").delete();
 		new Checksummer(files, progress).updateFromLocal();
-		assertEquals("Narf", files.get("macros/macro.ijm").description);
+		assertEquals("Narf", files.get("macros/macro.ijm").getDescription());
 	}
 
 	@Test
@@ -772,7 +772,7 @@ public class UpdaterTest {
 		files = readDb(files);
 		assertTrue(files.get(name1) == files.get(name2));
 		assertStatus(Status.MODIFIED, files.get(name1));
-		final String modifiedChecksum = files.get(name2).localChecksum;
+		final String modifiedChecksum = files.get(name2).getLocalChecksum();
 		files.get(name1).stageForUpload(files, FilesCollection.DEFAULT_UPDATE_SITE);
 		upload(files);
 
@@ -783,9 +783,9 @@ public class UpdaterTest {
 		// now the updater should be updated first thing
 		files = readDb(files);
 		FileObject file2 = files.get(name2);
-		assertNotEqual(file2.localFilename, name2);
+		assertNotEqual(file2.getLocalFilename(), name2);
 		assertTrue(file2.isUpdateable());
-		assertNotEqual(modifiedChecksum, files.get(name2).localChecksum);
+		assertNotEqual(modifiedChecksum, files.get(name2).getLocalChecksum());
 		assertTrue(Installer.isTheUpdaterUpdateable(files));
 		Installer.updateTheUpdater(files, progress);
 		assertTrue(files.prefix("update/" + name1).exists());
@@ -797,7 +797,7 @@ public class UpdaterTest {
 		assertTrue(files.prefix("update/" + name2).renameTo(files.prefix(name2)));
 		files.prefix(".checksums").delete();
 		new Checksummer(files, progress).updateFromLocal();
-		assertEquals(modifiedChecksum, files.get(name2).current.checksum);
+		assertEquals(modifiedChecksum, files.get(name2).getCurrentVersion().getChecksum());
 	}
 
 	@Test
@@ -814,7 +814,7 @@ public class UpdaterTest {
 		new Checksummer(files, progress).updateFromLocal();
 		final FileObject object = files.get("jars/hello.jar");
 		assertNotNull(object);
-		assertEquals(object.description, "Take over the world!");
+		assertEquals(object.getDescription(), "Take over the world!");
 		assertCount(2, object.authors);
 		final String[] authors = new String[2];
 		int counter = 0;
@@ -916,8 +916,8 @@ public class UpdaterTest {
 			final FileObject file2 = files.get("jars/new.jar");
 			assertTrue(file == file2);
 			assertEquals(triplet[1], file.getChecksum());
-			assertEquals(triplet[2], file.localChecksum != null ? file.localChecksum
-				: file.current.checksum);
+			assertEquals(triplet[2], file.getLocalChecksum() != null ? file.getLocalChecksum()
+				: file.getCurrentVersion().getChecksum());
 		}
 
 		final FileObject file =
@@ -928,7 +928,7 @@ public class UpdaterTest {
 		final File webRoot = getWebRoot(files);
 		new File(webRoot, "jars").mkdirs();
 		assertTrue(jar.renameTo(new File(webRoot, "jars/new.jar-" +
-			file.current.timestamp)));
+			file.getCurrentVersion().getTimestamp())));
 		new XMLFileWriter(files).write(new GZIPOutputStream(new FileOutputStream(
 			new File(webRoot, "db.xml.gz"))), false);
 
@@ -1113,9 +1113,9 @@ public class UpdaterTest {
 		assertTrue(db.indexOf("<plugin filename=\"jars/obsolete.jar\"") > 0);
 		FileObject obsoleteFile = files.get("jars/obsolete.jar");
 		assertNotNull(obsoleteFile);
-		assertNull(obsoleteFile.current);
-		assertCount(1, obsoleteFile.previous);
-		assertNotEquals(0, obsoleteFile.previous.iterator().next().timestampObsolete);
+		assertNull(obsoleteFile.getCurrentVersion());
+		assertCount(1, obsoleteFile.getPrevious());
+		assertNotEquals(0, obsoleteFile.getPrevious().iterator().next().getTimestampObsolete());
 	}
 
 	@Test
@@ -1183,7 +1183,7 @@ public class UpdaterTest {
 		new Checksummer(files, progress).updateFromLocal();
 		final FileObject dependency = files.get("jars/dependency.jar");
 		assertNotNull(dependency);
-		dependency.updateSite = FilesCollection.DEFAULT_UPDATE_SITE;
+		dependency.setUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE);
 		dependency.setAction(files, Action.UPLOAD);
 		assertCount(1, files.toUpload());
 		upload(files);
@@ -1258,7 +1258,7 @@ public class UpdaterTest {
 		final FileObject blub = files.get("jars/blub.jar");
 		assertNotNull(blub);
 		blub.addDependency(files, files.get("jars/something-cool.jar"));
-		blub.updateSite = "Second";
+		blub.setUpdateSite("Second");
 		blub.setAction(files, Action.UPLOAD);
 		upload(files, "Second");
 

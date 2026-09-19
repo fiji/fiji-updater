@@ -284,15 +284,15 @@ public class FileTable extends JTable {
 		if (list.size() == 1 &&
 			list.get(0).equals(FilesCollection.DEFAULT_UPDATE_SITE))
 		{
-			file.updateSite = FilesCollection.DEFAULT_UPDATE_SITE;
+			file.setUpdateSite(FilesCollection.DEFAULT_UPDATE_SITE);
 			return true;
 		}
 		final String updateSite =
 			SwingTools.getChoice(updaterFrame, list,
-				"To which upload site do you want to upload " + file.filename + "?",
+				"To which upload site do you want to upload " + file.getFilename() + "?",
 				"Upload site");
 		if (updateSite == null) return false;
-		file.updateSite = updateSite;
+		file.setUpdateSite(updateSite);
 		return true;
 	}
 
@@ -363,8 +363,8 @@ public class FileTable extends JTable {
 		 * </p>
 		 */
 		private String channelOf(final FileObject file) {
-			if (file.updateSite == null) return "";
-			final UpdateSite site = files.getUpdateSite(file.updateSite, true);
+			if (file.getUpdateSite() == null) return "";
+			final UpdateSite site = files.getUpdateSite(file.getUpdateSite(), true);
 			if (site == null) return "";
 			final String channel = site.getChannel();
 			return channel == null ? ChannelState.BASE_CHANNEL_NAME : channel;
@@ -392,7 +392,7 @@ public class FileTable extends JTable {
 				return file.getAction() != null ? file.getAction().toString()
 					: file.getStatus().getLabel();
 			case SITE_COLUMN:
-				return file.updateSite;
+				return file.getUpdateSite();
 			case CHANNEL_COLUMN:
 				return channelOf(file);
 			}

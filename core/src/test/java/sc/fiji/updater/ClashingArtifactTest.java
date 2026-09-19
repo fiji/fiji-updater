@@ -85,8 +85,8 @@ public class ClashingArtifactTest {
 	@Test
 	public void testDifferentArtifactIsRefused() throws Exception {
 		final FileObject file = stageSecondJar("jars/annotations-2.46.15.jar", AWSSDK);
-		assertEquals(AWSSDK, file.coordinate);
-		assertEquals(JETBRAINS, file.originalCoordinate);
+		assertEquals(AWSSDK, file.getCoordinate());
+		assertEquals(JETBRAINS, file.getOriginalCoordinate());
 
 		final List<Conflict> conflicts = criticalConflicts();
 		assertEquals(1, conflicts.size());
@@ -116,23 +116,23 @@ public class ClashingArtifactTest {
 		final FileObject renamed =
 			files.get("jars/software.amazon.awssdk.annotations.jar");
 		assertNotNull(renamed);
-		assertEquals(AWSSDK, renamed.coordinate);
+		assertEquals(AWSSDK, renamed.getCoordinate());
 		assertEquals(FileObject.Action.UPLOAD, renamed.getAction());
 
 		// The file it would have replaced is untouched, and simply not installed
 		// any more -- its .jar is the one that got renamed away.
 		final FileObject annotations = files.get("jars/annotations.jar");
-		assertEquals(JETBRAINS, annotations.coordinate);
-		assertNull(annotations.originalCoordinate);
+		assertEquals(JETBRAINS, annotations.getCoordinate());
+		assertNull(annotations.getOriginalCoordinate());
 		assertEquals(Status.NOT_INSTALLED, annotations.getStatus());
 		assertNull(annotations.getAction());
 
 		// And the update site ends up offering both, under their own names.
 		upload(files);
 		final FilesCollection reread = readDb(files);
-		assertEquals(JETBRAINS, reread.get("jars/annotations.jar").coordinate);
+		assertEquals(JETBRAINS, reread.get("jars/annotations.jar").getCoordinate());
 		assertEquals(AWSSDK, reread.get(
-			"jars/software.amazon.awssdk.annotations.jar").coordinate);
+			"jars/software.amazon.awssdk.annotations.jar").getCoordinate());
 	}
 
 	/**
@@ -162,13 +162,13 @@ public class ClashingArtifactTest {
 		// The artifact the update site knows kept the plain name, installed and
 		// up-to-date; the other is a local-only file of its own.
 		final FileObject annotations = files.get("jars/annotations.jar");
-		assertEquals(JETBRAINS, annotations.coordinate);
+		assertEquals(JETBRAINS, annotations.getCoordinate());
 		assertEquals(Status.INSTALLED, annotations.getStatus());
 		assertTrue(files.prefix("jars/annotations-13.0.jar").exists());
 		final FileObject renamed =
 			files.get("jars/software.amazon.awssdk.annotations.jar");
 		assertNotNull(renamed);
-		assertEquals(AWSSDK, renamed.localCoordinate);
+		assertEquals(AWSSDK, renamed.getLocalCoordinate());
 		assertEquals(Status.LOCAL_ONLY, renamed.getStatus());
 	}
 
@@ -189,8 +189,8 @@ public class ClashingArtifactTest {
 		writeMavenJar(path, coordinate);
 		files = readDb(files);
 		final FileObject file = files.get("jars/annotations.jar");
-		assertEquals(JETBRAINS, file.coordinate);
-		assertEquals(coordinate, file.localCoordinate);
+		assertEquals(JETBRAINS, file.getCoordinate());
+		assertEquals(coordinate, file.getLocalCoordinate());
 		file.stageForUpload(files, FilesCollection.DEFAULT_UPDATE_SITE);
 		return file;
 	}

@@ -119,7 +119,7 @@ public class InstallerReuseTest {
 		final FileObject twin = files.get("jars/twin-1.0.jar");
 		assertStatus(Status.INSTALLED, original);
 		assertStatus(Status.NOT_INSTALLED, twin);
-		assertEquals(original.localChecksum, twin.getChecksum());
+		assertEquals(original.getLocalChecksum(), twin.getChecksum());
 		twin.setAction(files, Action.INSTALL);
 		return twin;
 	}

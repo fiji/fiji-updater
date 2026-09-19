@@ -122,7 +122,7 @@ public class Remove implements GroupAction {
 		final Status status = file.getStatus();
 		final boolean canRemove = status.isValid(Action.REMOVE);
 
-		boolean unshadowing = updateSite.equals(file.updateSite) && file.overridesOtherUpdateSite();
+		boolean unshadowing = updateSite.equals(file.getUpdateSite()) && file.overridesOtherUpdateSite();
 
 		if (!canRemove) {
 			if (!unshadowing) return false;

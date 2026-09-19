@@ -650,14 +650,14 @@ public class UpdaterFrame extends JFrame implements TableModelListener,
 				case INSTALL:
 				case UPDATE:
 					install++;
-					bytesToDownload += file.filesize;
+					bytesToDownload += file.getFilesize();
 					break;
 				case UNINSTALL:
 					uninstall++;
 					break;
 				case UPLOAD:
 					upload++;
-					bytesToUpload += file.filesize;
+					bytesToUpload += file.getFilesize();
 					break;
 				default:
 			}
@@ -666,7 +666,7 @@ public class UpdaterFrame extends JFrame implements TableModelListener,
 		final DependencyMap map = files.getDependencies(true);
 		for (final FileObject file : map.keySet()) {
 			implicated++;
-			bytesToUpload += file.filesize;
+			bytesToUpload += file.getFilesize();
 		}
 		String text = "";
 		if (install > 0) text +=

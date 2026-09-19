@@ -305,7 +305,7 @@ public class ChannelResolutionTest {
 		final FileObject orphan = after.get("macros/macro.ijm");
 		assertNotNull(orphan);
 		assertEquals(FileObject.Status.LOCAL_ONLY, orphan.getStatus());
-		assertNull(orphan.updateSite);
+		assertNull(orphan.getUpdateSite());
 	}
 
 	/**

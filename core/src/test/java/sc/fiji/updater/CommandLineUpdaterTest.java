@@ -146,7 +146,7 @@ public class CommandLineUpdaterTest {
 		final File tmp = addUpdateSite(files, "second");
 		files = main(files, "upload", "--update-site", "second", "--force-shadow", path);
 
-		final File onSecondSite = new File(tmp, path + "-" + files.get(path).current.timestamp);
+		final File onSecondSite = new File(tmp, path + "-" + files.get(path).getCurrentVersion().getTimestamp());
 		assertTrue("File exists: " + onSecondSite, onSecondSite.exists());
 	}
 
@@ -223,7 +223,7 @@ public class CommandLineUpdaterTest {
 
 		writeFile(files, "macros/a.ijm");
 		files = main(files, "upload", "--update-site", "third", "macros/a.ijm");
-		final File uploaded = new File(third, "macros/a.ijm-" + files.get("macros/a.ijm").current.timestamp);
+		final File uploaded = new File(third, "macros/a.ijm-" + files.get("macros/a.ijm").getCurrentVersion().getTimestamp());
 		assertTrue(uploaded.exists());
 
 		// make sure that circular dependencies are still reported when uploading to the site
@@ -256,7 +256,7 @@ public class CommandLineUpdaterTest {
 		assertTrue(file2.delete());
 		files = main(files, "update-force-pristine");
 
-		assertEquals(path2, files.get(path2).filename);
+		assertEquals(path2, files.get(path2).getFilename());
 		assertStatus(Status.INSTALLED, files, path2);
 		assertFalse(file1.exists());
 		assertTrue(file2.exists());
@@ -358,7 +358,7 @@ public class CommandLineUpdaterTest {
 		// intermittent failure, and no amount of sleeping between the two
 		// versions would have addressed it: the race is inside the first upload,
 		// not between the uploads.
-		final long firstVersion = files.get(macro).current.timestamp;
+		final long firstVersion = files.get(macro).getCurrentVersion().getTimestamp();
 
 		// Long enough that the second upload lands in a later second than the
 		// first, since version timestamps have second granularity.
@@ -369,7 +369,7 @@ public class CommandLineUpdaterTest {
 		upload(files);
 
 		files = main(files, "list");
-		final long secondVersion = files.get(macro).current.timestamp;
+		final long secondVersion = files.get(macro).getCurrentVersion().getTimestamp();
 		assertTrue("a second version should have been recorded, but the current " +
 			"version is still " + firstVersion, secondVersion > firstVersion);
 

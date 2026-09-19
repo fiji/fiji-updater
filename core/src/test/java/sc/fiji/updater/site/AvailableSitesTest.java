@@ -354,7 +354,7 @@ public class AvailableSitesTest {
 
 		assertNull(files.getUpdateSite("Old", true));
 		assertNotNull(files.getUpdateSite("New", true));
-		assertEquals("New", files.get("jars/thing.jar").updateSite);
+		assertEquals("New", files.get("jars/thing.jar").getUpdateSite());
 
 		cleanup(files);
 	}
@@ -383,7 +383,7 @@ public class AvailableSitesTest {
 		final UpdateSite renamed = files.getUpdateSite("Fiji", true);
 		assertEquals("https://sites.imagej.net/Fiji/", renamed.getURL());
 		assertTrue(renamed.isActive());
-		assertEquals("Fiji", files.get("jars/ij.jar").updateSite);
+		assertEquals("Fiji", files.get("jars/ij.jar").getUpdateSite());
 
 		// The legacy entry was disambiguated rather than silently displacing it,
 		// and kept both its URL and its files.
@@ -391,7 +391,7 @@ public class AvailableSitesTest {
 		assertNotNull(legacy);
 		assertEquals("https://update.fiji.sc/", legacy.getURL());
 		assertFalse(legacy.isActive());
-		assertEquals("Fiji-2", files.get("jars/legacy.jar").updateSite);
+		assertEquals("Fiji-2", files.get("jars/legacy.jar").getUpdateSite());
 
 		cleanup(files);
 	}

@@ -515,7 +515,7 @@ public class FilesCollection implements Iterable<FileObject> {
 
 		// handle all files
 		for (final FileObject file : this)
-			if (oldName.equals(file.updateSite)) file.updateSite = newName;
+			if (oldName.equals(file.getUpdateSite())) file.setUpdateSite(newName);
 
 		// preserve order
 		final Map<String, UpdateSite> oldMap = updateSites;
@@ -547,10 +547,10 @@ public class FilesCollection implements Iterable<FileObject> {
 	public void renameUpdateSiteReferences(final Map<String, String> renames) {
 		if (renames.isEmpty()) return;
 		for (final FileObject file : this) {
-			final String site = renames.get(file.updateSite);
-			if (site != null) file.updateSite = site;
-			final String original = renames.get(file.originalUpdateSite);
-			if (original != null) file.originalUpdateSite = original;
+			final String site = renames.get(file.getUpdateSite());
+			if (site != null) file.setUpdateSite(site);
+			final String original = renames.get(file.getOriginalUpdateSite());
+			if (original != null) file.setOriginalUpdateSite(original);
 		}
 	}
 
@@ -621,9 +621,9 @@ public class FilesCollection implements Iterable<FileObject> {
 	public Collection<String> getSiteNamesToUpload() {
 		final Collection<String> set = new HashSet<>();
 		for (final FileObject file : toUpload(false))
-			set.add(file.updateSite);
+			set.add(file.getUpdateSite());
 		for (final FileObject file : toRemove())
-			set.add(file.updateSite);
+			set.add(file.getUpdateSite());
 		// keep the update sites' order
 		final List<String> result = new ArrayList<>();
 		for (final String name : getUpdateSiteNames(false))
@@ -700,7 +700,7 @@ public class FilesCollection implements Iterable<FileObject> {
 		new XMLFileReader(this).read(name);
 		final List<String> filesFromSite = new ArrayList<>();
 		for (final FileObject file : forUpdateSite(name))
-			filesFromSite.add(file.localFilename != null ? file.localFilename : file.filename);
+			filesFromSite.add(file.getLocalFilename() != null ? file.getLocalFilename() : file.getFilename());
 		final Checksummer checksummer =
 			new Checksummer(this, progress);
 		checksummer.updateFromLocal(filesFromSite);
@@ -829,7 +829,7 @@ public class FilesCollection implements Iterable<FileObject> {
 
 	public Iterable<FileObject> toUpload(final boolean includeMetadataChanges) {
 		if (!includeMetadataChanges) return filter(is(Action.UPLOAD));
-		return filter(is(Action.UPLOAD).or(file -> file.metadataChanged &&
+		return filter(is(Action.UPLOAD).or(file -> file.isMetadataChanged() &&
 			file.isUploadable(this, false)));
 	}
 
@@ -991,8 +991,8 @@ public class FilesCollection implements Iterable<FileObject> {
 
 	public static Predicate<FileObject> isUpdateSite(final String updateSite) {
 		// NB: file.updateSite is null for local-only files.
-		return file -> file.updateSite != null &&
-			file.updateSite.equals(updateSite);
+		return file -> file.getUpdateSite() != null &&
+			file.getUpdateSite().equals(updateSite);
 	}
 
 	public Iterable<FileObject> filter(final Predicate<FileObject> filter) {
@@ -1068,11 +1068,11 @@ public class FilesCollection implements Iterable<FileObject> {
 	}
 
 	public String getURL(final FileObject file) {
-		final String siteName = file.updateSite;
+		final String siteName = file.getUpdateSite();
 		assert (siteName != null && !siteName.equals(""));
 		final UpdateSite site = getUpdateSite(siteName, false);
 		if (site == null) return null;
-		return sourceURL(site) + file.filename.replace(" ", "%20") + "-" +
+		return sourceURL(site) + file.getFilename().replace(" ", "%20") + "-" +
 			file.getTimestamp();
 	}
 
@@ -1104,7 +1104,7 @@ public class FilesCollection implements Iterable<FileObject> {
 				!other.isActivePlatform(this)) continue;
 			if (other.isObsolete() && other.willNotBeInstalled()) {
 				log.debug("Ignoring obsolete dependency " + dependency.filename
-						+ " of " + file.filename);
+						+ " of " + file.getFilename());
 				continue;
 			}
 			if (dependency.overrides) {
@@ -1157,18 +1157,18 @@ public class FilesCollection implements Iterable<FileObject> {
 			@Override
 			public int compare(final FileObject a, final FileObject b) {
 				final int result = firstChar(a) - firstChar(b);
-				return result != 0 ? result : a.filename.compareTo(b.filename);
+				return result != 0 ? result : a.getFilename().compareTo(b.getFilename());
 			}
 
 			int firstChar(final FileObject file) {
-				final char c = file.filename.charAt(0);
+				final char c = file.getFilename().charAt(0);
 				final int index = "CIfpjsim".indexOf(c);
 				return index < 0 ? 0x200 + c : index;
 			}
 		});
 		byFilename.clear();
 		for (final FileObject file : files) {
-			byFilename.put(file.filename, file);
+			byFilename.put(file.getFilename(), file);
 		}
 	}
 
@@ -1193,7 +1193,7 @@ public class FilesCollection implements Iterable<FileObject> {
 		for (final String dependency : file.dependencies.keySet()) {
 			final FileObject dep = get(dependency);
 			if (dep == null) continue;
-			if (updateSite != null && !updateSite.equals(dep.updateSite)) continue;
+			if (updateSite != null && !updateSite.equals(dep.getUpdateSite())) continue;
 			if (chain.contains(dep)) return " " + dependency;
 			chain.add(dep);
 			final String result = checkForCircularDependency(dep, seen, chain, updateSite);
@@ -1212,7 +1212,7 @@ public class FilesCollection implements Iterable<FileObject> {
 		final StringBuilder result = new StringBuilder();
 		final Set<FileObject> circularChecked = new HashSet<>();
 		for (final FileObject file : this) {
-			if (uploadSiteName != null && !uploadSiteName.equals(file.updateSite) || file.getAction() == Action.REMOVE) {
+			if (uploadSiteName != null && !uploadSiteName.equals(file.getUpdateSite()) || file.getAction() == Action.REMOVE) {
 				continue;
 			}
 			result.append(checkForCircularDependency(file, circularChecked, uploadSiteName));
@@ -1223,7 +1223,7 @@ public class FilesCollection implements Iterable<FileObject> {
 			}
 			for (final String dependency : deps) {
 				final FileObject dep = get(dependency);
-				if (dep == null || dep.current == null) result.append("The file " +
+				if (dep == null || dep.getCurrentVersion() == null) result.append("The file " +
 					file + " has the obsolete/local-only " + "dependency " + dependency +
 					"!\n");
 			}
@@ -1399,8 +1399,8 @@ public class FilesCollection implements Iterable<FileObject> {
 				notUpToDateShown = true;
 			}
 			final FileObject.Version version = entry.getValue();
-			String checksum = version.checksum;
-			if (version.checksum != null && version.checksum.length() > 8) {
+			String checksum = version.getChecksum();
+			if (version.getChecksum() != null && version.getChecksum().length() > 8) {
 				final StringBuilder rebuild = new StringBuilder();
 				for (final String element : checksum.split(":")) {
 					if (rebuild.length() > 0) rebuild.append(":");
@@ -1411,7 +1411,7 @@ public class FilesCollection implements Iterable<FileObject> {
 			}
 			sb.append("  ").append(checksum).append(" ");
 			if (fileObject != null) sb.append("(").append(fileObject.getStatus()).append(") ");
-			sb.append(version.timestamp).append(" ");
+			sb.append(version.getTimestamp()).append(" ");
 			sb.append(file).append("\n");
 		}
 		return sb.toString();
@@ -1420,10 +1420,10 @@ public class FilesCollection implements Iterable<FileObject> {
 	Collection<String> getProtocols(Iterable<FileObject> selected) {
 		final Set<String> protocols = new LinkedHashSet<>();
 		for (final FileObject file : selected) {
-			final UpdateSite site = getUpdateSite(file.updateSite, false);
+			final UpdateSite site = getUpdateSite(file.getUpdateSite(), false);
 			if (site != null) {
 				if (site.getHost() == null)
-					protocols.add("unknown(" + file.filename + ")");
+					protocols.add("unknown(" + file.getFilename() + ")");
 				else
 					protocols.add(site.getUploadProtocol());
 			}

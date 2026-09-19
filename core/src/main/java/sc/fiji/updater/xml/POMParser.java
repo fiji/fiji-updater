@@ -74,7 +74,7 @@ public class POMParser extends DefaultHandler {
 				read = true;
 			}
 		}
-		object.localCoordinate = coordinate(jar);
+		object.setLocalCoordinate(coordinate(jar));
 		jar.close();
 	}
 
@@ -157,8 +157,8 @@ public class POMParser extends DefaultHandler {
 	{
 		if (prefix.equals(">project>description")) {
 			if (!"".equals(body)) {
-				file.description = body;
-				file.descriptionFromPOM = true;
+				file.setDescription(body);
+				file.setDescriptionFromPOM(true);
 			}
 		}
 		else if (prefix.equals(">project>developers>developer>name")) {

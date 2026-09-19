@@ -413,11 +413,11 @@ public class FilesUploader {
 		 */
 		for (final FileObject file : files.forUpdateSite(siteName)) {
 			if (!file.actionSpecified() && file.getStatus() == Status.INSTALLED &&
-				file.metadataChanged &&
-				file.localFilename != null && !file.localFilename.equals(file.filename))
+				file.isMetadataChanged() &&
+				file.getLocalFilename() != null && !file.getLocalFilename().equals(file.getFilename()))
 			{
-				file.addPreviousVersion(file.current.checksum, file.current.timestamp,
-					file.filename, 0);
+				file.addPreviousVersion(file.getCurrentVersion().getChecksum(), file.getCurrentVersion().getTimestamp(),
+					file.getFilename(), 0);
 				file.setAction(files, Action.UPLOAD);
 			}
 		}
@@ -428,7 +428,7 @@ public class FilesUploader {
 				final String filename = iter.next().filename;
 				final FileObject other = files.get(filename);
 				if (other == null || other.isObsolete()) {
-					files.log.warn("Removed obsolete dependency " + filename + " of " + file.filename);
+					files.log.warn("Removed obsolete dependency " + filename + " of " + file.getFilename());
 					iter.remove();
 				}
 			}
@@ -475,15 +475,15 @@ public class FilesUploader {
 		final UploadableFile uploadable = (UploadableFile) file;
 		final long size = uploadable.source.length();
 		if (uploadable.filesize != size) throw new RuntimeException(
-			"File size of " + uploadable.file.filename +
+			"File size of " + uploadable.file.getFilename() +
 				" changed since being checksummed (was " + uploadable.filesize +
 				" but is " + size + ")!");
 		if (checkTimestamp) {
 			final long stored =
 				uploadable.file.getStatus() == FileObject.Status.LOCAL_ONLY
-					? uploadable.file.current.timestamp : uploadable.file.localTimestamp;
+					? uploadable.file.getCurrentVersion().getTimestamp() : uploadable.file.getLocalTimestamp();
 			if (stored != Timestamps.getTimestamp(uploadable.source)) throw new RuntimeException(
-				"Timestamp of " + uploadable.file.filename +
+				"Timestamp of " + uploadable.file.getFilename() +
 					" changed since being checksummed (was " + stored + " but is " +
 					Timestamps.getTimestamp(uploadable.source) + ")!");
 		}
@@ -495,12 +495,13 @@ public class FilesUploader {
 			final UploadableFile uploadable = (UploadableFile) f;
 			final FileObject file = uploadable.file;
 			if (file == null) continue;
-			file.filesize = uploadable.filesize = uploadable.source.length();
-			file.localTimestamp = timestamp;
-			uploadable.filename = file.filename + "-" + timestamp;
+			uploadable.filesize = uploadable.source.length();
+			file.setFilesize(uploadable.getFilesize());
+			file.setLocalTimestamp(timestamp);
+			uploadable.filename = file.getFilename() + "-" + timestamp;
 			if (file.getStatus() == FileObject.Status.LOCAL_ONLY) {
 				file.setStatus(FileObject.Status.INSTALLED);
-				file.current.timestamp = timestamp;
+				file.getCurrentVersion().setTimestamp(timestamp);
 			}
 		}
 

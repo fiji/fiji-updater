@@ -249,9 +249,9 @@ public class FijiUpdater implements UpdaterCommand {
 	protected boolean overwriteWithUpdated(final FilesCollection files,
 		final FileObject file)
 	{
-		File downloaded = files.prefix("update/" + file.filename);
+		File downloaded = files.prefix("update/" + file.getFilename());
 		if (!downloaded.exists()) return true; // assume all is well if there is no updated file
-		final File jar = files.prefix(file.filename);
+		final File jar = files.prefix(file.getFilename());
 		if (!jar.delete() && !moveOutOfTheWay(jar)) return false;
 		if (!downloaded.renameTo(jar)) return false;
 		for (;;) {
