@@ -367,7 +367,9 @@ What the pass did not cover, and what each is waiting on.
 - **Smaller DRY not yet taken:** `Diff`'s generic-IO helpers and the stateless
   `GroupAction` singletons, both described above.
 
-Note the two documents interact: the bootstrap consolidation and the
-`FileObject.updateSite` encapsulation are both prerequisites in spirit for
-"Identify sites by URL, not by name". If that work is happening anyway, doing
-it after this pass is meaningfully cheaper.
+Note the two documents interacted as expected: the bootstrap consolidation and
+the `FileObject.updateSite` encapsulation were both prerequisites in spirit for
+`REMAINING-WORK.md`'s "Identify sites by URL, not by name", and all three have
+now landed. `UpdateSiteNetwork.MIRROR_URL_PREFIXES` appears in the list above
+because the mirror work left it used only for detection; it goes when mirrors
+move into the published site list.
