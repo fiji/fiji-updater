@@ -256,19 +256,24 @@ The first three landed; the last two did not.
   `Status` also grew the three `OBSOLETE*` constants it needed once it stopped
   borrowing `Action`'s.
 
-- **Public mutable fields. Not done.** `FileObject` exposes 16 --
-  `updateSite`, `originalUpdateSite`, `filename`, `description`, `executable`,
-  `coordinate`, `originalCoordinate`, `current`, `previous`, `filesize`,
-  `metadataChanged`, `descriptionFromPOM`, `localFilename`, `localChecksum`,
-  `localTimestamp`, `localCoordinate` -- and `FileObject.Version` exposes 4
-  more (`checksum`, `timestamp`, `timestampObsolete`, `filename`). The three
-  `coordinate` fields are new since this document was written, added by the
-  Maven coordinate work, so the wart grew rather than shrank.
-  `Upload.setAction` still reaches in and writes `file.updateSite` and
-  `file.originalUpdateSite` directly, which is exactly the coupling that makes
-  the site-identity work in `REMAINING-WORK.md` harder than it needs to be: if
-  `updateSite` were behind a setter, "rewrite every file's site attribute on a
-  URL match" would have one place to live.
+- **Public mutable fields. Landed.** `FileObject` exposed 16 and
+  `FileObject.Version` 4 more, read and written directly from every module.
+  All are private now, behind accessors named after what was already there:
+  `getFilename()` and `getDescription()` existed and already returned exactly
+  their fields, so those call sites merely lost a dot. Two took a decision:
+  `current` is `getCurrentVersion()`, because `getChecksum()` and
+  `getTimestamp()` were taken and answer a different question -- what a staged
+  action would leave behind, rather than what the site serves -- and
+  `previous` keeps its existing `getPrevious()`.
+
+  The rewrite was compiler-driven rather than textual: make a field private,
+  let javac name every access, rewrite those lines, repeat. Six sites needed
+  hands -- three chained assignments, and three where the field belonged to
+  `Dependency`, to `Checksummer`'s `StringAndFile` or to `XMLFileReader`
+  itself rather than to a `FileObject`.
+
+  Note `Dependency`'s three public fields are now the conspicuous remainder,
+  and were never part of this item.
 
 - **Four ways to find the app root, and this one was a live bug. Fixed.**
   `AppLayout.appDirectory()` consults `scijava.app.directory`, `fiji.dir`,
@@ -340,12 +345,6 @@ Not taken:
 ## Still outstanding
 
 What the pass did not cover, and what each is waiting on.
-
-- **`FileObject`'s public mutable fields.** Mechanical but very wide: the 16
-  fields above are read directly from every module, and `Version`'s 4 with
-  them. Worth doing, and worth doing with the accessor names agreed first,
-  since they are the API that replaces them. Note that the coordinate work
-  added three more fields in the meantime, so this gets no cheaper by waiting.
 
 - **Filename-derived automatic modules.** `miglayout-swing`, `jsch` and
   `jackrabbit-webdav` declare no `Automatic-Module-Name`, so the names the
