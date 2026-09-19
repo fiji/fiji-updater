@@ -513,22 +513,10 @@ public class SitesDialog extends JDialog implements ActionListener {
 
 	private void updateAvailableUpdateSites() {
 		new Thread(() -> {
-			List<URLChange>
-					changes = AvailableSites.initializeAndAddSites(files, (Logger) null);
-			boolean reviewChanges = ReviewSiteURLsDialog.shouldBeDisplayed(changes);
-			AtomicBoolean changesApproved = new AtomicBoolean(!reviewChanges);
-			try {
-				SwingUtilities.invokeAndWait(() -> {
-					ReviewSiteURLsDialog dialog = new ReviewSiteURLsDialog(null, changes);
-					dialog.setVisible(true);
-					changesApproved.set(dialog.isOkPressed());
-				});
-			} catch (InterruptedException | InvocationTargetException e) {
-				e.printStackTrace();
-			}
-			if(changesApproved.get()) {
+			final List<URLChange> changes = AvailableSites.refresh(files, null,
+				proposed -> FijiUpdater.reviewWith(null, proposed));
+			if (changes.stream().anyMatch(URLChange::isApproved)) {
 				searchTerm.setText(""); // Reset filtering
-				AvailableSites.applySitesURLUpdates(files, changes);
 			}
 			tableModel.rowsChanged(0, tableModel.getRowCount()-1);
 		}).start();

@@ -40,6 +40,7 @@ import java.net.URL;
 import java.net.URLConnection;
 import java.net.UnknownHostException;
 import java.util.Date;
+import java.util.List;
 import java.util.Enumeration;
 
 import javax.xml.parsers.ParserConfigurationException;
@@ -50,6 +51,8 @@ import org.xml.sax.SAXException;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.app.AppLayout;
+import sc.fiji.updater.channel.URLChange;
+import sc.fiji.updater.channel.URLChangeReview;
 import sc.fiji.updater.site.AvailableSites;
 import sc.fiji.updater.site.Connections;
 
@@ -114,30 +117,30 @@ public class UpToDate {
 		if (isDeveloper()) return Result.DEVELOPER;
 		if (!haveNetworkConnection()) return Result.OFFLINE;
 		final FilesCollection plugins = new FilesCollection(ijRoot);
-		try {
-			try {
-				plugins.read();
-			}
-			catch (final FileNotFoundException e) { /* ignore */}
-			if(AvailableSites.hasUpdateSiteURLUpdates(plugins)) {
+		/*
+		 * Note: a failure to reach anything is tolerated throughout rather than
+		 * caught here. This is just an up-to-date check, so a temporary network
+		 * failure -- or even a site that went away -- means only that there is
+		 * nothing to report this time.
+		 */
+		// Approving nothing: this runs unattended on every launch, and its job
+		// is to report that there is something to do rather than to do it.
+		// Nothing is written, so the user still meets the proposal in the
+		// updater, where they can see it.
+		final List< URLChange > changes =
+			AvailableSites.bootstrap(plugins, null, URLChangeReview.approveNone());
+		if (changes.stream().anyMatch(URLChange::isRecommended)) {
+			return Result.UPDATEABLE;
+		}
+		for (final String name : plugins.getUpdateSiteNames(false)) {
+			final UpdateSite updateSite = plugins.getUpdateSite(name, true);
+			final long lastModified = getLastModified(plugins.indexURL(updateSite));
+			if (lastModified == FOUR_O_SEVEN) return Result.PROXY_NEEDS_AUTHENTICATION;
+			if (lastModified < 0) return Result.OFFLINE; // assume network is down
+			if (!updateSite.isLastModified(lastModified)) {
+				setLatestNag();
 				return Result.UPDATEABLE;
 			}
-			for (final String name : plugins.getUpdateSiteNames(false)) {
-				final UpdateSite updateSite = plugins.getUpdateSite(name, true);
-				final long lastModified = getLastModified(plugins.indexURL(updateSite));
-				if (lastModified == FOUR_O_SEVEN) return Result.PROXY_NEEDS_AUTHENTICATION;
-				if (lastModified < 0) return Result.OFFLINE; // assume network is down
-				if (!updateSite.isLastModified(lastModified)) {
-					setLatestNag();
-					return Result.UPDATEABLE;
-				}
-			}
-		}
-		catch (final FileNotFoundException  | UnknownHostException e) {
-			/*
-			 * Ignore when it is a temporary failure, or even when the site went away:
-			 * this is just an up-to-date-check, nothing more.
-			 */
 		}
 		setLatestNag(-1);
 		return Result.UP_TO_DATE;

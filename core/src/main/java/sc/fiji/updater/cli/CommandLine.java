@@ -85,6 +85,7 @@ import sc.fiji.updater.channel.ChannelState;
 import sc.fiji.updater.channel.ChannelUpgrade;
 import sc.fiji.updater.channel.Channels;
 import sc.fiji.updater.channel.URLChange;
+import sc.fiji.updater.channel.URLChangeReview;
 import sc.fiji.updater.diff.Diff.Mode;
 import sc.fiji.updater.diff.Diff;
 import sc.fiji.updater.internal.DllFile;
@@ -1475,20 +1476,25 @@ public class CommandLine {
 			}
 			throw die("Unknown option: " + option);
 		}
+		final boolean showOnly = simulate;
+		final URLChangeReview decide = updateall ? URLChangeReview.approveAll()
+			: URLChangeReview.approveRecommended();
 		try {
-			files.tryLoadingCollection();
+			AvailableSites.bootstrap(files, log, changes -> {
+				decide.review(changes);
+				report(changes);
+				// --simulate decides and reports, then approves nothing, so that
+				// what it prints is what a real run would have done.
+				if (showOnly) URLChangeReview.approveNone().review(changes);
+			});
 		} catch (ParserConfigurationException | SAXException e) {
 			e.printStackTrace();
 		}
 		warnAboutInsecureSites();
-		final List< URLChange > urlChanges = AvailableSites.initializeAndAddSites(files, log);
-		if(updateall) {
-			urlChanges.forEach( change -> change.setApproved(true));
-		}
-		else {
-			urlChanges.forEach( change -> change.setApproved(change.isRecommended()));
-		}
-		urlChanges.forEach(change -> {
+	}
+
+	private void report(final List< URLChange > changes) {
+		changes.forEach(change -> {
 			UpdateSite site = change.updateSite();
 			if(change.isApproved()) {
 				System.out.println("  [UPDATE] " + site.getName() + ": " + site.getURL() + " -> " + change.getNewURL());
@@ -1496,9 +1502,6 @@ public class CommandLine {
 				System.out.println("  [KEEP] " + site.getName() + ": " + site.getURL() + " (new: " + change.getNewURL() + ")");
 			}
 		});
-		if(!simulate) {
-			AvailableSites.applySitesURLUpdates(files, urlChanges);
-		}
 	}
 
 	private static List<String> makeList(final String[] list, int start) {

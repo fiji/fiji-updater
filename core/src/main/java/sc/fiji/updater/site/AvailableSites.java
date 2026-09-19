@@ -56,6 +56,7 @@ import org.xml.sax.SAXException;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.channel.URLChange;
+import sc.fiji.updater.channel.URLChangeReview;
 import sc.fiji.updater.internal.UpdaterUtil;
 
 /**
@@ -179,6 +180,55 @@ public final class AvailableSites {
 	private static void runSanityChecks(final Map<String, UpdateSite> result) throws IOException {
 		final Iterator<UpdateSite> iter = result.values().iterator();
 		if (!iter.hasNext()) throw new IOException("Invalid page: " + SITE_LIST_PAGE_TITLE);
+	}
+
+	/**
+	 * Brings an installation up to date with the published site list: loads its
+	 * own index, reconciles it with the list, and applies the URL changes the
+	 * given review approves.
+	 * <p>
+	 * Every entry point goes through here, so that they cannot disagree about
+	 * the order of the three steps or about who decides. What they vary is the
+	 * review; see {@link URLChangeReview}.
+	 * </p>
+	 *
+	 * @param files the installation, which need not have been loaded yet.
+	 * @param log for reporting errors, or null.
+	 * @param review who decides which proposed URL changes to apply.
+	 * @return the changes that were proposed, approved or not.
+	 */
+	public static List< URLChange > bootstrap(final FilesCollection files,
+		final Logger log, final URLChangeReview review)
+		throws ParserConfigurationException, SAXException
+	{
+		files.tryLoadingCollection();
+		return refresh(files, log, review);
+	}
+
+	/**
+	 * As {@link #bootstrap}, for an installation whose index is already loaded.
+	 *
+	 * @param files the installation, already loaded.
+	 * @param log for reporting errors, or null.
+	 * @param review who decides which proposed URL changes to apply.
+	 * @return the changes that were proposed, approved or not.
+	 */
+	public static List< URLChange > refresh(final FilesCollection files,
+		final Logger log, final URLChangeReview review)
+	{
+		return refresh(files, tryGetAvailableSites(log), review);
+	}
+
+	/** As {@link #refresh}, against a given site list rather than the published
+	 * one. Package private to allow testing. */
+	static List< URLChange > refresh(final FilesCollection files,
+		final Collection< UpdateSite > availableSites, final URLChangeReview review)
+	{
+		final List< URLChange > changes =
+			initializeAndAddSites(files, availableSites);
+		review.review(changes);
+		applySitesURLUpdates(files, changes);
+		return changes;
 	}
 
 	/**
@@ -479,42 +529,10 @@ public final class AvailableSites {
 		}
 	}
 
-	/**
-	 * Initializes the list of update sites,
-	 * <em>and</em> adds them to the given {@link FilesCollection}.
-	 */
-	public static void initializeAndAddSites(final FilesCollection files) {
-		initializeAndAddSites(files, (Logger) null);
-	}
-
 	private static String stripWikiMarkup(final String[] columns, int index) {
 		if (index < 0 || index >= columns.length) return null;
 		final String string = columns[index];
 		return string.replaceAll("'''", "").replaceAll("\\[\\[([^\\|\\]]*\\|)?([^\\]]*)\\]\\]", "$2").replaceAll("\\[[^\\[][^ ]*([^\\]]*)\\]", "$1");
-	}
-
-	/**
-	 * Checks whether for all update sites of a given {@link FilesCollection} there is
-	 * an updated URL on the remote list of available update sites.
-	 */
-	public static boolean hasUpdateSiteURLUpdates(FilesCollection plugins) throws IOException {
-		return hasUpdateSiteURLUpdates(plugins, getAvailableSites());
-	}
-
-	/**
-	 * Checks whether for all update sites of a given {@link FilesCollection} there is
-	 * an updated URL on the given list of available sites.
-	 */
-	public static boolean hasUpdateSiteURLUpdates(FilesCollection plugins, Map<String, UpdateSite> availableSites) {
-		for(UpdateSite site : availableSites.values()) {
-			// TODO use site id
-			UpdateSite local = plugins.getUpdateSite(site.getName(), false);
-			if(local == null) continue;
-			if(!local.shouldKeepURL() && !local.getURL().equals(site.getURL())) {
-				return true;
-			}
-		}
-		return false;
 	}
 
 	/**

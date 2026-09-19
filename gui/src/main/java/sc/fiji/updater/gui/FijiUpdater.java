@@ -41,6 +41,8 @@ import java.net.UnknownHostException;
 import java.util.Collection;
 import java.util.List;
 
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.scijava.Priority;
 import org.scijava.app.StatusService;
 import org.scijava.event.ContextDisposingEvent;
@@ -51,6 +53,8 @@ import org.scijava.plugin.Menu;
 import org.scijava.plugin.Parameter;
 import org.scijava.plugin.Plugin;
 
+import org.xml.sax.SAXException;
+
 import sc.fiji.updater.Conflicts.Conflict;
 import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
@@ -59,6 +63,7 @@ import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.UpdaterCommand;
 import sc.fiji.updater.app.AppLayout;
 import sc.fiji.updater.channel.URLChange;
+import sc.fiji.updater.channel.URLChangeReview;
 import sc.fiji.updater.gui.ViewOptions.Option;
 import sc.fiji.updater.progress.Progress;
 import sc.fiji.updater.progress.UpdateCanceledException;
@@ -213,18 +218,27 @@ public class FijiUpdater implements UpdaterCommand {
 	}
 
 	private void refreshUpdateSites(FilesCollection files)
-			throws InterruptedException, InvocationTargetException
+			throws ParserConfigurationException, SAXException
 	{
-		List<URLChange>
-				changes = AvailableSites.initializeAndAddSites(files, log);
-		if(ReviewSiteURLsDialog.shouldBeDisplayed(changes)) {
-			ReviewSiteURLsDialog dialog = new ReviewSiteURLsDialog(main, changes);
+		AvailableSites.refresh(files, log, changes -> reviewWith(main, changes));
+	}
+
+	/**
+	 * Asks the user about the proposed URL changes, when there is anything worth
+	 * asking about. Cancelling approves nothing.
+	 */
+	static void reviewWith(final UpdaterFrame parent, final List<URLChange> changes) {
+		if (!ReviewSiteURLsDialog.shouldBeDisplayed(changes)) return;
+		final ReviewSiteURLsDialog dialog = new ReviewSiteURLsDialog(parent, changes);
+		try {
 			EventQueue.invokeAndWait(() -> dialog.setVisible(true));
-			if(dialog.isOkPressed())
-				AvailableSites.applySitesURLUpdates(files, changes);
 		}
-		else
-			AvailableSites.applySitesURLUpdates(files, changes);
+		catch (final InterruptedException | InvocationTargetException e) {
+			e.printStackTrace();
+			URLChangeReview.approveNone().review(changes);
+			return;
+		}
+		if (!dialog.isOkPressed()) URLChangeReview.approveNone().review(changes);
 	}
 
 	@EventHandler

@@ -45,6 +45,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Collection;
+import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -59,6 +60,7 @@ import sc.fiji.updater.FileObject;
 import sc.fiji.updater.FilesCollection;
 import sc.fiji.updater.UpdateSite;
 import sc.fiji.updater.channel.URLChange;
+import sc.fiji.updater.channel.URLChangeReview;
 import sc.fiji.updater.internal.UpdaterUtil;
 
 /**
@@ -231,8 +233,10 @@ public class AvailableSitesTest {
 		// load initial files collection
 		FilesCollection files = initialize();
 
-		// get list of available update sites
-		AvailableSites.initializeAndAddSites(files);
+		// merge in a published list
+		AvailableSites.refresh(files,
+			asListOfUpdateSites(new String[] { "a", "https://a.de/", "b", "https://b.de/" }),
+			URLChangeReview.asProposed());
 
 		// test whether the update sites are marked as official
 		files.getUpdateSites(true).forEach(updateSite -> assertTrue(updateSite.isOfficial()));
@@ -467,6 +471,96 @@ public class AvailableSitesTest {
 		assertEquals(pasteur + "MoBIE/", files.sourceURL(migrated));
 
 		cleanup(files);
+	}
+
+	/**
+	 * The bootstrap loads the installation's index itself, so an entry point
+	 * hands it a collection rather than a loaded one.
+	 */
+	@Test
+	public void testBootstrapLoadsTheIndex() throws Exception {
+		final FilesCollection files = initialize();
+		files.addUpdateSite("Thing", "https://sites.fiji.sc/Thing/", null, null, 0);
+		files.write();
+
+		final FilesCollection fresh = new FilesCollection(files.getAppRoot());
+		fresh.tryLoadingCollection();
+		AvailableSites.refresh(fresh, Collections.emptyList(),
+			URLChangeReview.approveNone());
+
+		assertNotNull(fresh.getUpdateSite("Thing", true));
+
+		cleanup(files);
+	}
+
+	/**
+	 * Approving nothing still reports: this is what lets the up-to-date check
+	 * say there is something to do without doing it.
+	 */
+	@Test
+	public void testApproveNoneStillReports() throws Exception {
+		final FilesCollection files = initialize();
+		files.addUpdateSite("Thing", "https://sites.fiji.sc/Thing/", null, null, 0);
+		files.write();
+		final byte[] before = index(files);
+
+		final List< URLChange > changes = AvailableSites.refresh(files, moved(),
+			proposed -> {
+				// The proposal reaches the reviewer either way.
+				assertNotNull(changeFor(proposed, "Thing"));
+				URLChangeReview.approveNone().review(proposed);
+			});
+
+		final URLChange thing = changeFor(changes, "Thing");
+		assertNotNull(thing);
+		assertTrue(thing.isRecommended());
+		assertFalse(thing.isApproved());
+		assertEquals("https://sites.fiji.sc/Thing/",
+			files.getUpdateSite("Thing", true).getURL());
+		assertArrayEquals(before, index(files));
+
+		cleanup(files);
+	}
+
+	/**
+	 * A URL the user pinned is left alone by the recommended policy and taken by
+	 * the one the command line's --updateall selects.
+	 */
+	@Test
+	public void testApproveAllOverridesAPinnedURL() throws Exception {
+		final FilesCollection pinned = initialize();
+		pinned.addUpdateSite("Thing", "https://sites.fiji.sc/Thing/", null, null, 0);
+		pinned.getUpdateSite("Thing", true).setKeepURL(true);
+		pinned.write();
+
+		AvailableSites.refresh(pinned, moved(), URLChangeReview.approveRecommended());
+		assertEquals("a pinned URL is not recommended for change",
+			"https://sites.fiji.sc/Thing/",
+			pinned.getUpdateSite("Thing", true).getURL());
+
+		AvailableSites.refresh(pinned, moved(), URLChangeReview.approveAll());
+		assertEquals("https://sites.fiji.sc/Moved/",
+			pinned.getUpdateSite("Thing", true).getURL());
+
+		cleanup(pinned);
+	}
+
+	private static URLChange changeFor(final List< URLChange > changes,
+		final String name)
+	{
+		return changes.stream()
+			.filter(change -> name.equals(change.updateSite().getName()))
+			.findFirst().orElse(null);
+	}
+
+	/** A published list that has moved the "Thing" site. */
+	private List< UpdateSite > moved() {
+		return asListOfUpdateSites(
+			new String[] { "Thing", "https://sites.fiji.sc/Moved/" });
+	}
+
+	private byte[] index(final FilesCollection files) throws IOException {
+		return Files.readAllBytes(files.prefix(UpdaterUtil.XML_COMPRESSED).toPath());
 	}
 
 	private static long countSitesNamed(final FilesCollection files, final String name) {
