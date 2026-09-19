@@ -43,7 +43,14 @@ import sc.fiji.updater.GroupAction;
  * 
  * @author Johannes Schindelin
  */
-public class KeepAsIs implements GroupAction {
+public class KeepAsIs extends GroupAction {
+
+	/** The one instance: this action carries no state. */
+	public static final KeepAsIs INSTANCE = new KeepAsIs();
+
+	private KeepAsIs() {
+		// NB: stateless, so there is nothing to have two of.
+	}
 
 	@Override
 	public boolean isValid(FilesCollection files, FileObject file) {
@@ -59,10 +66,4 @@ public class KeepAsIs implements GroupAction {
 	public String getLabel(FilesCollection files, Iterable<FileObject> selected) {
 		return "Keep as-is";
 	}
-
-	@Override
-	public String toString() {
-		return "Keep as-is";
-	}
-
 }

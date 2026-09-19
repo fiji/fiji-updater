@@ -735,10 +735,10 @@ public class FilesCollection implements Iterable<FileObject> {
 
 	public Set<GroupAction> getValidActions() {
 		final Set<GroupAction> actions = new LinkedHashSet<>();
-		actions.add(new KeepAsIs());
+		actions.add(KeepAsIs.INSTANCE);
 		boolean hasChanges = hasChanges(), hasUploadOrRemove = hasUploadOrRemove();
 		if (!hasUploadOrRemove) {
-			actions.add(new InstallOrUpdate());
+			actions.add(InstallOrUpdate.INSTANCE);
 		}
 		if (hasUploadOrRemove || !hasChanges) {
 			final Collection<String> siteNames = getSiteNamesToUpload();
@@ -759,7 +759,7 @@ public class FilesCollection implements Iterable<FileObject> {
 			}
 		}
 		if (!hasUploadOrRemove) {
-			actions.add(new Uninstall());
+			actions.add(Uninstall.INSTANCE);
 		}
 		return actions;
 	}

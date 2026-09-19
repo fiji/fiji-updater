@@ -45,7 +45,14 @@ import sc.fiji.updater.GroupAction;
  * 
  * @author Johannes Schindelin
  */
-public class InstallOrUpdate implements GroupAction {
+public class InstallOrUpdate extends GroupAction {
+
+	/** The one instance: this action carries no state. */
+	public static final InstallOrUpdate INSTANCE = new InstallOrUpdate();
+
+	private InstallOrUpdate() {
+		// NB: stateless, so there is nothing to have two of.
+	}
 
 	@Override
 	public boolean isValid(FilesCollection files, FileObject file) {
@@ -69,10 +76,4 @@ public class InstallOrUpdate implements GroupAction {
 		if (!(install ^ update)) return "Install / Update";
 		return update ? "Update" : "Install";
 	}
-
-	@Override
-	public String toString() {
-		return "Install / Update";
-	}
-
 }

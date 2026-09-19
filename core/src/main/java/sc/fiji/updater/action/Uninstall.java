@@ -44,7 +44,14 @@ import sc.fiji.updater.GroupAction;
  * 
  * @author Johannes Schindelin
  */
-public class Uninstall implements GroupAction {
+public class Uninstall extends GroupAction {
+
+	/** The one instance: this action carries no state. */
+	public static final Uninstall INSTANCE = new Uninstall();
+
+	private Uninstall() {
+		// NB: stateless, so there is nothing to have two of.
+	}
 
 	@Override
 	public boolean isValid(FilesCollection files, FileObject file) {
@@ -60,10 +67,4 @@ public class Uninstall implements GroupAction {
 	public String getLabel(FilesCollection files, Iterable<FileObject> selected) {
 		return "Uninstall";
 	}
-
-	@Override
-	public String toString() {
-		return "Uninstall";
-	}
-
 }

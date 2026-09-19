@@ -29,8 +29,10 @@
 
 package sc.fiji.updater;
 
+import java.util.Collections;
+
 /**
- * A common interface for all actions to be applied to a set of files.
+ * A common base for all actions to be applied to a set of files.
  * 
  * <p>
  * This is the business end of the combo-boxes and context menus in the updater
@@ -39,11 +41,36 @@ package sc.fiji.updater;
  * 
  * @author Johannes Schindelin
  */
-public interface GroupAction {
-	boolean isValid(final FilesCollection files, final FileObject file);
+public abstract class GroupAction {
 
-	void setAction(final FilesCollection files, final FileObject file);
+	/** Whether this action can be applied to the given file. */
+	public abstract boolean isValid(final FilesCollection files,
+			final FileObject file);
 
-	String getLabel(final FilesCollection files,
+	/** Applies this action to the given file. */
+	public abstract void setAction(final FilesCollection files,
+			final FileObject file);
+
+	/**
+	 * What to call this action for the given selection, which some actions
+	 * describe more precisely than others -- whether an install would also be
+	 * an update, say, or whether an upload would shadow another site.
+	 */
+	public abstract String getLabel(final FilesCollection files,
 			final Iterable<FileObject> selected);
+
+	/**
+	 * What to call this action with nothing selected, which is what a button
+	 * offering it is labelled before anything is picked.
+	 * <p>
+	 * Note: this is why {@code GroupAction} is a class rather than the
+	 * interface it was. Every implementation had a {@code toString} that was
+	 * this, spelled out again, and Java does not let an interface default an
+	 * {@link Object} method.
+	 * </p>
+	 */
+	@Override
+	public final String toString() {
+		return getLabel(null, Collections.emptyList());
+	}
 }

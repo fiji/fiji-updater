@@ -321,11 +321,11 @@ public class UpdaterFrame extends JFrame implements TableModelListener,
 		bottomPanel = SwingTools.horizontalPanel();
 		bottomPanel.setBorder(Utils.defaultBorder());
 		bottomPanel.add(easyBottomPanel);
-		bottomPanel.add(new FileActionButton(new KeepAsIs()));
+		bottomPanel.add(new FileActionButton(KeepAsIs.INSTANCE));
 		bottomPanel.add(Utils.hSpace());
-		bottomPanel.add(new FileActionButton(new InstallOrUpdate()));
+		bottomPanel.add(new FileActionButton(InstallOrUpdate.INSTANCE));
 		bottomPanel.add(Utils.hSpace());
-		bottomPanel.add(new FileActionButton(new Uninstall()));
+		bottomPanel.add(new FileActionButton(Uninstall.INSTANCE));
 		bottomPanel.add(Utils.hSpace());
 		showChanges =
 				SwingTools.button("Diff",

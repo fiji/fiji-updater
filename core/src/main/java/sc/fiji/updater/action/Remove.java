@@ -30,7 +30,6 @@
 package sc.fiji.updater.action;
 
 import java.util.Collection;
-import java.util.Collections;
 
 import sc.fiji.updater.FileObject.Action;
 import sc.fiji.updater.FileObject.Status;
@@ -49,7 +48,7 @@ import sc.fiji.updater.GroupAction;
  * 
  * @author Johannes Schindelin
  */
-public class Remove implements GroupAction {
+public class Remove extends GroupAction {
 
 	private String updateSite;
 
@@ -149,10 +148,4 @@ public class Remove implements GroupAction {
 		return "Mark obsolete" + (unshadowing ? " (unshadowing)" : "")
 				+ " (" + updateSite + ")";
 	}
-
-	@Override
-	public String toString() {
-		return getLabel(null, Collections.<FileObject>emptyList());
-	}
-
 }

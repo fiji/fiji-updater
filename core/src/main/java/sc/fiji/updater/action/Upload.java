@@ -30,7 +30,6 @@
 package sc.fiji.updater.action;
 
 import java.util.Collection;
-import java.util.Collections;
 
 import sc.fiji.updater.FileObject.Action;
 import sc.fiji.updater.FileObject.Status;
@@ -51,7 +50,7 @@ import sc.fiji.updater.UpdateSite;
  * 
  * @author Johannes Schindelin
  */
-public class Upload implements GroupAction {
+public class Upload extends GroupAction {
 
 	private String updateSite;
 
@@ -170,10 +169,4 @@ public class Upload implements GroupAction {
 		}
 		return "Upload" + (shadowing ? " (shadowing)" : "") + " to " + updateSite;
 	}
-
-	@Override
-	public String toString() {
-		return getLabel(null, Collections.<FileObject>emptyList());
-	}
-
 }
