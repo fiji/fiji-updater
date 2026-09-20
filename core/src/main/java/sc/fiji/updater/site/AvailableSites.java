@@ -231,6 +231,10 @@ public final class AvailableSites {
 		return changes;
 	}
 
+	public static List< URLChange > initializeAndAddSites(final FilesCollection files) {
+		return initializeAndAddSites(files, (Logger) null);
+	}
+
 	/**
 	 * As {@link #initializeAndAddSites(FilesCollection)} with an optional
 	 * {@link Logger} for reporting errors.
