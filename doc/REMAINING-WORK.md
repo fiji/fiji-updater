@@ -13,6 +13,52 @@ A companion document, `API-CLEANUP.md`, covers the API surface and the package
 layout. Its two items that bore on the work here — the bootstrap consolidation
 and `FileObject` encapsulation — have both landed.
 
+## Found while dry-running the manual test protocol
+
+`CHANNEL-TESTING.md` is the protocol. A command-line dry run of it against a
+sandbox site turned up three things. The first two should be fixed before
+people spend time on the GUI cases, because the protocol walks straight into
+them.
+
+- **A declined upgrade leaves the session on the offered channel.**
+  `ChannelUpgrade.reconcile` calls `files.pinChannel(to)` and re-reads every
+  site against the target. `ChannelUpgradePrompt.offer` never undoes that:
+  not on *Not now*, not on *Never ask again*, and not when `reconcile`
+  throws. `FijiUpdater` then opens the main window on that same collection,
+  which offers the target channel's files as ordinary updates while the
+  installation still declares the old channel. Applying them produces the
+  disagreement between files and declaration that `ChannelUpgrade` exists to
+  prevent. Seen headlessly: after a declined reconcile, `getChannel()` is the
+  target, `getDeclaredChannelState()` is Origin, and a file the target
+  changed reads `UPDATEABLE`. Wanted: unpin and re-read on every path out of
+  the prompt that does not commit, or reconcile against a copy of the
+  collection.
+
+- **The upgrade preview under-reports.** Updates and the removal of
+  obsoleted files are only decided in `ChannelUpgrade.stage`, which touches
+  disk. The GUI dialog's counts, `upgrade`'s listing and `upgrade --simulate`
+  are all produced before it runs. So they show installs and stranded files,
+  but not the rest. A move that updated one file, removed one obsoleted file
+  and installed one new file was previewed as "[Install it]" alone. The
+  outcome was correct; only the preview was wrong. Wanted: have `reconcile`
+  compute the full plan without touching disk, and have `stage` carry it out.
+
+- **Most Fiji-Latest installations have no `fiji.cfg`.** `ChannelState` treats
+  a missing launcher CFG as *unknown*, on the assumption that the launcher
+  always leaves one. It does not: `config/jaunch/fiji.cfg` is not shipped (the
+  Checksummer's allow list keeps it off update sites) and is written only by
+  the memory dialog or by app-launcher installing a Java. On an untouched
+  installation, the first channel minted makes `XMLFileDownloader` refuse
+  every site, and `ChannelUpgrade` refuses to move it. The refusal is right
+  for a JVM the launcher did not start. It is wrong when
+  `scijava.app.config-file` names a CFG that simply does not exist yet. That
+  is the launcher saying where the file would be, which, since `commit` always
+  writes the file, means the installation was never moved off the base
+  channel. The residual risk is a user deleting the CFG from an upgraded
+  installation. Decide whether that case is worth a marker somewhere other
+  than the CFG. `ChannelState.write` must also create the file rather than
+  refuse.
+
 ## Blockers before the first channel is minted
 
 These are wrong or missing in ways that only bite once a channel exists, which
