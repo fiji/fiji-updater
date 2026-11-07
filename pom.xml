@@ -122,9 +122,6 @@
 		<!-- NB: Do not install/deploy this aggregator POM. -->
 		<maven.deploy.skip>true</maven.deploy.skip>
 		<maven.install.skip>true</maven.install.skip>
-
-		<!-- NB: Deploy releases to the SciJava Maven repository. -->
-		<releaseProfiles>sign,deploy-to-scijava</releaseProfiles>
 	</properties>
 
 	<repositories>
